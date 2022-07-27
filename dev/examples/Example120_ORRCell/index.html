@@ -73,7 +73,6 @@ function main(;voltages=-1:0.005:1,compare=false,molarity=0.1,nref=0,κ=10.0,ene
 
     # Compare electroneutral and double layer cases
     if compare
-
         celldata.eneutral=false
 	volts,currs, sols=ivsweep(cell;voltages,ispec=io2,kwargs...)
 
@@ -85,8 +84,6 @@ function main(;voltages=-1:0.005:1,compare=false,molarity=0.1,nref=0,κ=10.0,ene
         scalarplot!(vis,nvolts,ncurrs,clear=false,color=:green,markershape=:none,label=&quot;NNP&quot;)
         return reveal(vis)
     end
-
-
 
     vis=GridVisualizer(resolution=(1200,400),layout=(1,5),Plotter=PyPlot)
 
@@ -107,7 +104,9 @@ function main(;voltages=-1:0.005:1,compare=false,molarity=0.1,nref=0,κ=10.0,ene
     scalarplot!(vis[1,2],cell,tsol;species=io2,aspect,xlimits,title=&quot;O2&quot;,colormap=:summer)
     scalarplot!(vis[1,3],cell,tsol;species=ihplus,aspect,xlimits,title=&quot;H+&quot;,colormap=:summer)
     scalarplot!(vis[1,4],cell,tsol;species=iϕ,aspect,xlimits,title=&quot;ϕ&quot;,colormap=:bwr)
-    scalarplot!(vis[1,5],tsol[io2,1,:],volts,title=&quot;c_o2(0)&quot;,xlabel=&quot;O2&quot;,ylabel=&quot;V&quot;)</code></pre><p>Plots.plot(tsol.t,tsol[io2,1,:])</p><p>save(plotsdir(&quot;1DResults.pdf&quot;),vis)</p><pre><code class="language-julia hljs">    reveal(vis)
+    scalarplot!(vis[1,5],tsol[io2,1,:],volts,title=&quot;c_o2(0)&quot;,xlabel=&quot;O2&quot;,ylabel=&quot;V&quot;)
+
+    reveal(vis)
 end
 
-end</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Example110_Fe23Cell/">« Fe redox half cell</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.22 on <span class="colophon-date" title="Wednesday 27 July 2022 10:05">Wednesday 27 July 2022</span>. Using Julia version 1.7.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Example110_Fe23Cell/">« Fe redox half cell</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.22 on <span class="colophon-date" title="Wednesday 27 July 2022 10:10">Wednesday 27 July 2022</span>. Using Julia version 1.7.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
