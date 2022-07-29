@@ -24,6 +24,7 @@ VoronoiFVM = "82b139dc-5afc-11e9-35da-9b9bdfd336f3"
 [compat]
 DocStringExtensions = "0.8,0.9"
 ExtendableGrids = "0.9.6"
+ForwardDiff = "0.10"
 LessUnitful = "0.6.1"
 NLsolve = "4.5.1"
 Parameters = "0.12.3"
