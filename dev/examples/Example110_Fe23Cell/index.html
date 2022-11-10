@@ -54,18 +54,16 @@ function main(;nref=0,
     function halfcellbc(f,u,bnode,data)
         (;nc,Γ_we,Γ_bulk,ϕ_we,ip,iϕ,v,v0,RT)=data
         bulkbcondition(f,u,bnode,data;region=Γ_bulk)
-        if bnode.region==Γ_we[1]
+        if bnode.region==Γ_we
+            if !data.eneutral
+                boundary_dirichlet!(f,u,bnode;species=iϕ,region=Γ_we,value=ϕ_we)
+            end
             c0,barc=c0_barc(u,data)
             μfe2=chemical_potential(u[ife2], barc, u[ip], v[ife2]+κ*v0, data)
-	        μfe3=chemical_potential(u[ife3], barc, u[ip], v[ife2]+κ*v0, data)
+	    μfe3=chemical_potential(u[ife3], barc, u[ip], v[ife2]+κ*v0, data)
             r=rrate(R0,β,(μfe2 - μfe3 + Δg - data.eneutral*F*(u[iϕ]-ϕ_we))/RT)
             f[ife2]-=r
             f[ife3]+=r
-        end
-        if !eneutral
-            for index in Γ_we
-                boundary_dirichlet!(f,u,bnode;species=iϕ,region=index,value=ϕ_we)
-            end
         end
         nothing
     end
@@ -75,7 +73,7 @@ function main(;nref=0,
                              z=[1,2,3,-2],
                              eneutral,
                              κ=fill(κ,4),
-                             Γ_we=[1],
+                             Γ_we=1,
                              Γ_bulk=2,
                              scheme)
 
@@ -149,4 +147,4 @@ function main(;nref=0,
     reveal(vis)
 end
 
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Main.Example110_Fe23Cell</code></pre><pre><code class="language- hljs">Example110_Fe23Cell.main()</code></pre><pre><code class="language- hljs">Example110_Fe23Cell.main(compare=true)</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Example101_DLCap/">« Double Layer Capacitance</a><a class="docs-footer-nextpage" href="../Example120_ORRCell/">ORR cell »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Wednesday 2 November 2022 21:14">Wednesday 2 November 2022</span>. Using Julia version 1.8.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Main.Example110_Fe23Cell</code></pre><pre><code class="language- hljs">Example110_Fe23Cell.main()</code></pre><pre><code class="language- hljs">Example110_Fe23Cell.main(compare=true)</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Example101_DLCap/">« Double Layer Capacitance</a><a class="docs-footer-nextpage" href="../Example120_ORRCell/">ORR cell »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Thursday 10 November 2022 15:54">Thursday 10 November 2022</span>. Using Julia version 1.8.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
