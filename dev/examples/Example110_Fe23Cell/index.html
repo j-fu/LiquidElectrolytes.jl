@@ -61,7 +61,8 @@ function main(;nref=0,
             c0,barc=c0_barc(u,data)
             μfe2=chemical_potential(u[ife2], barc, u[ip], v[ife2]+κ*v0, data)
 	    μfe3=chemical_potential(u[ife3], barc, u[ip], v[ife2]+κ*v0, data)
-            r=rrate(R0,β,(μfe2 - μfe3 + Δg - data.eneutral*F*(u[iϕ]-ϕ_we))/RT)
+            A=(μfe2 - μfe3 + Δg - data.eneutral*F*(u[iϕ]-ϕ_we))/RT
+            r=rrate(R0,β,A)
             f[ife2]-=r
             f[ife3]+=r
         end
@@ -92,10 +93,12 @@ function main(;nref=0,
     if compare
 
         celldata.eneutral=false
-	volts,currs, sols=ivsweep(cell;voltages,ispec=ife2,kwargs...)
+	volts,  j_we, j_bulk, sols=ivsweep(cell;voltages,kwargs...)
 
+        currs=[F*j[ife2] for j in j_we]
         celldata.eneutral=true
-        nvolts,ncurrs, nsols=ivsweep(cell;voltages,ispec=ife2,kwargs...)
+        nvolts,j_we, j_bulk, nsols=ivsweep(cell;voltages,ispec=ife2,kwargs...)
+        ncurrs=[F*j[ife2] for j in j_we]
 
         vis=GridVisualizer(;Plotter,resolution=(600,400),clear=true,legend=:lt,xlabel=&quot;Δϕ/V&quot;,ylabel=&quot;I/(A/m^2)&quot;)
         scalarplot!(vis,volts,-currs,color=&quot;red&quot;,markershape=:utriangle,markersize=7, markevery=10,label=&quot;PNP&quot;)
@@ -107,7 +110,7 @@ function main(;nref=0,
     # Calculate double layer capacitances
     if dlcap
 
-        vis=GridVisualizer(;Plotter,resolution=(500,300),legend=:rt,clear=true,xlabel=&quot;φ/V&quot;,ylabel=&quot;C_dl/(μF/cm^2)&quot;)
+        vis=GridVisualizer(;Plotter,size=(500,300),legend=:rt,clear=true,xlabel=&quot;φ/V&quot;,ylabel=&quot;C_dl/(μF/cm^2)&quot;)
         hmol=1/length(molarities)
         for imol=1:length(molarities)
             color=RGB(1-imol/length(molarities),0,imol/length(molarities))
@@ -122,7 +125,11 @@ function main(;nref=0,
 
     # Full calculation
 
-    volts,currs, sols=ivsweep(cell;voltages,ispec=ife2,kwargs...)
+    volts, j_we, j_bulk, sols=ivsweep(cell;voltages,ispec=ife2,kwargs...)
+
+    currs=[F*j[ife2] for j in j_we]
+
+
     tsol=VoronoiFVM.TransientSolution(sols,volts)
 
     for it=1:length(tsol.t)
@@ -143,4 +150,4 @@ function main(;nref=0,
     reveal(vis)
 end
 
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Main.Example110_Fe23Cell</code></pre><pre><code class="language- hljs">Example110_Fe23Cell.main()</code></pre><pre><code class="language- hljs">Example110_Fe23Cell.main(compare=true)</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Example101_DLCap/">« Double Layer Capacitance</a><a class="docs-footer-nextpage" href="../Example120_ORRCell/">ORR cell »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Wednesday 1 February 2023 15:45">Wednesday 1 February 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Main.Example110_Fe23Cell</code></pre><pre><code class="language- hljs">Example110_Fe23Cell.main()</code></pre><pre><code class="language- hljs">Example110_Fe23Cell.main(compare=true)</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Example101_DLCap/">« Double Layer Capacitance</a><a class="docs-footer-nextpage" href="../Example120_ORRCell/">ORR cell »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Monday 26 June 2023 08:24">Monday 26 June 2023</span>. Using Julia version 1.9.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
