@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>ORR cell · LiquidElectrolytes.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">LiquidElectrolytes.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../api/">API</a></li><li><a class="tocitem" href="../../internal/">Internal API</a></li><li><a class="tocitem" href="../../changes/">Changes</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../Example101_DLCap/">Double Layer Capacitance</a></li><li><a class="tocitem" href="../Example110_Fe23Cell/">Fe redox half cell</a></li><li class="is-active"><a class="tocitem" href>ORR cell</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>ORR cell</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>ORR cell</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/j-fu/LiquidElectrolytes.jl/blob/main/examples/Example120_ORRCell.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="ORR-cell"><a class="docs-heading-anchor" href="#ORR-cell">ORR cell</a><a id="ORR-cell-1"></a><a class="docs-heading-anchor-permalink" href="#ORR-cell" title="Permalink"></a></h1><p>(<a href="https://github.com/j-fu/LiquidElectrolytes.jl/blob/main/examples/Example120_ORRCell.jl">source code</a>)</p><p>I-V sweep for Oxygen Reduction</p><p>Methods called:</p><ul><li><a href="../../api/#LiquidElectrolytes.ElectrolyteData"><code>ElectrolyteData</code></a></li><li><a href="../../api/#LiquidElectrolytes.ivsweep"><code>ivsweep</code></a></li><li><a href="../../api/#LiquidElectrolytes.dlcapsweep"><code>dlcapsweep</code></a></li><li><a href="../../api/#LiquidElectrolytes.PNPSystem"><code>PNPSystem</code></a></li></ul><pre><code class="language-julia hljs">module Example120_ORRCell
+using ExtendableGrids, GridVisualize
+using VoronoiFVM
+using LiquidElectrolytes
+using PyPlot, Colors
+using StaticArrays
+using LessUnitful
+
+
+function main(;
+    voltages = -1:0.1:1,
+    compare = false,
+    molarity = 0.1,
+    nref = 0,
+    κ = 10.0,
+    eneutral = false,
+    scheme = :μex,
+    Plotter = PyPlot,
+    R0::Float64 = 4.0e-15,
+    epsreg = 1.0e-20,
+    kwargs...,
+)
+
+    @local_phconstants R N_A e
+    @local_unitfactors nm cm μF mol dm s
+    F = N_A * e
+
+
+    defaults = (;
+        max_round = 3,
+        tol_round = 1.0e-10,
+        reltol = 1.0e-7,
+        tol_mono = 1.0e-7,
+        verbose = &quot;e&quot;,
+    )
+    kwargs = merge(defaults, kwargs)
+
+    hmin = 1.0e-1 * nm * 2.0^(-nref)
+    hmax = 1.0 * nm * 2.0^(-nref)
+    L = 20.0 * nm
+    X = geomspace(0, L, hmin, hmax)
+    grid = simplexgrid(X)
+
+
+    R0 = R0 * mol / (cm^2 * s)
+    Δg = 0.0
+    β = 0.5
+    ϕ_we = 0.0
+    ihplus = 1
+    iso4 = 2
+    io2 = 3
+    z = [1, -2, 0]
+    κ = [κ, κ, 0]
+
+    function halfcellbc(f, u, bnode, data)
+        bulkbcondition(f, u, bnode, data)
+        (; iϕ, eneutral, ϕ_we, Γ_we, RT) = data
+
+        if bnode.region == Γ_we
+            f .= 0.0
+            if !data.eneutral
+                boundary_dirichlet!(
+                    f,
+                    u,
+                    bnode;
+                    species = iϕ,
+                    region = data.Γ_we,
+                    value = data.ϕ_we,
+                )
+            end
+            μh2o, μ = chemical_potentials!(MVector{4,eltype(u)}(undef), u, data)
+            A =
+                (4 * μ[ihplus] + μ[io2] - 2μh2o + Δg + eneutral * F * (u[iϕ] - data.ϕ_we)) /
+                (RT)
+
+            r = rrate(R0, β, A)
+            f[ihplus] -= 4 * r
+            f[io2] -= r
+        end
+    end
+
+
+
+
+    celldata =
+        ElectrolyteData(; nc = 3, z, κ, Γ_we = 1, Γ_bulk = 2, eneutral, scheme, epsreg)
+
+    (; iϕ, c_bulk) = celldata
+
+
+    c_bulk[io2] = 0.001 * mol / dm^3
+    c_bulk[iso4] = molarity * mol / dm^3
+    c_bulk[ihplus] = 2.0 * molarity * mol / dm^3
+
+
+    @assert isapprox(celldata.c_bulk&#39; * celldata.z, 0, atol = 1.0e-12)
+
+    cell = PNPSystem(grid; bcondition = halfcellbc, celldata)
+
+
+    # Compare electroneutral and double layer cases
+    if compare
+        celldata.eneutral = false
+        volts,  j_we, j_bulk, sols = ivsweep(cell; voltages, kwargs...)
+        currs=[F*j[io2] for j in j_we]
+
+        celldata.eneutral = true
+        nvolts,  j_we, j_bulk, nsols = ivsweep(cell; voltages, kwargs...)
+        ncurrs=[F*j[io2] for j in j_we]
+
+        vis = GridVisualizer(;
+            Plotter,
+            resolution = (600, 400),
+            clear = true,
+            legend = :lt,
+            xlabel = &quot;Δϕ/V&quot;,
+            ylabel = &quot;I/(A/m^2)&quot;,
+        )
+        scalarplot!(
+            vis,
+            volts,
+            currs,
+            color = &quot;red&quot;,
+            markershape = :utriangle,
+            markersize = 7,
+            markevery = 10,
+            label = &quot;PNP&quot;,
+        )
+        scalarplot!(
+            vis,
+            nvolts,
+            ncurrs,
+            clear = false,
+            color = :green,
+            markershape = :none,
+            label = &quot;NNP&quot;,
+        )
+        return reveal(vis)
+    end
+
+    vis = GridVisualizer(;Plotter, resolution = (1000, 300), layout = (1, 5))
+
+    volts,  j_we, j_bulk, sols = ivsweep(cell; voltages, kwargs...)
+    tsol = VoronoiFVM.TransientSolution(sols, volts)
+    currs=[F*j[io2] for j in j_we]
+
+    for it = 1:length(tsol.t)
+        tsol.u[it][io2, :] /= mol / dm^3
+        tsol.u[it][ihplus, :] /= mol / dm^3
+        tsol.u[it][iso4, :] /= mol / dm^3
+    end
+
+    xmax = 3 * nm
+    xlimits = [0, xmax]
+    aspect = 3.5 * xmax / (tsol.t[end] - tsol.t[begin])
+
+    scalarplot!(
+        vis[1, 1],
+        currs,
+        volts,
+        markershape = :none,
+        title = &quot;IV&quot;,
+        xlabel = &quot;I&quot;,
+        ylabel = &quot;V&quot;,
+    )
+    scalarplot!(
+        vis[1, 2],
+        cell,
+        tsol;
+        species = io2,
+        aspect,
+        xlimits,
+        title = &quot;O2&quot;,
+        colormap = :summer,
+    )
+    scalarplot!(
+        vis[1, 3],
+        cell,
+        tsol;
+        species = ihplus,
+        aspect,
+        xlimits,
+        title = &quot;H+&quot;,
+        colormap = :summer,
+    )</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">&lt;&lt; @example-block not executed in draft mode &gt;&gt;</code></pre><p>scalarplot!(vis[1,4],cell,tsol;species=iϕ,aspect,xlimits,title=&quot;ϕ&quot;,colormap=:bwr)</p><pre><code class="language-julia hljs">    scalarplot!(
+        vis[1, 4],
+        tsol[io2, 1, :],
+        volts,
+        label = &quot;O2&quot;,
+        xlabel = &quot;c&quot;,
+        color = :green,
+        clear = false,
+        legend = :rc,
+    )
+    scalarplot!(
+        vis[1, 5],
+        tsol[ihplus, 1, :],
+        volts,
+        title = &quot;c(0)&quot;,
+        xlabel = &quot;c&quot;,
+        ylabel = &quot;V&quot;,
+        label = &quot;H+&quot;,
+        color = :red,
+    )
+    scalarplot!(
+        vis[1, 5],
+        tsol[iso4, 1, :],
+        volts,
+        label = &quot;SO4--&quot;,
+        color = :blue,
+        clear = false,
+        legend = :rc,
+    )
+
+    reveal(vis)
+end
+
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">&lt;&lt; @example-block not executed in draft mode &gt;&gt;</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Example110_Fe23Cell/">« Fe redox half cell</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Monday 26 June 2023 11:15">Monday 26 June 2023</span>. Using Julia version 1.9.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
