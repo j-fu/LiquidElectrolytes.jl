@@ -119,14 +119,14 @@ function main(;
     ## Compare electroneutral and double layer cases
     if compare
         celldata.eneutral = false
-        tsol, j_we, j_bulk  = ivsweep(cell; voltages, kwargs...)
-        currs=[F*j[io2] for j in j_we]
-        volts=tsol.t
+        sol=ivsweep(cell; voltages, kwargs...)
+        currs=currents(sol,io2)
+        volts=sol.voltages
         
         celldata.eneutral = true
-        ntsol, j_we, j_bulk  = ivsweep(cell; voltages, kwargs...)
-        ncurrs=[F*j[io2] for j in j_we]
-        nvolts=ntsol.t
+        nsol  = ivsweep(cell; voltages, kwargs...)
+        ncurrs=currents(nsol,io2)
+        nvolts=nsol.voltages
         
         vis = GridVisualizer(;
             Plotter,
@@ -161,13 +161,14 @@ function main(;
     ## IVsweep
     vis = GridVisualizer(;Plotter, resolution = (1000, 300), layout = (1, 4))
     
-    tsol, j_we, j_bulk = ivsweep(cell; voltages, kwargs...)
-    currs=[F*j[io2] for j in j_we]
-    volts=tsol.t
+    result = ivsweep(cell; voltages,store_solutions=true, kwargs...)
+    currs=LiquidElectrolytes.currents(result,io2)
+    sol=LiquidElectrolytes.voltage_solution(result)
+    volts=result.voltages
 
     xmax = 10 * nm
     xlimits = [0, xmax]
-    aspect = 2 * xmax / (tsol.t[end] - tsol.t[begin])
+    aspect = 2 * xmax / (volts[end] - volts[begin])
 
     
     scalarplot!(
@@ -182,7 +183,7 @@ function main(;
     scalarplot!(
         vis[1, 2],
         cell,
-        tsol;
+        sol;
         scale= 1.0/(mol/dm^3),
         species = io2,
         aspect,
@@ -193,7 +194,7 @@ function main(;
     scalarplot!(
         vis[1, 3],
         cell,
-        tsol;
+        sol;
         species = ihplus,
         aspect,
         scale= 1.0/(mol/dm^3),
@@ -204,7 +205,7 @@ function main(;
 
     scalarplot!(
         vis[1, 4],
-        tsol[io2, 1, :]*1000,
+        sol[io2, 1, :]*1000,
         volts,
         xlabel = "c",
         label = "1000 O2",
@@ -214,7 +215,7 @@ function main(;
     )
     scalarplot!(
         vis[1, 4],
-        tsol[ihplus, 1, :],
+        sol[ihplus, 1, :],
         volts,
         title = "c(0)",
         xlabel = "c",
@@ -225,7 +226,7 @@ function main(;
     )
     scalarplot!(
         vis[1, 4],
-        tsol[iso4, 1, :],
+        sol[iso4, 1, :],
         volts,
         label = "SO4--",
         color = :blue,

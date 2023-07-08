@@ -5,6 +5,7 @@ using ProgressLogging
 using StaticArrays
 using LinearAlgebra
 using LessUnitful
+using RecursiveArrayTools
 using Base: @kwdef
 
 function __init__()
@@ -35,7 +36,7 @@ export pnpunknowns,electrolytedata,bulkbcondition
 
 
 include("cells.jl")
-export ivsweep, dlcapsweep,ivsweep_new
+export ivsweep, dlcapsweep,currents, voltages_solutions
 
 
 include("equilibrium-pluto.jl")

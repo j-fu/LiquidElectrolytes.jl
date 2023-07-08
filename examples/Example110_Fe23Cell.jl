@@ -112,15 +112,15 @@ function main(;
     if compare
 
         celldata.eneutral = false
-        tsol, j_we, j_bulk = ivsweep(cell; voltages, kwargs...)
-        volts = tsol.t
-
-        currs = [F * j[ife2] for j in j_we]
+        result = ivsweep(cell; voltages,store_solutions=true, kwargs...)
+        currs = LiquidElectrolytes.currents(result,ife2)
+        
         celldata.eneutral = true
-        ntsol, nj_we, nj_bulk = ivsweep(cell; voltages, ispec = ife2, kwargs...)
-        ncurrs = [F * j[ife2] for j in nj_we]
-        nvolts = ntsol.t
+        nresult = ivsweep(cell; voltages,store_solutions=true, kwargs...)
+        ncurrs = LiquidElectrolytes.currents(nresult,ife2)
 
+        @show length(result.voltages), size(currs,1)
+        @show length(nresult.voltages), size(ncurrs,1)
         vis = GridVisualizer(;
             Plotter,
             resolution = (600, 400),
@@ -131,7 +131,7 @@ function main(;
         )
         scalarplot!(
             vis,
-            volts,
+            result.voltages,
             -currs,
             color = "red",
             markershape = :utriangle,
@@ -141,7 +141,7 @@ function main(;
         )
         scalarplot!(
             vis,
-            nvolts,
+            nresult.voltages,
             -ncurrs,
             clear = false,
             color = :green,
@@ -166,11 +166,11 @@ function main(;
         hmol = 1 / length(molarities)
         for imol = 1:length(molarities)
             color = RGB(1 - imol / length(molarities), 0, imol / length(molarities))
-            volts, caps = dlcapsweep(cell; voltages, molarity = molarities[imol], kwargs...)
+            result= dlcapsweep(cell; voltages, molarity = molarities[imol], kwargs...)
             scalarplot!(
                 vis,
-                volts,
-                caps / (μF / cm^2);
+                result.voltages,
+                result.cdl / (μF / cm^2);
                 color,
                 clear = false,
                 label = "$(molarities[imol])M",
@@ -181,20 +181,21 @@ function main(;
 
     ## Full calculation
 
-    tsol, j_we, j_bulk = ivsweep(cell; voltages, kwargs...)
-
-    currs = [F * j[ife2] for j in j_we]
-    volts = tsol.t
-
-
+    result=ivsweep(cell; store_solutions=true, voltages, kwargs...)
+    
+    currs = LiquidElectrolytes.currents(result,ife2)
+    
+    sol=LiquidElectrolytes.voltage_solution(result)
+    
     xmax = xmax * nm
     xlimits = [0, xmax]
     vis = GridVisualizer(; Plotter, resolution = (1200, 400), layout = (1, 5), clear = true)
-    aspect = 3.5 * xmax / (tsol.t[end] - tsol.t[begin])
+    aspect = 3.5 * xmax / (result.voltages[end] - result.voltages[begin])
+
     scalarplot!(
         vis[1, 1],
-        F * currs / (mA / cm^2),
-        volts,
+        currs / (mA / cm^2),
+        result.voltages,
         markershape = :none,
         title = "IV",
         xlabel = "I",
@@ -203,7 +204,7 @@ function main(;
     scalarplot!(
         vis[1, 2],
         cell,
-        tsol;
+        sol;
         species = ife2,
         aspect,
         scale = 1.0 / (mol / dm^3),
@@ -215,7 +216,7 @@ function main(;
     scalarplot!(
         vis[1, 3],
         cell,
-        tsol;
+        sol;
         species = ife3,
         aspect,
         scale = 1.0 / (mol / dm^3),
@@ -227,7 +228,7 @@ function main(;
     scalarplot!(
         vis[1, 4],
         cell,
-        tsol;
+        sol;
         species = iϕ,
         aspect,
         scale = 1.0 / (mol / dm^3),
@@ -239,7 +240,7 @@ function main(;
     scalarplot!(
         vis[1, 5],
         cell,
-        tsol;
+        sol;
         species = ip,
         aspect,
         xlimits,

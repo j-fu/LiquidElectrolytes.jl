@@ -42,15 +42,21 @@ end
     κ=[0,0]
     acelldata=ElectrolyteData(;Γ_we=1, Γ_bulk=2,  scheme=:act,κ)
     acell=PNPSystem(grid;bcondition,celldata=acelldata)
-    avolts,acaps=dlcapsweep(acell;voltages,molarity,δ)
-
+    aresult=dlcapsweep(acell;voltages,molarity,δ)
+    avolts=aresult.voltages
+    acaps=aresult.dlcaps
+    
     μcelldata=ElectrolyteData(;Γ_we=1, Γ_bulk=2, scheme=:μex,κ)
     μcell=PNPSystem(grid;bcondition,celldata=μcelldata)
-    μvolts,μcaps=dlcapsweep(μcell;voltages,molarity,δ)
-    
+    μresult=dlcapsweep(μcell;voltages,molarity,δ)
+    μvolts=μresult.voltages
+    μcaps=μresult.dlcaps
+
     ccelldata=ElectrolyteData(;Γ_we=1, Γ_bulk=2, scheme=:cent,κ)
     ccell=PNPSystem(grid;bcondition,celldata=ccelldata)
-    cvolts,ccaps=dlcapsweep(ccell;voltages,molarity,δ)
+    cresult=dlcapsweep(ccell;voltages,molarity,δ)
+    cvolts=cresult.voltages
+    ccaps=cresult.dlcaps
     
     ecell=create_equilibrium_system(grid,EquilibriumData(acelldata))
     evolts,ecaps=dlcapsweep_equi(ecell,vmax=1.0,molarity=0.1,δV=1.0e-4,nsteps=101)

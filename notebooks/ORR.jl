@@ -194,9 +194,8 @@ iselectroneutral(celldata.c_bulk, celldata)
 cell = PNPSystem(grid; bcondition = halfcellbc, celldata)
 
 # ╔═╡ 763c393c-e0c8-447e-92e4-f2a5f0de2a30
-tsol, j_we, j_bulk = LiquidElectrolytes.ivsweep(cell;
+result=LiquidElectrolytes.ivsweep(cell;store_solutions=true,
                                                 voltages = vmin:vdelta:vmax,
-                                                ispec = io2,
                                                 solver_control...)
 
 # ╔═╡ 22bc5f42-1a21-41a5-a059-b4ac44a29566
@@ -205,7 +204,7 @@ md"""
 """
 
 # ╔═╡ d7b10140-7db7-4be0-88c3-53ba1f203310
-@bind vshow PlutoUI.Slider(range(extrema(tsol.t)...; length = 101),
+@bind vshow PlutoUI.Slider(range(extrema(result.voltages)...; length = 101),
                            show_value = true)
 
 # ╔═╡ 300ed474-76c5-47e9-b15a-8c4c93082268
@@ -222,9 +221,9 @@ function curr_h2o(J)
 end
 
 # ╔═╡ b81676e8-dcec-49fd-b350-f26ac61243ec
-function plotcurr(tsol, j_bulk, j_we)
+function plotcurr(result)
     scale = 1 / (mol / dm^3)
-    volts = tsol.t
+    volts = result.voltages
     vis = GridVisualizer(;
                          size = (600, 300),
                          tilte = "IV Curve",
@@ -233,13 +232,13 @@ function plotcurr(tsol, j_bulk, j_we)
                          legend = :lt)
     scalarplot!(vis,
                 volts,
-                curr(j_bulk, ihplus);
+                curr(result.j_bulk, ihplus);
                 linestyle = :dash,
                 label = "H+, bulk",
                 color = :red)
     scalarplot!(vis,
                 volts,
-                curr(j_we, ihplus);
+                curr(result.j_we, ihplus);
                 color = :red,
                 clear = false,
                 linestyle = :solid,
@@ -247,14 +246,14 @@ function plotcurr(tsol, j_bulk, j_we)
 
     scalarplot!(vis,
                 volts,
-                curr(j_bulk, io2);
+                curr(result.j_bulk, io2);
                 linestyle = :dash,
                 label = "O2, bulk",
                 color = :green,
                 clear = false)
     scalarplot!(vis,
                 volts,
-                curr(j_we, io2);
+                curr(result.j_we, io2);
                 color = :green,
                 clear = false,
                 linestyle = :solid,
@@ -262,14 +261,14 @@ function plotcurr(tsol, j_bulk, j_we)
 
     scalarplot!(vis,
                 volts,
-                curr(j_bulk, io2);
+                curr(result.j_bulk, io2);
                 linestyle = :dash,
                 label = "O2, bulk",
                 color = :green,
                 clear = false)
     scalarplot!(vis,
                 volts,
-                curr(j_we, io2);
+                curr(result.j_we, io2);
                 color = :green,
                 clear = false,
                 linestyle = :solid,
@@ -277,14 +276,14 @@ function plotcurr(tsol, j_bulk, j_we)
 
     scalarplot!(vis,
                 volts,
-                curr_h2o(j_bulk) / 100;
+                curr_h2o(result.j_bulk) / 100;
                 linestyle = :dash,
                 label = "H2O/100, bulk",
                 color = :blue,
                 clear = false)
     scalarplot!(vis,
                 volts,
-                curr_h2o(j_we) / 100;
+                curr_h2o(result.j_we) / 100;
                 color = :blue,
                 clear = false,
                 linestyle = :solid,
@@ -294,11 +293,12 @@ function plotcurr(tsol, j_bulk, j_we)
 end
 
 # ╔═╡ 7891a252-8fdf-40df-a205-64ca4078a542
-plotcurr(tsol, j_bulk, j_we)
+plotcurr(result)
 
 # ╔═╡ 9226027b-725d-446e-bc14-dd335a60ec09
-function plot1d(tsol, j_we, celldata, vshow)
-    vinter = linear_interpolation(tsol.t, [j[io2] for j in j_we])
+function plot1d(result,celldata, vshow)
+    vinter = linear_interpolation(result.voltages, [j[io2] for j in result.j_we])
+    tsol=LiquidElectrolytes.voltage_solution(result)
     sol = tsol(vshow)
     scale = 1.0 / (mol / dm^3)
     title = "Φ_we=$(round(vshow,sigdigits=3)), I=$(round(vinter(vshow),sigdigits=3))"
@@ -328,11 +328,13 @@ function plot1d(tsol, j_we, celldata, vshow)
 end
 
 # ╔═╡ 56eb52b1-9017-4485-83d6-b7ef15ad522f
-plot1d(tsol, j_we, celldata, vshow)
+plot1d(result, celldata, vshow)
 
 # ╔═╡ 1ac7646a-76ae-4e8f-9d9d-ecaccc262857
-function cplot(cell, tsol, j_we)
+function cplot(cell, result)
     scale = 1.0 / (mol / dm^3)
+    tsol=LiquidElectrolytes.voltage_solution(result)
+    j_we=result.j_we
     currs = curr(j_we, io2)
     vis = GridVisualizer(; resolution = (1200, 400), layout = (1, 3),
                          gridscale = 1.0e9)
@@ -384,7 +386,7 @@ function cplot(cell, tsol, j_we)
 end
 
 # ╔═╡ 556c47ee-e172-483b-b922-a6422a0c405f
-cplot(cell, tsol, j_we)
+cplot(cell, result)
 
 # ╔═╡ 1317a982-c416-4d44-804a-8694cc2bbef2
 md"""
@@ -400,7 +402,8 @@ end
 
 # ╔═╡ 33ee0ded-5bc8-4fe7-bd2f-1cc44bc73f78
 
-ntsol, nj_we, nj_bulk = LiquidElectrolytes.ivsweep(ncell;
+nresult = LiquidElectrolytes.ivsweep(ncell;
+                                                store_solutions=true,
                                                    voltages = vmin:vdelta:vmax,
                                                    solver_control...)
 
@@ -410,17 +413,17 @@ md"""
 """
 
 # ╔═╡ 63dd0cef-7acd-4507-bbc6-3976181a143d
-plotcurr(ntsol, nj_bulk, nj_we)
+plotcurr(nresult)
 
 # ╔═╡ c7185947-56ea-4e79-a619-03bf77d5219d
-@bind nvshow PlutoUI.Slider(range(extrema(ntsol.t)...; length = 101),
+@bind nvshow PlutoUI.Slider(range(extrema(nresult.voltages)...; length = 101),
                             show_value = true)
 
 # ╔═╡ c6b9f3ce-dd3e-474e-b947-3daacc5cd1d0
-plot1d(ntsol, nj_we, ncelldata, nvshow)
+plot1d(nresult,ncelldata, nvshow)
 
 # ╔═╡ b729b190-a7ed-48b9-9584-fe5271e5dfa4
-cplot(ncell, ntsol, nj_we)
+cplot(ncell, nresult)
 
 # ╔═╡ 42dda2f6-ea60-4cbc-8372-fafd4a1218a8
 md"""
@@ -432,17 +435,17 @@ let vis = GridVisualizer(;
                          size = (600, 400),
                          title = "IV Curve",
                          xlabel = "Φ_WE/V",
-                         ylabel = "I",
+                         ylabel = "I/(A/m^2)",
                          legend = :lt,
-                         limits = (-100, 100))
+                         )
     scalarplot!(vis,
-                ntsol.t,
-                curr(nj_we, io2);
+                nresult.voltages,
+                currents(nresult,io2);
                 label = "O2,electroneutral",
                 color = :green,
                 clear = false)
 
-    scalarplot!(vis, tsol.t, curr(j_we, io2); label = "O2,PNP", color = :red,
+    scalarplot!(vis, result.voltages, currents(result, io2); label = "O2,PNP", color = :red,
                 clear = false)
     reveal(vis)
 end
@@ -527,7 +530,7 @@ VoronoiFVM = "~1.9.0"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.9.1"
+julia_version = "1.9.2"
 manifest_format = "2.0"
 project_hash = "73a8e7c819e92f3b90406745a7095df8de04d84f"
 
@@ -791,7 +794,7 @@ weakdeps = ["Dates", "LinearAlgebra"]
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.0.2+0"
+version = "1.0.5+0"
 
 [[deps.CompositeTypes]]
 git-tree-sha1 = "02d2316b7ffceff992f3096ae48c7829a8aa0638"
@@ -1838,7 +1841,7 @@ version = "0.42.2+0"
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.9.0"
+version = "1.9.2"
 
 [[deps.PkgVersion]]
 deps = ["Pkg"]

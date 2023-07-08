@@ -71,20 +71,20 @@ function main(;voltages=-2:0.01:2,           ## Voltages/V
 	color=RGB(1-imol/length(molarities),0,imol/length(molarities))
 
         
-	volts,caps=dlcapsweep(cell;
-                              δ=1.0e-6,
-                              voltages=collect(voltages)*V,
-                              molarity=molarities[imol]*M,
-                              kwargs...)
+	result=dlcapsweep(cell;
+                          δ=1.0e-6,
+                          voltages=collect(voltages)*V,
+                          molarity=molarities[imol]*M,
+                          kwargs...)
 
 	cdl0=dlcap0(celldata)
         
-	scalarplot!(vis,volts/V,caps/(μF/cm^2);
+	scalarplot!(vis,result.voltages/V,result.dlcaps/(μF/cm^2);
                     color,
                     clear=false,
                     label="$(molarities[imol])M",
                     markershape=:none)
-
+        
 	scalarplot!(vis,[0],[cdl0]/(μF/cm^2);
                     clear=false,
                     markershape=:circle,
