@@ -262,14 +262,17 @@ y_α^E&=\frac{n_α^E}{n^E}
 
 # ╔═╡ 32db42f3-5084-4908-9b53-59291b6133c5
 function derived(κ, v0, n_E, T)
+	c0=1/v0
+	barc=0.0
     v = (1.0 .+ κ) .* v0
-    n_E_all = 1 / v0
     N = length(κ)
     for α = 1:N
-        n_E_all += κ[α] * n_E[α]
+		barc+=n_E[α]
+		c0-=n_E[α]*(1+κ[α])
     end
-    y_E = n_E / n_E_all
-    y0_E = (1 / v0) / n_E_all
+	barc+=c0
+    y_E = n_E /barc
+    y0_E = c0/barc
     U_T = ph"k_B" * T / ph"e"
     (; v, y_E, y0_E, U_T)
 end;
@@ -348,6 +351,24 @@ function update_derived!(data)
     (; κ, v0, n_E, T) = data
     data.v, data.y_E, data.y0_E, data.U_T = derived(κ, v0, n_E, T)
 end
+
+# ╔═╡ b1e333c0-cdaa-4242-b71d-b54ff71aef83
+ let
+	data=EquilibriumData()
+    set_molarity!(data,0.01)
+    update_derived!(data)
+	 sumyz=0.0
+	 sumyv=data.y0_E*data.v0
+	 sumy=data.y0_E
+	for α=1:data.N
+		v=(1.0+data.κ[α])*data.v0
+		sumyz+=data.y_E[α]*data.z[α]	
+		sumyv+=data.y_E[α]*v
+		sumy+=data.y_E[α]
+	end
+	 @assert sumy≈ 1.0
+ end
+	
 
 # ╔═╡ 243d27b5-a1b8-4127-beec-d5643ad07855
 md"""
@@ -745,6 +766,7 @@ end;
 # ╟─13fc2859-496e-4f6e-8b22-36d9d55768b8
 # ╠═32db42f3-5084-4908-9b53-59291b6133c5
 # ╠═3d9a47b8-2754-4a21-84a4-39cbeab12286
+# ╠═b1e333c0-cdaa-4242-b71d-b54ff71aef83
 # ╟─243d27b5-a1b8-4127-beec-d5643ad07855
 # ╟─005289e8-6979-49fe-b20f-66afd207baea
 # ╟─cbd3fbab-e95a-41d1-98c2-3cd8aec9ce18

@@ -1,16 +1,25 @@
 
 function pbspacecharge(φ, p, data)
     c0_bulk, barc_bulk = c0_barc(data.c_bulk, data)
-    c0 = c0_bulk * exp(-data.v0 * (p * data.pscale - data.p_bulk) / (data.RT))
+    pscaled = (p * data.pscale - data.p_bulk)
+    c0 = c0_bulk * exp(-data.v0 * pscaled / (data.RT))
     sumyz = zero(p)
     sumyv = data.v0 * c0
-    for α = 1:(data.nc)
-        v = data.v[α] * (1.0 + data.κ[α] * data.v0)
+    for α = 1:data.nc
+        barv = data.v[α] + data.κ[α] * data.v0
+        if false
+            # from flux equilibrium condition, seems to
+            # be equivalent...
+            Mrel = data.M[α] / data.M0
+            tildev = barv - Mrel * data.v0
+            η_p = tildev * pscaled - Mrel * data.RT * log(c0 / barc_bulk)
+        else
+            η_p = barv * pscaled
+        end
         η_φ = data.z[α] * data.F * (φ - data.ϕ_bulk)
-        η_p = v * (p * data.pscale - data.p_bulk)
         y = data.c_bulk[α] * exp(-(η_φ + η_p) / (data.RT))
         sumyz += data.z[α] * y
-        sumyv += v * y
+        sumyv += barv * y
     end
     data.F * sumyz / sumyv
 end

@@ -129,7 +129,7 @@ round(dlcap0(ely),sigdigits=5) |> u"μF/cm^2"
 ```
 """
 function dlcap0(data::AbstractElectrolyteData)
-    sqrt(2 * (data.ε) * data.ε_0 * data.F^2 * data.c_bulk[1] / (data.RT))
+    sqrt(2 * data.ε * data.ε_0 * data.F^2 * data.c_bulk[1] / (data.RT))
 end
 
 """

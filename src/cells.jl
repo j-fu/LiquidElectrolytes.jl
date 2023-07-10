@@ -120,14 +120,8 @@ function dlcapsweep(sys;
     ϕprogress = 0
 
     function show_error(u, δ)
-        @show cond(inv(Diagonal(sys.matrix)) * Matrix(sys.matrix))
-        @show u[1, 1:5]
-        @show u[2, 1:5]
-        @show u[3, 1:5]
-        @show u[4, 1:5]
-        @show chemical_potentials!(zeros(2), u[:, 1], data)
-        c0, barc = c0_barc(u[:, 1], data)
-        @show c0 / barc, u[1, 1] / barc, u[2, 1] / barc
+        @show u[iϕ, 1:5]
+        @show u[ip, 1:5]
         @error "bailing out at δ=$(δ) ϕ_we=$(data.ϕ_we)V, molarity=$(molarity)"
     end
 

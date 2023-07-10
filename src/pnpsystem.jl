@@ -70,9 +70,20 @@ Verification calculation is in the paper.
 """
 function sflux(ic, dϕ, ck, cl, βk, βl, bar_ck, bar_cl, electrolyte)
     (; D, z, F, RT) = electrolyte
-    bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(βk, βl, electrolyte) / RT)
-    D[ic] * (bm * ck - bp * cl)
+    bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(βk, βl, electrolyte) /RT)
+    D[ic] * (bm * ck/bar_ck - bp * cl/bar_cl)
 end
+
+#=
+
+B(b-a)/B(a-b)= (b-a)*(exp(a-b)-1)/ (a-b)*(exp(b-a)-1)
+             = (1-exp(a-b))/(exp(b-a)-1)
+             = exp(-b)*(exp(b)-exp(a)) / exp(-a)*(exp(b)-exp(a))
+             = exp(a)/exp(b)
+
+c/barc= C
+ck/cl = bp/bm = exp(z ϕk*F/RT + μex_k/RT)/exp(z ϕl*F/RT + μex_l/RT)
+=#
 
 """
     aflux(ic,dϕ,ck,cl,βk,βl,bar_ck,bar_cl,electrolyte)
@@ -82,8 +93,13 @@ Flux expression based on reciprocal activity coefficents, see Fuhrmann, CPC 2015
 function aflux(ic, dϕ, ck, cl, βk, βl, bar_ck, bar_cl, electrolyte)
     (; D, z, F, RT) = electrolyte
     bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT)
-    D[ic] * (bm * ck * βk - bp * cl * βl) * (1 / βk + 1 / βl) / 2
+    D[ic] * (bm * ck * βk/bar_ck - bp * cl * βl/bar_cl) * (1 / βk + 1 / βl) / 2
 end
+
+#=
+ck/cl= bp/betaK  / bm/betal
+     =  exp(z\phik *F/RT + \muexK/RT)/ exp(z\phil *F/RT + \muexL/RT)
+=#
 
 """
     aflux(ic,dϕ,ck,cl,βk,βl,bar_ck,bar_cl,electrolyte)
@@ -94,9 +110,12 @@ function cflux(ic, dϕ, ck, cl, βk, βl, bar_ck, bar_cl, electrolyte)
     (; D, z, F, RT) = electrolyte
     μk = rlog(ck / bar_ck, electrolyte) * RT
     μl = rlog(cl / bar_cl, electrolyte) * RT
-    D[ic] * 0.5 * (ck + cl) * (μk - μl + dμex(βk, βl, electrolyte) + z[ic] * F * dϕ) / RT
+    D[ic] * 0.5 * (ck + cl) * (μk - μl +  dμex(βk, βl, electrolyte) + z[ic] * F * dϕ) / RT
 end
+#=
 
+ ck/cl = exp(\muex_k + zF\phiK)/exp(\muex_l + zF\phil)
+=#
 """
     pnpflux(f, u, edge, electrolyte)
 
@@ -105,9 +124,9 @@ Finite volume flux. It calls either [`sflux`](@ref), [`cflux`](@ref) or [`aflux`
 function pnpflux(f, u, edge, electrolyte)
     iϕ = electrolyte.iϕ # index of potential
     ip = electrolyte.ip
-    (; ip, iϕ, v0, v, M0, M, κ, ε_0, ε, RT, nc, eneutral, pscale, scheme) = electrolyte
+    (; ip, iϕ, v0, v, M0, M, κ, ε_0, ε, RT, nc, eneutral, pscale, p_bulk, scheme) = electrolyte
 
-    pk, pl = u[ip, 1] * pscale, u[ip, 2] * pscale
+    pk, pl = u[ip, 1] * pscale-p_bulk, u[ip, 2] * pscale-p_bulk
     ϕk, ϕl = u[iϕ, 1], u[iϕ, 2]
 
     @views qk, ql = charge(u[:, 1], electrolyte), charge(u[:, 2], electrolyte)
@@ -133,9 +152,10 @@ function pnpflux(f, u, edge, electrolyte)
         ## as these expressions are less degenerating.
         if bikerman
             Mrel = M[ic] / M0
-            barv = v[ic] + (κ[ic] - Mrel) * v0
-            βk = exp(barv * pk / (RT)) * (bar_ck / c0k)^Mrel
-            βl = exp(barv * pl / (RT)) * (bar_cl / c0l)^Mrel
+            barv=v[ic] + κ[ic]*v0
+            tildev=barv - Mrel*v0
+            βk = exp(tildev * pk / (RT)) * (bar_ck / c0k)^Mrel
+            βl = exp(tildev * pl / (RT)) * (bar_cl / c0l)^Mrel
         end
 
         if scheme == :μex

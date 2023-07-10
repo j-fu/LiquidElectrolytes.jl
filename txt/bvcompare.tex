@@ -132,14 +132,28 @@ and express $c_0$ via \eqref{eq:c0} and $\bar c$ in terms of $c_1\dots c_N$
 \end{align*}
 
 Thus, we can rewrite \eqref{eq:NP}  as 
-\begin{align}
-  \mathbf N_i &= - D_i\nabla\left( c_i + \frac{1}{RT} (\mu_i^{ex} + z_i F \nabla \phi) \right)
+\begin{align}\label{eq:flux}
+  \mathbf N_i &= - D_i\nabla\left( c_i + \frac{c_i}{RT} (\mu_i^{ex} + z_i F \nabla \phi) \right)
 \end{align}
 where the expression \eqref{eq:muex} for $\mu_i^{ex}(c_1\dots c_N, p)$  encodes the non-ideality properties of the mixture.
-The excess chemical potential is linked to the \textit{activity coefficient} $\gamma_i=\exp(\mu_i)$ and the
+The excess chemical potential is linked to the \textit{activity coefficient} $\gamma_i=\exp(\frac{\mu_i}{RT})$ and the
 reciprocal (inverse) activity coefficient $\beta_i=\frac1{\gamma_i}$  \cite{Fuhrmann2015}.
 These data allow to define various numerical flux approximations in the context of the Voronoi finite volume
 method \cite{Fuhrmann2015,GaudeulFuhrmannNM2022}.
+
+\subsection{Equilibrium problem}
+\eqref{eq:flux} gives
+\begin{align}\label{eq:flux}
+  \mathbf N_i &= - D_i\frac{c_i}{RT}\nabla\left( \mu_i +  \mu_i^{ex} + z_i F \nabla \phi \right)
+\end{align}
+Zero flux gives 
+\begin{align}
+  \mu_i   &=   - \mu_i^{ex} - z_i F \nabla \phi\\
+  c_i   &=  C_i\exp\left( -\frac{\mu_i^{ex} + z_i F \nabla \phi}{RT}\right)\\
+        &=  C_i \exp\left(-\frac{\left(\bar v_i-\frac{M_i}{M_0}v_0\right)p - \frac{M_i}{M_0}RT\log \frac{c_0}{\bar c} + z_i F \nabla \phi}{RT}\right)
+        &=  C_i \exp\left(-\frac{\left(\bar v_i-\frac{M_i}{M_0}v_0\right)p - \frac{M_i}{M_0}RT\log \frac{c_0}{\bar c} + z_i F \nabla \phi}{RT}\right)
+\end{align}
+
 
 \begin{table}
   \begin{tabular}{rl}
