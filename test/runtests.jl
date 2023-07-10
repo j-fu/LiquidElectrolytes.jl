@@ -57,6 +57,13 @@ end
     cresult=dlcapsweep(ccell;voltages,molarity,δ)
     cvolts=cresult.voltages
     ccaps=cresult.dlcaps
+
+    pcelldata=ElectrolyteData(;Γ_we=1, Γ_bulk=2, scheme=:cent,κ)
+    pcell=PNPSystem(grid;bcondition,celldata=ccelldata)
+    presult=dlcapsweep(pcell;voltages,molarity,δ, iϕ=1)
+    pvolts=presult.voltages
+    pcaps=presult.dlcaps
+
     
     ecell=create_equilibrium_system(grid,EquilibriumData(acelldata))
     evolts,ecaps=dlcapsweep_equi(ecell,vmax=1.0,molarity=0.1,δV=1.0e-4,nsteps=101)
@@ -64,11 +71,19 @@ end
     @show norm((acaps-ecaps)./ecaps)
     @show norm((acaps-μcaps)./acaps)
     @show norm((acaps-ccaps)./acaps)
+    @show norm((acaps-pcaps)./acaps)
 
+    @show dlcap0(acelldata)
+    @show minimum(acaps)
+    @show minimum(ecaps)
+    @show minimum(μcaps)
+    @show minimum(ccaps)
+    
     @test dlcap0(acelldata) ≈ dlcap0(EquilibriumData(acelldata))
     @test isapprox(acaps,ecaps,rtol=1.0e-3)
     @test isapprox(acaps,μcaps,rtol=1.0e-10)
     @test isapprox(acaps,ccaps,rtol=1.0e-10)
+    @test isapprox(acaps,pcaps,rtol=1.0e-10)
 end    
 
 

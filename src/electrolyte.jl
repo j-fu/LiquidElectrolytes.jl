@@ -5,7 +5,6 @@ Abstract super type for electrolytes
 """
 abstract type AbstractElectrolyteData end
 
-
 """
 $(TYPEDEF)
 
@@ -19,77 +18,77 @@ $(TYPEDFIELDS)
 """
 @kwdef mutable struct ElectrolyteData <: AbstractElectrolyteData
     "Number of ionic species."
-    nc::Int=2
-    
+    nc::Int = 2
+
     "Number of surface species"
-    na::Int=0
+    na::Int = 0
 
     "Potential index in species list."
-    iϕ::Int=nc+na+1
-    
+    iϕ::Int = nc + na + 1
+
     "Pressure index in species list"
-    ip::Int=nc+na+2
-    
+    ip::Int = nc + na + 2
+
     "Mobility coefficient"
-    D::Vector{Float64}=fill(2.0e-9*ufac"m^2/s",nc) 
+    D::Vector{Float64} = fill(2.0e-9 * ufac"m^2/s", nc)
 
     "Charge numbers of ions"
-    z::Vector{Int}=[ (-1)^(i-1) for i=1:nc]
-    
+    z::Vector{Int} = [(-1)^(i - 1) for i = 1:nc]
+
     "Molar weight of solvent"
-    M0::Float64=18.0153*ufac"g/mol"
-    
+    M0::Float64 = 18.0153 * ufac"g/mol"
+
     "Molar weight of ions"
-    M::Vector{Float64}=fill(M0,nc)
+    M::Vector{Float64} = fill(M0, nc)
 
     "Molar volume of solvent"
-    v0::Float64=1/(55.4*ufac"M")
+    v0::Float64 = 1 / (55.4 * ufac"M")
 
     "Molar volumes of ions"
-    v::Vector{Float64}=fill(v0,nc)
+    v::Vector{Float64} = fill(v0, nc)
 
     "Solvation numbers"
-    κ::Vector{Float64}=fill(10.0,nc)
-    
+    κ::Vector{Float64} = fill(10.0, nc)
+
     "Bulk ion concentrations"
-    c_bulk::Vector{Float64}=fill(0.1*ufac"M",nc)
-    
+    c_bulk::Vector{Float64} = fill(0.1 * ufac"M", nc)
+
     "Bulk voltage"
-    ϕ_bulk::Float64=0.0*ufac"V"
-    
+    ϕ_bulk::Float64 = 0.0 * ufac"V"
+
     "Bulk pressure"
-    p_bulk::Float64=0.0*ufac"Pa"
+    p_bulk::Float64 = 0.0 * ufac"Pa"
 
     "Bulk boundary number"
-    Γ_bulk::Int=2
+    Γ_bulk::Int = 2
 
     "Working electrode voltage"
-    ϕ_we::Float64=0.0*ufac"V"
-    
+    ϕ_we::Float64 = 0.0 * ufac"V"
+
     "Working electrode  boundary number"
-    Γ_we::Int=1
-    
+    Γ_we::Int = 1
+
     "Temperature"
-    T::Float64=(273.15+25)*ufac"K"
-    
+    T::Float64 = (273.15 + 25) * ufac"K"
+
     "Molar gas constant scaled with temperature"
-    RT::Float64=ph"R"*T
-    
+    RT::Float64 = ph"R" * T
+
     "Faraday constant"
-    F::Float64=ph"N_A*e"
-    
+    F::Float64 = ph"N_A*e"
+
     "Dielectric permittivity of solvent"
-    ε::Float64=78.49
-    
+    ε::Float64 = 78.49
+
     "Dielectric permittivity of vacuum"
-    ε_0::Float64=ph"ε_0"
-    
+    ε_0::Float64 = ph"ε_0"
+
     "Pressure scaling factor"
-    pscale::Float64=1.0e9
-    
+    pscale::Float64 = 1.0e9
+
     "Local electroneutrality switch"
-    eneutral::Bool=false
-    
+    eneutral::Bool = false
+
     """
     [Flux caculation scheme](@id fluxes)
     This allows to choose between
@@ -97,23 +96,21 @@ $(TYPEDFIELDS)
     - `:act` : scheme based on reciprocal activity coefficients, see [`aflux`](@ref)
     - `:cent` : central scheme, see [`cflux`](@ref).
     """
-    scheme::Symbol=:μex
-    
+    scheme::Symbol = :μex
+
     """
     Regularization parameter used in [`rlog`](@ref)
     """
-    epsreg::Float64=1.0e-20
-
+    epsreg::Float64 = 1.0e-20
 
     """
     Species weights for norms in solver control.
     """
-    weights::Vector{Float64}=[v...,zeros(na)...,1.0,0.0]
-
+    weights::Vector{Float64} = [v..., zeros(na)..., 1.0, 0.0]
 end
 
 function Base.show(io::IO, this::ElectrolyteData)
-    showstruct(io,this)
+    showstruct(io, this)
 end
 
 """
@@ -132,9 +129,8 @@ round(dlcap0(ely),sigdigits=5) |> u"μF/cm^2"
 ```
 """
 function dlcap0(data::AbstractElectrolyteData)
-    sqrt( 2*(data.ε)*data.ε_0*data.F^2*data.c_bulk[1]/(data.RT))
+    sqrt(2 * (data.ε) * data.ε_0 * data.F^2 * data.c_bulk[1] / (data.RT))
 end
-
 
 """
     debyelength(electrolyte)
@@ -150,21 +146,19 @@ round(debyelength(ely),sigdigits=5) |> u"nm"
 4.3018 nm
 ```
 """
-debyelength(data)=sqrt(data.ε*data.ε_0*data.RT/(data.F^2*data.c_bulk[1]))
-
-
+debyelength(data) = sqrt(data.ε * data.ε_0 * data.RT / (data.F^2 * data.c_bulk[1]))
 
 """
     charge(c,electrolyte)
 
 Calculate charge from vector of concentrations
 """
-function charge(u,electrolyte::AbstractElectrolyteData)
-    q=zero(eltype(u))
-    for ic=1:electrolyte.nc
-        q+=u[ic] * electrolyte.z[ic]
+function charge(u, electrolyte::AbstractElectrolyteData)
+    q = zero(eltype(u))
+    for ic = 1:(electrolyte.nc)
+        q += u[ic] * electrolyte.z[ic]
     end
-    q*electrolyte.F
+    q * electrolyte.F
 end
 
 @doc raw"""
@@ -172,8 +166,7 @@ end
 
 Calculate relative (wrt. solvent) molar volume of i-th species ``v_{i,rel}=κ_i+\frac{v_i}{v_0}``.
 """
-vrel(ic,electrolyte)=electrolyte.v[ic]/electrolyte.v0+electrolyte.κ[ic]
-
+vrel(ic, electrolyte) = electrolyte.v[ic] / electrolyte.v0 + electrolyte.κ[ic]
 
 @doc raw"""
 	c0_barc(u,electrolyte)
@@ -202,9 +195,9 @@ Then we can calculate
 function c0_barc(c, electrolyte)
     c0 = one(eltype(c)) / electrolyte.v0
     barc = zero(eltype(c))
-    for ic = 1:electrolyte.nc
+    for ic = 1:(electrolyte.nc)
         barc += c[ic]
-        c0 -= c[ic] * vrel(ic,electrolyte)
+        c0 -= c[ic] * vrel(ic, electrolyte)
     end
     barc += c0
     c0, barc
@@ -215,7 +208,7 @@ end
 
 Calls rlog(u;eps=electrolyte.epsreg)
 """
-rlog(x,electrolyte::AbstractElectrolyteData)=rlog(x,eps=electrolyte.epsreg)
+rlog(x, electrolyte::AbstractElectrolyteData) = rlog(x; eps = electrolyte.epsreg)
 
 """
     rlog(u; eps=1.0e-20)
@@ -223,9 +216,9 @@ rlog(x,electrolyte::AbstractElectrolyteData)=rlog(x,eps=electrolyte.epsreg)
 Regularized logarithm. Smooth linear continuation for `x<eps`.
 This means we can calculate a "logarithm"  of a small negative number.
 """
-function rlog(x;eps=1.0e-20)
-    if x<eps
-        return log(eps)+(x-eps)/eps
+function rlog(x; eps = 1.0e-20)
+    if x < eps
+        return log(eps) + (x - eps) / eps
     else
         return log(x)
     end
@@ -237,15 +230,13 @@ end
 Calculate vector of solvent concentrations from solution array.
 """
 function solventconcentration(U::Array, electrolyte)
-    c0 = similar(U[1,:])
+    c0 = similar(U[1, :])
     c0 .= 1.0 / electrolyte.v0
-    for ic = 1:electrolyte.nc
-        c0 -= U[ic,:] .* vrel(ic,electrolyte)
+    for ic = 1:(electrolyte.nc)
+        c0 -= U[ic, :] .* vrel(ic, electrolyte)
     end
     c0
 end
-
-
 
 @doc raw"""
         chemical_potential(c, barc, p, v, electrolye)
@@ -256,8 +247,7 @@ Calculate chemical potential of species with concentration c
         μ = v(p-p_{ref}) + RT\log \frac{c}{\bar c}
 ```
 """
-chemical_potential(c, barc, p, v, data)=rlog(c/barc,data)*data.RT+v*data.pscale*(p-data.p_bulk)
-
+chemical_potential(c, barc, p, v, data) = rlog(c / barc, data) * data.RT + v * data.pscale * (p - data.p_bulk)
 
 """
     chemical_potentials!(μ,u,electrolyte)
@@ -280,17 +270,15 @@ round(μ0,sigdigits=5),round.(μ,sigdigits=5)
 (-0.89834, [-21359.0, -21359.0])
 ```
 """
-function chemical_potentials!(μ,u,data::AbstractElectrolyteData)
-    (;ip, pscale,RT,v0,v,nc) = data
-    c0,barc=c0_barc(u,data)
-    μ0=chemical_potential(c0,barc, u[ip], data.v0,data)
-    for i=1:nc
-        μ[i]=chemical_potential(u[i],barc, u[ip], data.v[i],data)
+function chemical_potentials!(μ, u, data::AbstractElectrolyteData)
+    (; ip, pscale, RT, v0, v, nc) = data
+    c0, barc = c0_barc(u, data)
+    μ0 = chemical_potential(c0, barc, u[ip], data.v0, data)
+    for i = 1:nc
+        μ[i] = chemical_potential(u[i], barc, u[ip], data.v[i], data)
     end
-    μ0,μ
+    μ0, μ
 end
-
-
 
 """
     rexp(x;trunc=500.0)
@@ -298,16 +286,15 @@ end
 Regularized exponential. Linear continuation for `x>trunc`,  
 returns 1/rexp(-x) for `x<-trunc`.
 """
-function rexp(x;trunc=20.0)
-    if x<-trunc
-        1.0/rexp(-x;trunc)
-    elseif x<=trunc
+function rexp(x; trunc = 20.0)
+    if x < -trunc
+        1.0 / rexp(-x; trunc)
+    elseif x <= trunc
         exp(x)
     else
-        exp(trunc)*(x-trunc+1)
+        exp(trunc) * (x - trunc + 1)
     end
 end
-
 
 """
     rrate(R0,β,A)
@@ -316,34 +303,33 @@ Reaction rate expression
 
     rrate(R0,β,A)=R0*(exp(-β*A) - exp((1-β)*A))
 """
-rrate(R0,β,A)=R0*(rexp(-β*A) - rexp((1-β)*A))
+rrate(R0, β, A) = R0 * (rexp(-β * A) - rexp((1 - β) * A))
 
 """
     wnorm(u,w,p)
 
 Weighted norm with respect to columns
 """
-function wnorm(u,w,p)
-    @views norms=[w[i]*LinearAlgebra.norm(u[i,:],p) for i=1:size(u,1)]
-    LinearAlgebra.norm(norms,p)
+function wnorm(u, w, p)
+    @views norms = [w[i] * LinearAlgebra.norm(u[i, :], p) for i = 1:size(u, 1)]
+    LinearAlgebra.norm(norms, p)
 end
-
 
 """
     isincompressible(cx::Vector,celldata)
 
 Check for incompressibility of concentration vector
 """
-function isincompressible(cx::Vector,celldata)
+function isincompressible(cx::Vector, celldata)
     c0, barc = c0_barc(cx, celldata)
     v0 = celldata.v0
     v = celldata.v
     κx = celldata.κ
     cv = c0 * v0
-    for i = 1:celldata.nc
+    for i = 1:(celldata.nc)
         cv += cx[i] * (v[i] + κx[i] * v0)
     end
-    cv≈1.0
+    cv ≈ 1.0
 end
 
 """
@@ -351,18 +337,17 @@ end
 
 Check for incompressibility of transient solution
 """
-function isincompressible(tsol::TransientSolution,celldata)
-     all(cx->isincompressible(cx,celldata),[u[:,i] for u in tsol.u, i in size(tsol,2)])
+function isincompressible(tsol::TransientSolution, celldata)
+    all(cx -> isincompressible(cx, celldata), [u[:, i] for u in tsol.u, i in size(tsol, 2)])
 end
-
 
 """
     iselectroneutral(cx::Vector,celldata)
 
 Check for electroneutrality of concentration vector
 """
-function iselectroneutral(cx,celldata)
-    isapprox(cx[1:celldata.nc]' * celldata.z, 0, atol = 1.0e-12)
+function iselectroneutral(cx, celldata)
+    isapprox(cx[1:(celldata.nc)]' * celldata.z, 0; atol = 1.0e-12)
 end
 
 """
@@ -370,6 +355,6 @@ end
 
 Check for electorneutrality of transient solution
 """
-function iselectroneutral(tsol::TransientSolution,celldata)
-     all(cx->iselectroneutral(cx,celldata),[u[:,i] for u in tsol.u, i in size(tsol,2)])
+function iselectroneutral(tsol::TransientSolution, celldata)
+    all(cx -> iselectroneutral(cx, celldata), [u[:, i] for u in tsol.u, i in size(tsol, 2)])
 end

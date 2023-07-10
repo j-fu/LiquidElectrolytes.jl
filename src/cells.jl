@@ -10,7 +10,7 @@ function splitz(range::AbstractRange)
     elseif range[end] <= 0
         return [reverse(range)]
     else
-        [0:-step(range):range[1], 0:step(range):range[end]]
+        [0:(-step(range)):range[1], 0:step(range):range[end]]
     end
 end
 
@@ -28,14 +28,12 @@ function splitz(range::Vector)
         for i = 1:length(range)
             if range[i] ≈ 0.0
                 return [reverse(range[1:i]), range[i:end]]
-            elseif i > 1 && range[i-1] < 0.0 && range[i] > 0.0
-                return [vcat([0.0], reverse(range[1:i-1])), vcat([0.0], range[i:end])]
+            elseif i > 1 && range[i - 1] < 0.0 && range[i] > 0.0
+                return [vcat([0.0], reverse(range[1:(i - 1)])), vcat([0.0], range[i:end])]
             end
         end
     end
-
 end
-
 
 """
     bulkbcondition(f,u,bnode,electrolyte)
@@ -55,7 +53,6 @@ end
 
 abstract type AbstractSimulationResult end
 
-
 """
     $(TYPEDEF)
 
@@ -63,7 +60,7 @@ Result data type for [`dlcapsweep`](@ref)
 
 $(TYPEDFIELDS)
 """
-struct DLCapSweepResult{Tv,Tc,Ts} <: AbstractSimulationResult
+struct DLCapSweepResult{Tv, Tc, Ts} <: AbstractSimulationResult
     """
     Vector of voltages
     """
@@ -79,7 +76,6 @@ struct DLCapSweepResult{Tv,Tc,Ts} <: AbstractSimulationResult
     """
     solutions::Ts
 end
-
 
 voltage_solution(r::DLCapSweepResult) = TransientSolution(r.solutions, r.voltages)
 voltage_dlcap(r::DLCapSweepResult) = RecursiveArrayTools.DiffEqArray(r.dlcaps, r.voltages)
@@ -98,14 +94,15 @@ Assumptions:
 - Only one double layer in the system - close to working electrode
 - 1D domain
 """
-function dlcapsweep(
-    sys;
-    voltages = (-1:0.1:1) * ufac"V",
-    δ = 1.0e-4,
-    molarity = 0.1 * ufac"mol/dm^3",
-    store_solutions = false,
-    solver_kwargs...,
-)
+function dlcapsweep(sys;
+                    data=electrolytedata(sys),
+                    inival = pnpunknowns(sys),
+                    iϕ = data.iϕ,
+                    voltages = (-1:0.1:1) * ufac"V",
+                    δ = 1.0e-4,
+                    molarity = 0.1 * ufac"mol/dm^3",
+                    store_solutions = false,
+                    solver_kwargs...)
     ranges = splitz(voltages)
     vplus = zeros(0)
     cdlplus = zeros(0)
@@ -114,13 +111,11 @@ function dlcapsweep(
     splus = []
     sminus = []
 
-    data = electrolytedata(sys)
     data.ϕ_we = 0
 
     data.c_bulk .= molarity
 
-    iϕ = data.iϕ
-    inival = solve(sys, inival = pnpunknowns(sys))
+    inival = solve(sys; inival)
     allprogress = sum(length, ranges)
     ϕprogress = 0
 
@@ -136,8 +131,7 @@ function dlcapsweep(
         @error "bailing out at δ=$(δ) ϕ_we=$(data.ϕ_we)V, molarity=$(molarity)"
     end
 
-
-    control = VoronoiFVM.SolverControl(max_round = 3, tol_round = 1.0e-9; solver_kwargs...)
+    control = VoronoiFVM.SolverControl(; max_round = 3, tol_round = 1.0e-9, solver_kwargs...)
     @withprogress for range in ranges
         sol = inival
         success = true
@@ -192,7 +186,6 @@ function dlcapsweep(
     DLCapSweepResult(volts, cdls, store_solutions ? vcat(reverse(sminus), splus) : nothing)
 end
 
-
 """
 
 Returns:
@@ -209,8 +202,7 @@ currs = [ j[ispec] for j in j_we]
 ```
 
 """
-struct IVSweepResult{Tv,Twe,Tbulk,Ts} <: AbstractSimulationResult
-
+struct IVSweepResult{Tv, Twe, Tbulk, Ts} <: AbstractSimulationResult
     """
     Vector of voltages
     """
@@ -232,11 +224,8 @@ struct IVSweepResult{Tv,Twe,Tbulk,Ts} <: AbstractSimulationResult
     solutions::Ts
 end
 
-
-
 voltage_solution(r::IVSweepResult) = TransientSolution(r.solutions, r.voltages)
-voltage_current(r::IVSweepResult, ispec) =
-    RecursiveArrayTools.DiffEqArray(currents(r, ispec), r.voltages)
+voltage_current(r::IVSweepResult, ispec) = RecursiveArrayTools.DiffEqArray(currents(r, ispec), r.voltages)
 
 currents(r::IVSweepResult, ispec) = [ph"F" * j[ispec] for j in r.j_we]
 
@@ -252,12 +241,10 @@ currents(r::IVSweepResult, ispec) = [ph"F" * j[ispec] for j in r.j_we]
 Calculate molar reaction rates and bulk flux rates for each voltage in `voltages`.
 
 """
-function ivsweep(
-    sys;
-    voltages = (-0.5:0.1:0.5) * ufac"V",
-    store_solutions = false,
-    solver_kwargs...,
-)
+function ivsweep(sys;
+                 voltages = (-0.5:0.1:0.5) * ufac"V",
+                 store_solutions = false,
+                 solver_kwargs...)
     ranges = splitz(voltages)
     F = ph"N_A*e"
     data = sys.physics.data
@@ -276,16 +263,15 @@ function ivsweep(
     data = electrolytedata(sys)
     data.ϕ_we = 0
     control = SolverControl(;
-        verbose = true,
-        handle_exceptions = true,
-        Δp_min = 1.0e-3,
-        Δp = 1.0e-2,
-        Δp_grow = 1.2,
-        Δu_opt = 1.0e-2,
-        unorm = u -> wnorm(u, data.weights, Inf),
-        rnorm = u -> wnorm(u, data.weights, 1),
-        solver_kwargs...,
-    )
+                            verbose = true,
+                            handle_exceptions = true,
+                            Δp_min = 1.0e-3,
+                            Δp = 1.0e-2,
+                            Δp_grow = 1.2,
+                            Δu_opt = 1.0e-2,
+                            unorm = u -> wnorm(u, data.weights, Inf),
+                            rnorm = u -> wnorm(u, data.weights, 1),
+                            solver_kwargs...)
     iϕ = data.iϕ
     @info "Solving for 0V..."
     inival = solve(sys; inival = pnpunknowns(sys), control)
@@ -298,17 +284,13 @@ function ivsweep(
 
         psol = nothing
         @withprogress begin
-
             function pre(sol, ϕ)
                 data.ϕ_we = dir * ϕ
             end
 
             function post(sol, oldsol, ϕ, Δϕ)
-                I_react =
-                    -integrate(sys, sys.physics.breaction, sol; boundary = true)[
-                        :,
-                        data.Γ_we,
-                    ]
+                I_react = -integrate(sys, sys.physics.breaction, sol; boundary = true)[:,
+                                                                                       data.Γ_we]
                 I_bulk = -integrate(sys, tf_bulk, sol)
                 if dir > 0
                     push!(vplus, data.ϕ_we)
@@ -327,16 +309,14 @@ function ivsweep(
                 n = wnorm(u, data.weights, Inf) * data.v0
             end
 
-            psol = solve(
-                sys;
-                inival,
-                embed = dir * range,
-                control,
-                pre,
-                post,
-                delta,
-                store_all = store_solutions,
-            )
+            psol = solve(sys;
+                         inival,
+                         embed = dir * range,
+                         control,
+                         pre,
+                         post,
+                         delta,
+                         store_all = store_solutions)
         end
 
         if dir == 1
@@ -353,10 +333,8 @@ function ivsweep(
         end
     end
 
-    IVSweepResult(
-        vcat(reverse(vminus), vplus),
-        vcat(reverse(iminus), iplus),
-        vcat(reverse(fminus), fplus),
-        store_solutions ? vcat(reverse(sminus), splus) : nothing,
-    )
+    IVSweepResult(vcat(reverse(vminus), vplus),
+                  vcat(reverse(iminus), iplus),
+                  vcat(reverse(fminus), fplus),
+                  store_solutions ? vcat(reverse(sminus), splus) : nothing)
 end
