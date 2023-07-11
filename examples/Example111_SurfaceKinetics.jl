@@ -1,3 +1,9 @@
+#=
+# Suface kinetics
+([source code](SOURCE_URL))
+
+=#
+
 module Example111_SurfaceKinetics
 using LessUnitful
 using ExtendableGrids, GridVisualize
@@ -46,10 +52,10 @@ function main(;
     T = 273.15 + 25 * ufac"K"
 
 
-    # kinetic model
-    # A+_aq <-> A+_ads,	                    #1
-    # A+_ads + e- <-> A_ads,                #2
-    # A_ads <-> A_aq                        #3
+    ## kinetic model
+    ## A+_aq <-> A+_ads,	                    ##1
+    ## A+_ads + e- <-> A_ads,                ##2
+    ## A_ads <-> A_aq                        ##3
 
 
     bulk_species = ["A+_aq", "A_aq"]
@@ -78,31 +84,31 @@ function main(;
 
         if bnode.region == Γ_we
 
-            # boundary_dirichlet!(f,u,bnode;species=iϕ,region=Γ_we,value=ϕ_we)
+            ## boundary_dirichlet!(f,u,bnode;species=iϕ,region=Γ_we,value=ϕ_we)
 
-            # Robin b.c. for the Poisson equation
+            ## Robin b.c. for the Poisson equation
 
             boundary_robin!(f, u, bnode, iϕ, C_gap / ε, C_gap * (ϕ_we - ϕ_pzc) / ε)
 
-            # surface current density
+            ## surface current density
             sigma = C_gap * (ϕ_we - u[iϕ] - ϕ_pzc)
 
             kf = zeros(Tval, 3)
             kr = zeros(Tval, 3)
 
-            # A+_aq <-> A+_ads,	                    #1
+            ## A+_aq <-> A+_ads,	                    ##1
             ΔG_ads_aplus = 1.0 * eV + 1.0e+1 * sigma * eV
 
             kf[1] = 1.0e13 * exp(-max(ΔG_ads_aplus, 0.0) / (k_B * T))
             kr[1] = 1.0e13 * exp(-max(-ΔG_ads_aplus, 0.0) / (k_B * T))
 
-            # A+_ads + e- <-> A_ads,                #2          
+            ## A+_ads + e- <-> A_ads,                ##2          
             ΔG_rxn = 1.0 * eV + 1.5e+1 * sigma * eV
 
             kf[2] = 1.0e13 * exp(-max(ΔG_rxn, 0.0) / (k_B * T))
             kr[2] = 1.0e13 * exp(-max(-ΔG_rxn, 0.0) / (k_B * T))
 
-            # A_ads <-> A_aq                        #3
+            ## A_ads <-> A_aq                        ##3
             ΔG_ads_a = 0.5 * eV + 0.5e+1 * sigma * eV
 
             kf[3] = 1.0e13 * exp(-max(ΔG_ads_a, 0.0) / (k_B * T))
@@ -123,11 +129,11 @@ function main(;
             println("rates: $(ForwardDiff.value.(rates))")
             println("aplus: $(ForwardDiff.value(u[iaplus]))")
 
-            # bulk species
+            ## bulk species
             f[iaplus] += -rates[1] * S
             f[ia] += rates[3] * S
 
-            # surface species
+            ## surface species
             f[iaplus_ads] += rates[1] - rates[2]
             f[ia_ads] += rates[2] - rates[3]
 
@@ -140,7 +146,7 @@ function main(;
         nc = 3,
         na = 2,
         z = [1, -1, 0],
-        D = [2.0e-9, 2.0e-9, 2.0e-9] * ufac"m^2/s", # from Ringe paper
+        D = [2.0e-9, 2.0e-9, 2.0e-9] * ufac"m^2/s", ## from Ringe paper
         T = T,
         eneutral = false,
         κ = fill(κ, 3),
@@ -184,8 +190,8 @@ function main(;
         xlabel = "Δϕ/V",
         ylabel = "I/(mA/cm^2)",
     )
-    #scalarplot!(vis[2,1], sigmas, energies, color="black",clear=true,xlabel="σ/(μC/cm^s)",ylabel="ΔE/eV")
-    #scalarplot!(vis[2,1], ϕs, rs, xlimits=(-1.5,-0.6), yscale=:log, xlabel="Δϕ/V", ylabel="c(CO2)/M")
+    ##scalarplot!(vis[2,1], sigmas, energies, color="black",clear=true,xlabel="σ/(μC/cm^s)",ylabel="ΔE/eV")
+    ##scalarplot!(vis[2,1], ϕs, rs, xlimits=(-1.5,-0.6), yscale=:log, xlabel="Δϕ/V", ylabel="c(CO2)/M")
     for curr in currs
         println(curr)
     end

@@ -39,7 +39,8 @@ export PBSystem
 
 
 include("cells.jl")
-export ivsweep, dlcapsweep, currents, voltages_solutions
+export ivsweep, dlcapsweep, currents, voltages_solutions, voltages_dlcaps, voltages_currents
+export AbstractSimulationResult, DLCapSweepResult, IVSweepResult
 
 include("equilibrium-pluto.jl")
 export EquilibriumData, apply_voltage!, set_molarity!, update_derived!

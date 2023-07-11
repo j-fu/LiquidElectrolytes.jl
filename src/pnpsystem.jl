@@ -176,7 +176,7 @@ end
              bcondition=default_bcondition,
              kwargs...)
 
-Create VoronoiFVM system. Input:
+Create VoronoiFVM system for generalized Poisson-Nernst-Planck. Input:
 - `grid`: discretization grid
 - `celldata`: composite struct containing electrolyte data
 - `bcondition`: boundary condition

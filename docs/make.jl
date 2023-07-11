@@ -44,6 +44,7 @@ function mkdocs()
     #generated_examples=vcat(["runexamples.md"],joinpath.("examples",readdir(example_md_dir)))
     generated_examples=joinpath.("examples",readdir(example_md_dir))
     
+    DocMeta.setdocmeta!(LiquidElectrolytes, :DocTestSetup, :(using LiquidElectrolytes, Unitful, LessUnitful); recursive=true)
 
     makedocs(sitename="LiquidElectrolytes.jl",
              modules = [LiquidElectrolytes],
@@ -54,10 +55,11 @@ function mkdocs()
              repo="https://github.com/j-fu/LiquidElectrolytes.jl/",
              pages=[
                  "Home"=>"index.md",
-                 "API"=>"api.md",
-                 "Internal API"=>"internal.md",
+                 "Electrolyte models"=>"api.md",
+                 "Standard calculations"=>"std.md",
                  "Changes" => "changes.md",
                  "Examples" => generated_examples
+                 "Internal API"=>"internal.md",
 
              ])
     if !isinteractive()

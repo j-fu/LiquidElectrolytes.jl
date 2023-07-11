@@ -1,7 +1,6 @@
 ## Electrolyte data
 
 
-
 ```@docs
 LiquidElectrolytes.charge
 LiquidElectrolytes.vrel
@@ -10,12 +9,19 @@ LiquidElectrolytes.rexp
 LiquidElectrolytes.wnorm
 ```
 
-## Finite volume system
+## Poisson-Boltzmann
+```@docs
+LiquidElectrolytes.pbspacecharge
+LiquidElectrolytes.pbreaction
+LiquidElectrolytes.pbflux
+```
+
+## Poisson-Nernst-Planck
 ```@docs
 LiquidElectrolytes.pnpstorage
 LiquidElectrolytes.pnpreaction
-LiquidElectrolytes.default_bcondition
 LiquidElectrolytes.pnpflux
+LiquidElectrolytes.default_bcondition
 LiquidElectrolytes.sflux
 LiquidElectrolytes.aflux
 LiquidElectrolytes.cflux

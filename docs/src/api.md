@@ -27,20 +27,17 @@ rrate
 iselectroneutral
 isincompressible
 ``` 
+## Poisson-Boltzmann system
+```@docs
+PBSystem
+```
 
-## Discretization system
+## Poisson-Nernst-Planck system
 
 ```@docs
 PNPSystem
 pnpunknowns
 electrolytedata
 solventconcentration
-```
-
-## Standard calculations
-```@docs
-bulkbcondition
-dlcapsweep
-ivsweep
 ```
 

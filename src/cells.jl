@@ -51,6 +51,11 @@ function bulkbcondition(f, u, bnode, data; region = data.Γ_bulk)
     end
 end
 
+"""
+    $(TYPEDEF)
+
+Abstract simulation result.
+"""
 abstract type AbstractSimulationResult end
 
 """
@@ -77,8 +82,23 @@ struct DLCapSweepResult{Tv, Tc, Ts} <: AbstractSimulationResult
     solutions::Ts
 end
 
-voltage_solution(r::DLCapSweepResult) = TransientSolution(r.solutions, r.voltages)
-voltage_dlcap(r::DLCapSweepResult) = RecursiveArrayTools.DiffEqArray(r.dlcaps, r.voltages)
+
+"""
+    voltages_solutions(result)
+
+Return a [`TransientSolution`](https://j-fu.github.io/VoronoiFVM.jl/stable/solutions/#Transient-solution) `tsol`
+containing voltages (in `tsol.t`) and the corresponding stationary solutions (in `tsol.u`).
+"""
+function voltages_solutions end
+
+voltages_solutions(r::DLCapSweepResult) = TransientSolution(r.solutions, r.voltages)
+
+"""
+    voltages_dlcaps(result)
+
+Double layer capacitance curve as [`DiffEqArray`](https://docs.sciml.ai/RecursiveArrayTools/stable/array_types/#RecursiveArrayTools.DiffEqArray)
+"""
+voltages_dlcaps(r::DLCapSweepResult) = RecursiveArrayTools.DiffEqArray(r.dlcaps, r.voltages)
 
 """
            dlcapsweep(sys;voltages=(-1:0.1:1)*ufac"V",
@@ -181,20 +201,11 @@ function dlcapsweep(sys;
 end
 
 """
+    $(TYPEDEF)
 
-Returns:
-- transient solution `tsol` with components `t` (voltages) and `u` (solutions)
-- vector `j_we` of working electrode molar reaction rates in `mol/(m^3*s)`
-- vector `j_bulk` of bulk electrode in/outflow rates in `mol/(m^3*s)`
+Result data type for [`ivsweep`](@ref)
 
-Pre  v0.0.21 there was an `ispec` keyword arg, and the return values
-were `volts, currs, solutions`.
-
-Since v0.0.21, the `currs` vector can be obtained via
-```
-currs = [ j[ispec] for j in j_we]
-```
-
+$(TYPEDFIELDS)
 """
 struct IVSweepResult{Tv, Twe, Tbulk, Ts} <: AbstractSimulationResult
     """
@@ -218,9 +229,20 @@ struct IVSweepResult{Tv, Twe, Tbulk, Ts} <: AbstractSimulationResult
     solutions::Ts
 end
 
-voltage_solution(r::IVSweepResult) = TransientSolution(r.solutions, r.voltages)
-voltage_current(r::IVSweepResult, ispec) = RecursiveArrayTools.DiffEqArray(currents(r, ispec), r.voltages)
+voltages_solutions(r::IVSweepResult) = TransientSolution(r.solutions, r.voltages)
 
+"""
+    voltages_currents(result,ispec)
+
+Voltage- working electrode current curve for species as [`DiffEqArray`](https://docs.sciml.ai/RecursiveArrayTools/stable/array_types/#RecursiveArrayTools.DiffEqArray)
+"""
+voltages_currents(r::IVSweepResult, ispec) = RecursiveArrayTools.DiffEqArray(currents(r, ispec), r.voltages)
+
+"""
+    currents(result,ispec)
+
+Working electrode current  for species `ispec`.
+"""
 currents(r::IVSweepResult, ispec) = [ph"F" * j[ispec] for j in r.j_we]
 
 """
@@ -231,9 +253,7 @@ currents(r::IVSweepResult, ispec) = [ph"F" * j[ispec] for j in r.j_we]
           solver_kwargs...,
           )
 
-
 Calculate molar reaction rates and bulk flux rates for each voltage in `voltages`.
-
 """
 function ivsweep(sys;
                  voltages = (-0.5:0.1:0.5) * ufac"V",

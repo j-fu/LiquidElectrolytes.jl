@@ -10,7 +10,7 @@ voltages_solutions
 ```@docs
 dlcapsweep
 DLCapSweepResult 
-voltges_dlcaps
+voltages_dlcaps
 ```
 
 ## Voltage-current sweeps

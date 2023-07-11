@@ -1,4 +1,8 @@
+"""
+    pbspacecharge(φ, p, electorlyte)
 
+Space charge expression for Poisson-Boltzmann
+"""
 function pbspacecharge(φ, p, data)
     c0_bulk, barc_bulk = c0_barc(data.c_bulk, data)
     pscaled = (p * data.pscale - data.p_bulk)
@@ -24,6 +28,11 @@ function pbspacecharge(φ, p, data)
     data.F * sumyz / sumyv
 end
 
+"""
+    pbreaction(f, u, node, electrolyte)
+
+Reaction expression for Poisson-Boltzmann
+"""
 function pbreaction(f, u, node, electrolyte)
     iϕ, ip = 1, 2
     ## Charge density
@@ -31,6 +40,11 @@ function pbreaction(f, u, node, electrolyte)
     f[ip] = 0
 end
 
+"""
+    pbflux(f, u, edge, electrolyte)
+
+Flux expression for Poisson-Boltzmann
+"""
 function pbflux(f, u, edge, data)
     iϕ, ip = 1, 2
     f[iφ] = data.ε * data.ε_0 * (u[iφ, 1] - u[iφ, 2])
@@ -46,6 +60,18 @@ end
 
 
 
+"""
+    PBSystem(grid;
+             celldata=ElectrolyteData(),
+             bcondition=default_bcondition,
+             kwargs...)
+
+Create VoronoiFVM system generalized Poisson-Boltzmann. Input:
+- `grid`: discretization grid
+- `celldata`: composite struct containing electrolyte data
+- `bcondition`: boundary condition
+- `kwargs`: Keyword arguments of VoronoiFVM.System
+"""
 function PBSystem(
     grid;
     celldata = ElectrolyteData(),
