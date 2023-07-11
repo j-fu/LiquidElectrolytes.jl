@@ -35,7 +35,7 @@ end
     L=20.0*nm
     X=geomspace(0,L,hmin,hmax)
     molarity=0.1*ufac"M"
-    voltages=collect(-1:0.01:1)*ufac"V"
+    voltages=collect(-1:0.005:1)*ufac"V"
     δ=1.0e-4
     
     grid=simplexgrid(X)
@@ -75,7 +75,7 @@ end
         pcaps=presult.dlcaps
         
         ecell=create_equilibrium_system(grid,EquilibriumData(acelldata))
-        evolts,ecaps=dlcapsweep_equi(ecell,vmax=1.0,molarity=0.1,δV=1.0e-4,nsteps=101)
+        evolts,ecaps=dlcapsweep_equi(ecell,vmax=1.0,molarity=0.1,δV=1.0e-4,nsteps=201)
         
         @show norm((acaps-ecaps)./ecaps)
         @show norm((acaps-μcaps)./acaps)
