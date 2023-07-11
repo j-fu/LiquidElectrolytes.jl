@@ -54,7 +54,7 @@ function PBSystem(
 )
     sys = VoronoiFVM.System(
         grid;
-        data = deepcopy(celldata),
+        data = celldata,
         flux = pbflux,
         reaction = pbreaction,
         bcondition,

@@ -71,7 +71,7 @@ Verification calculation is in the paper.
 function sflux(ic, dϕ, ck, cl, βk, βl, bar_ck, bar_cl, electrolyte)
     (; D, z, F, RT) = electrolyte
     bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(βk, βl, electrolyte) /RT)
-    D[ic] * (bm * ck/bar_ck - bp * cl/bar_cl)
+    0.5*D[ic] * (bar_ck + bar_cl) * (bm * ck/bar_ck - bp * cl/bar_cl)
 end
 
 #=
@@ -93,7 +93,7 @@ Flux expression based on reciprocal activity coefficents, see Fuhrmann, CPC 2015
 function aflux(ic, dϕ, ck, cl, βk, βl, bar_ck, bar_cl, electrolyte)
     (; D, z, F, RT) = electrolyte
     bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT)
-    D[ic] * (bm * ck * βk/bar_ck - bp * cl * βl/bar_cl) * (1 / βk + 1 / βl) / 2
+    0.5*D[ic] * (bar_ck + bar_cl) * (bm * ck * βk/bar_ck - bp * cl * βl/bar_cl) * (1 / βk + 1 / βl) / 2
 end
 
 #=
@@ -110,7 +110,7 @@ function cflux(ic, dϕ, ck, cl, βk, βl, bar_ck, bar_cl, electrolyte)
     (; D, z, F, RT) = electrolyte
     μk = rlog(ck / bar_ck, electrolyte) * RT
     μl = rlog(cl / bar_cl, electrolyte) * RT
-    D[ic] * 0.5 * (ck + cl) * (μk - μl +  dμex(βk, βl, electrolyte) + z[ic] * F * dϕ) / RT
+    D[ic] * 0.5 * (ck+ cl) * (μk - μl +  dμex(βk, βl, electrolyte) + z[ic] * F * dϕ) / RT
 end
 #=
 
@@ -184,7 +184,7 @@ Create VoronoiFVM system. Input:
 """
 function PNPSystem(grid; celldata = ElectrolyteData(), bcondition = default_bcondition, kwargs...)
     sys = VoronoiFVM.System(grid;
-                            data = deepcopy(celldata),
+                            data = celldata,
                             flux = pnpflux,
                             reaction = pnpreaction,
                             storage = pnpstorage,

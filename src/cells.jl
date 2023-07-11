@@ -176,7 +176,7 @@ function dlcapsweep(sys;
 
     volts = vcat(reverse(vminus), vplus)
     cdls = vcat(reverse(cdlminus), cdlplus)
-
+    GC.gc()
     DLCapSweepResult(volts, cdls, store_solutions ? vcat(reverse(sminus), splus) : nothing)
 end
 
