@@ -298,7 +298,7 @@ plotcurr(result)
 # ╔═╡ 9226027b-725d-446e-bc14-dd335a60ec09
 function plot1d(result,celldata, vshow)
     vinter = linear_interpolation(result.voltages, [j[io2] for j in result.j_we])
-    tsol=LiquidElectrolytes.voltage_solution(result)
+    tsol=LiquidElectrolytes.voltages_solutions(result)
     sol = tsol(vshow)
     scale = 1.0 / (mol / dm^3)
     title = "Φ_we=$(round(vshow,sigdigits=3)), I=$(round(vinter(vshow),sigdigits=3))"
@@ -333,7 +333,7 @@ plot1d(result, celldata, vshow)
 # ╔═╡ 1ac7646a-76ae-4e8f-9d9d-ecaccc262857
 function cplot(cell, result)
     scale = 1.0 / (mol / dm^3)
-    tsol=LiquidElectrolytes.voltage_solution(result)
+    tsol=LiquidElectrolytes.voltages_solutions(result)
     j_we=result.j_we
     currs = curr(j_we, io2)
     vis = GridVisualizer(; resolution = (1200, 400), layout = (1, 3),
