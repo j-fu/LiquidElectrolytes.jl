@@ -164,10 +164,12 @@ function main(;
     @views un[ia_ads, :] .= 0.1
 
 
-    tsol, j_we, j_bulk = ivsweep(cell; voltages, kwargs...)
+    result = ivsweep(cell; voltages, store_solutions=true, kwargs...)
+    tsol = voltages_solutions(result)
+    currs = currents(result, ia)
+    volts = result.voltages
+    
     vis = GridVisualizer(Plotter = Plotter, layout = (1, 1))
-    currs = [F * j[ia] for j in j_we]
-    volts = tsol.t
 
     scalarplot!(
         vis[1, 1],

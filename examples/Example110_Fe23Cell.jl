@@ -185,7 +185,7 @@ function main(;
     
     currs = LiquidElectrolytes.currents(result,ife2)
     
-    sol=LiquidElectrolytes.voltage_solution(result)
+    sol=LiquidElectrolytes.voltages_solutions(result)
     
     xmax = xmax * nm
     xlimits = [0, xmax]

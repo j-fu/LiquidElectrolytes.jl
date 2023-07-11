@@ -163,7 +163,7 @@ function main(;
     
     result = ivsweep(cell; voltages,store_solutions=true, kwargs...)
     currs=LiquidElectrolytes.currents(result,io2)
-    sol=LiquidElectrolytes.voltage_solution(result)
+    sol=LiquidElectrolytes.voltages_solutions(result)
     volts=result.voltages
 
     xmax = 10 * nm
