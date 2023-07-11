@@ -58,9 +58,8 @@ function mkdocs()
                  "Electrolyte models"=>"api.md",
                  "Standard calculations"=>"std.md",
                  "Changes" => "changes.md",
-                 "Examples" => generated_examples
+                 "Examples" => generated_examples,
                  "Internal API"=>"internal.md",
-
              ])
     if !isinteractive()
         deploydocs(repo = "github.com/j-fu/LiquidElectrolytes.jl.git", devbranch = "main")
