@@ -137,7 +137,7 @@ end
 
 notebooks=["ORR.jl"]
 
-if VERSION>v"1.8" && !(VERSION>v"1.9.99")
+if VERSION>v"1.8" && !(VERSION>v"1.9.99") && !Sys.isapple()
     ENV["PLUTO_DEVELOP"]=true
     ENV["PLUTO_CI"]=true
     @testset "notebooks" begin
