@@ -102,7 +102,7 @@ ck/cl= bp/betaK  / bm/betal
 =#
 
 """
-    aflux(ic,dϕ,ck,cl,βk,βl,bar_ck,bar_cl,electrolyte)
+    cflux(ic,dϕ,ck,cl,βk,βl,bar_ck,bar_cl,electrolyte)
 
 Flux expression based on central differences, see Gaudeul/Fuhrmann 2022
 """
