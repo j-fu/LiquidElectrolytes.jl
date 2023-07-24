@@ -100,6 +100,7 @@ and the relationship between chemical potentials and concentrations \cite{dreyer
 where $  \bar c = \sum_{i=0}^N  c_i$.
 \end{subequations}
 
+
 By \eqref{eq:incompress} one can obtain the solvent concentration $c_0$  from the solute concentrations
 $c_1\dots c_N$:
 \begin{align}
@@ -140,6 +141,30 @@ The excess chemical potential is linked to the \textit{activity coefficient} $\g
 reciprocal (inverse) activity coefficient $\beta_i=\frac1{\gamma_i}$  \cite{Fuhrmann2015}.
 These data allow to define various numerical flux approximations in the context of the Voronoi finite volume
 method \cite{Fuhrmann2015,GaudeulFuhrmannNM2022}.
+
+\subsection{Alternative $\mu_{ex}$}
+
+\begin{align}
+  \mu_0 &= \mu_0^\circ + v_0(p-p^\circ) + RT \ln \frac{c_0}{\bar c}\\
+  \mu_i &= \mu_i^\circ + v_i(p-p^\circ) + RT \ln \frac{c_i}{\bar c} - \kappa_i RT \ln \frac{c_0}{\bar c}  & (i=1\dots N)
+\end{align}
+Then (again taking into account only non-constant contributions)
+\begin{align}
+  \mu_i^{exx} &=  \mu_i - \frac{M_i}{M_0} \mu_0  - RT \log \frac{c_i}{\bar c} \nonumber\\
+             &= \mu_i^\circ + v_i(p-p^\circ) + RT \ln \frac{c_i}{\bar c} - \kappa_i RT \ln \frac{c_0}{\bar c}
+               - \frac{M_i}{M_0}\left(\mu_0^\circ + v_0(p-p^\circ) + RT \ln \frac{c_0}{\bar c}\right)- RT \log \frac{c_0}{\bar c}\\
+             &= v_ip + RT \ln \frac{c_i}{\bar c} - \kappa_i RT \ln \frac{c_0}{\bar c}
+               - \frac{M_i}{M_0}\left(v_0 p + RT \ln \frac{c_0}{\bar c}\right)- RT \log \frac{c_i}{\bar c}\\
+             &= v_ip  - \kappa_i RT \ln \frac{c_0}{\bar c}
+               - \frac{M_i}{M_0}\left(v_0 p + RT \ln \frac{c_0}{\bar c}\right)\\
+             &= (v_i -\frac{M_i}{M_0}v_0)p  - \left(\frac{M_i}{M_0}+ \kappa_i\right)RT \ln \frac{c_0}{\bar c}
+\end{align}
+
+\begin{align}
+\mu_i^{exx}-\mu_i^{ex}&=(v_i -\frac{M_i}{M_0}v_0)p  - \left(\frac{M_i}{M_0}+ \kappa_i\right)RT \ln \frac{c_0}{\bar c}
+                        -  \left(\bar v_i-\frac{M_i}{M_0}v_0\right)p + \frac{M_i}{M_0}RT\log \frac{c_0}{\bar c}\\
+                      &= -\kappa_i \left(v_0p+RT\log \frac{c_0}{\bar c}\right)
+\end{align}
 
 \subsection{Equilibrium problem}
 \eqref{eq:flux} gives
