@@ -4,7 +4,7 @@
 
 LiquidElectrolytes.jl
 =====================
-This package is in pre-release state. Versions 0.0.x are registered in https://github.com/j-fu/PackageNursery.
+This package is in pre-release state. Versions up to 0.0.23 are registered in https://github.com/j-fu/PackageNursery.
 If you trust this registry, you can issue once
 
 ```
@@ -15,3 +15,4 @@ and add the package via
 pkg> add LiquidElectrolytes
 ```
 
+Next version will be 0.1.0 registered in General.

@@ -44,6 +44,14 @@ Default boundary condition amounts to `nothing`
 default_bcondition(f, u, bnode, electrolyte) = nothing
 
 """
+    default_reaction(f, u, bnode, electrolyte)
+
+Default reaction amounts to `nothing`
+"""
+default_reaction(f, u, node, electrolyte) = nothing
+
+
+"""
      dμex(βk, βl, electrolyte)
 
 Calculate differences of excess chemical potentials from reciprocal activity coefficients
@@ -102,7 +110,7 @@ ck/cl= bp/betaK  / bm/betal
 =#
 
 """
-    aflux(ic,dϕ,ck,cl,βk,βl,bar_ck,bar_cl,electrolyte)
+    cflux(ic,dϕ,ck,cl,βk,βl,bar_ck,bar_cl,electrolyte)
 
 Flux expression based on central differences, see Gaudeul/Fuhrmann 2022
 """
@@ -180,13 +188,21 @@ Create VoronoiFVM system for generalized Poisson-Nernst-Planck. Input:
 - `grid`: discretization grid
 - `celldata`: composite struct containing electrolyte data
 - `bcondition`: boundary condition
+- `reaction` : reactions of the bulk species
 - `kwargs`: Keyword arguments of VoronoiFVM.System
 """
-function PNPSystem(grid; celldata = ElectrolyteData(), bcondition = default_bcondition, kwargs...)
+function PNPSystem(grid; celldata = ElectrolyteData(), bcondition = default_bcondition, reaction = default_reaction, kwargs...)
+
+    function _pnpreaction(f, u, node, electrolyte)
+        pnpreaction(f, u, node, electrolyte)
+        reaction(f, u, node, electrolyte)
+        nothing
+    end
+
     sys = VoronoiFVM.System(grid;
                             data = celldata,
                             flux = pnpflux,
-                            reaction = pnpreaction,
+                            reaction = _pnpreaction,
                             storage = pnpstorage,
                             bcondition,
                             species = [1:(celldata.nc)..., celldata.iϕ, celldata.ip],

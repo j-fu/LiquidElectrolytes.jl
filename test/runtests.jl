@@ -108,43 +108,14 @@ end
     
 end
 
-function run_notebook_in_current_environment(notebookname)
-    # Prevent Pluto from calling into registry update
-    Pluto.PkgCompat._updated_registries_compat[]=true
-
-    session = Pluto.ServerSession();
-    session.options.server.disable_writing_notebook_files=true
-    session.options.server.show_file_system=false
-    session.options.server.launch_browser=false
-    session.options.server.dismiss_update_notification=true
-    session.options.evaluation.capture_stdout=false
-    session.options.evaluation.workspace_use_distributed=false # this makes it fast
-
-    wd=pwd()
-    t= @elapsed notebook = Pluto.SessionActions.open(session, notebookname; run_async=false)
-    @info "notebook executed in $(round(t,sigdigits=4)) seconds"
-    cd(wd)
-    errored=false
-    for c in notebook.cells
-        if c.errored
-            errored=true
-            @error "Error in  $(c.cell_id): $(c.output.body[:msg])\n $(c.code)"
-        end
-    end
-    !errored
-end
 
 
 notebooks=["ORR.jl"]
 
-if VERSION>v"1.8" && !(VERSION>v"1.9.99") && !Sys.isapple()
-    ENV["PLUTO_DEVELOP"]=true
-    ENV["PLUTO_CI"]=true
-    @testset "notebooks" begin
-        for notebook in notebooks
-            @info "notebook $(notebook):"
-            @test run_notebook_in_current_environment(joinpath(@__DIR__,"..","notebooks",notebook))
-            @info "notebook $(notebook) ok"
-        end
+@testset "notebooks" begin
+    for notebook in notebooks
+        @info "notebook $(notebook):"
+        @test test_as_script(joinpath(@__DIR__,"..","pluto-examples",notebook))
+        @info "notebook $(notebook) ok"
     end
 end
