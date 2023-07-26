@@ -116,34 +116,48 @@ The diffusive mass fluxes are defined relative to the barycentric velocity \cite
 
 
 For the derivation of the numerical scheme we calculate the non-constant
-contribution to the excess chemical potential defined as the difference between the chemical potential
-contribution to the driving force $\mu_i - \frac{M_i}{M_0}\mu_0$ and the chemical potential of an ideal gas
-$RT \log \frac{c_i}{\bar c}$:
+contribution to the excess chemical potential. 
+
+
+
+defined as the difference between the chemical potential $\mu^{ex}_i$.
+contribution to the driving force $\mu_i - \frac{M_i}{M_0}\mu_0$ and the term
+$RT \log c_i$ in order to be able to rewrite the the flux as
+
+\begin{align}
+  N_i &= \frac{D}{RT} c_i \nabla\left( RT \log c_i  +  \mu^i_{ex} +z_iF\nabla\phi\right) \nonumber\\
+      &= D\nabla\left(c_i  +  c_i\frac{1}{RT}(\mu^i_{ex} +z_iF\nabla\phi)\right) \label{eq:flux}
+\end{align}
+
 For $i=1\dots N$ we have
 \begin{align}
-  \mu_i^{ex} &=  \mu_i - \frac{M_i}{M_0} \mu_0  - RT \log \frac{c_i}{\bar c} \nonumber\\
-             &= \bar v_ip +  RT \log \frac{c_i}{\bar c}  -\frac{M_i}{M_0}\left(  v_0p + RT \log \frac{c_0}{\bar c}\right)  - RT \log \frac{c_i}{\bar c} \nonumber\\
-            &= \bar v_ip  -\frac{M_i}{M_0}\left(  v_0p + RT \log \frac{c_0}{\bar c}\right)\nonumber\\
-            &= \left(\bar v_i-\frac{M_i}{M_0}v_0\right)p - \frac{M_i}{M_0}RT\log \frac{c_0}{\bar c} \label{eq:muex}
+  \mu_i^{ex} &= \mu_i - \frac{M_i}{M_0} \mu_0  - RT \log c_i\nonumber\\
+             &= \bar v_ip +  RT \log \frac{c_i}{\bar c}  -\frac{M_i}{M_0}\left(  v_0p + RT \log \frac{c_0}{\bar c}\right)  - RT \log c_i  \nonumber\\
+            &= \bar v_ip - RT\log \bar c - \frac{M_i}{M_0}\left(v_0p + RT \log \frac{c_0}{\bar c}\right)\nonumber\\
+            &= \left(\bar v_i-\frac{M_i}{M_0}v_0\right)p - \frac{M_i}{M_0}RT\log \frac{c_0}{\bar c} - RT\log \bar c \label{eq:muex}
 \end{align}
 and express $c_0$ via \eqref{eq:c0} and $\bar c$ in terms of $c_1\dots c_N$
 \begin{align*}
   \bar c &% = \frac{1}{v_0} -  \sum_{i=1}^N \frac{\bar v_i}{v_0}c_i + \sum_{i=1}^N  c_i
           = \frac{1}{v_0} + \sum_{i=1}^N \left(1- \frac{\bar v_i}{v_0}\right) c_i 
 \end{align*}
+The expression \eqref{eq:muex} for $\mu_i^{ex}(c_1\dots c_N, p)$  encodes the non-ideality properties of the mixture.
+The excess chemical potential is linked to the \textit{activity coefficient} $\gamma_i=\exp(-\frac{\mu_i^{ex}}{RT})$
+\cite{Fuhrmann2015}
+\begin{align*}
+  \gamma_i&=\exp(-\frac{\mu_i^{ex}}{RT})\\
+         &= \frac{1}{\bar c}\exp\left(\frac{\bar v_i-\frac{M_i}{M_0}v_0}{RT}p\right)\left(\frac{\bar c}{c_0}\right)^{\frac{M_i}{M_0}}
+\end{align*}
 
-Thus, we can rewrite \eqref{eq:NP}  as 
-\begin{align}\label{eq:flux}
-  \mathbf N_i &= - D_i\bar c_i \left(\nabla \frac{c_i}{\bar c_i} + \frac{c_i}{\bar c_iRT} (\mu_i^{ex} + z_i F \nabla \phi) \right)
-\end{align}
-where the expression \eqref{eq:muex} for $\mu_i^{ex}(c_1\dots c_N, p)$  encodes the non-ideality properties of the mixture.
-The excess chemical potential is linked to the \textit{activity coefficient} $\gamma_i=\exp(\frac{\mu_i}{RT})$ and the
-reciprocal (inverse) activity coefficient $\beta_i=\frac1{\gamma_i}$  \cite{Fuhrmann2015}.
+
+
+
 These data allow to define various numerical flux approximations in the context of the Voronoi finite volume
 method \cite{Fuhrmann2015,GaudeulFuhrmannNM2022}.
 
 \subsection{Alternative $\mu_{ex}$}
-
+(this is for Dreyer/Guhlke/Landstorer on solvation effect (2014?) and probably
+doesn't need to be discussed further).
 \begin{align}
   \mu_0 &= \mu_0^\circ + v_0(p-p^\circ) + RT \ln \frac{c_0}{\bar c}\\
   \mu_i &= \mu_i^\circ + v_i(p-p^\circ) + RT \ln \frac{c_i}{\bar c} - \kappa_i RT \ln \frac{c_0}{\bar c}  & (i=1\dots N)
@@ -204,6 +218,14 @@ Zero flux gives
 \end{table}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Flux discretization}
+We intend to use the Sedan scheme wich is based on a reformulation of the equations:
+\begin{align*}
+  \mathbf N_i &= - \frac{D_i}{RT} c_i \left( \nabla \mu_i - \frac{M_i}{M_0}\nabla \mu_0 + z_i F \nabla \phi \right)& (i=1\dots N) \label{eq:NP}
+\end{align*}
+
+
+
 \subsection{Domain, boundary an initial conditions} 
 \subsubsection{Full cell}
 Assume a one-dimensional domain  $\Omega=(0,L)$, filled with

@@ -76,8 +76,9 @@ function PBSystem(
     grid;
     celldata = ElectrolyteData(),
     bcondition = default_bcondition,
-    kwargs...,
+    kwargs...
 )
+    @info "hi"
     sys = VoronoiFVM.System(
         grid;
         data = celldata,
@@ -85,6 +86,6 @@ function PBSystem(
         reaction = pbreaction,
         bcondition,
         species = [1, 2],
-        kwargs...,
+        kwargs...
     )
 end

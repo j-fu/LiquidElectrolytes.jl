@@ -36,9 +36,9 @@ end
 
 # ╔═╡ a5193642-e9fc-4b80-a9eb-84f5e1795008
 begin
-	const molarity=1
-	const voltages=-1:0.02:1
-	const nref=0
+	const molarity=0.01
+	const voltages=-0.2:0.02:0.2
+	const nref=1
 	const solvation=10
     celldata = ElectrolyteData(;
                                nc = 2,
@@ -84,7 +84,7 @@ result=dlcapsweep(pbsys;inival=unknowns(pbsys),iϕ=1,voltages,molarity=molarity*
 # ╔═╡ 6b0adcfd-a279-4b58-b029-db07fca60b0f
 begin
 	ecell=create_equilibrium_system(grid,EquilibriumData(celldata))
-    evolts,ecaps=dlcapsweep_equi(ecell;vmax=1.0,molarity,δV=1.0e-4,nsteps=101)
+    evolts,ecaps=dlcapsweep_equi(ecell;vmax=voltages[end],molarity,δV=1.0e-4,nsteps=101)
 end;
 
 # ╔═╡ f57cb1f9-3505-45e1-9524-ba37af47637b
@@ -248,18 +248,6 @@ PlutoVista = "646e1f28-b900-46d7-9d87-d554eb38a413"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 VoronoiFVM = "82b139dc-5afc-11e9-35da-9b9bdfd336f3"
-
-[compat]
-Colors = "~0.12.10"
-ExtendableGrids = "~1.0.0"
-GridVisualize = "~1.1.4"
-HypertextLiteral = "~0.9.4"
-LessUnitful = "~0.6.1"
-LiquidElectrolytes = "~0.1.0"
-PlutoUI = "~0.7.52"
-PlutoVista = "~0.8.24"
-Revise = "~3.5.3"
-VoronoiFVM = "~1.13.0"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -268,7 +256,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.2"
 manifest_format = "2.0"
-project_hash = "75a7ab5ee42d745e31e3d340870f721fc953dd31"
+project_hash = "f3d86ba698de8ecf3f99314cc7258bbb99c2c3d1"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "e58c18d2312749847a74f5be80bb0fa53da102bd"

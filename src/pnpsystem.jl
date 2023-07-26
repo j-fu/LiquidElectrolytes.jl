@@ -52,20 +52,20 @@ default_reaction(f, u, node, electrolyte) = nothing
 
 
 """
-     dμex(βk, βl, electrolyte)
+     dμex(γk, γl, electrolyte)
 
-Calculate differences of excess chemical potentials from reciprocal activity coefficients
+Calculate differences of excess chemical potentials from activity coefficients
 """
-@inline function dμex(βk, βl, electrolyte)
-    if βk > βl
-        rlog(βk / βl, electrolyte) * (electrolyte.RT)
+@inline function dμex(γk, γl, electrolyte)
+    if γk > γl
+        rlog(γk / γl, electrolyte) * (electrolyte.RT)
     else
-        -rlog(βl / βk, electrolyte) * (electrolyte.RT)
+        -rlog(γl / γk, electrolyte) * (electrolyte.RT)
     end
 end
 
 """
-    sflux(ic,dϕ,ck,cl,βk,βl,bar_ck,bar_cl,electrolyte)
+    sflux(ic,dϕ,ck,cl,γk,γl,bar_ck,bar_cl,electrolyte)
 
  Sedan flux,  see Gaudeul/Fuhrmann 2022
 
@@ -76,10 +76,10 @@ Appearantly first described by Yu, Zhiping  and Dutton, Robert, SEDAN III, www-t
 
 Verification calculation is in the paper.
 """
-function sflux(ic, dϕ, ck, cl, βk, βl, bar_ck, bar_cl, electrolyte)
+function sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte)
     (; D, z, F, RT) = electrolyte
-    bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(βk, βl, electrolyte) /RT)
-    0.5*D[ic] * (bar_ck + bar_cl) * (bm * ck/bar_ck - bp * cl/bar_cl)
+    bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(γk, γl, electrolyte) /RT)
+    D[ic]*(bm * ck - bp * cl)
 end
 
 #=
@@ -94,14 +94,14 @@ ck/cl = bp/bm = exp(z ϕk*F/RT + μex_k/RT)/exp(z ϕl*F/RT + μex_l/RT)
 =#
 
 """
-    aflux(ic,dϕ,ck,cl,βk,βl,bar_ck,bar_cl,electrolyte)
+    aflux(ic,dϕ,ck,cl,γk,γl,bar_ck,bar_cl,electrolyte)
 
-Flux expression based on reciprocal activity coefficents, see Fuhrmann, CPC 2015
+Flux expression based on  activities, see Fuhrmann, CPC 2015
 """
-function aflux(ic, dϕ, ck, cl, βk, βl, bar_ck, bar_cl, electrolyte)
+function aflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte)
     (; D, z, F, RT) = electrolyte
     bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT)
-    0.5*D[ic] * (bar_ck + bar_cl) * (bm * ck * βk/bar_ck - bp * cl * βl/bar_cl) * (1 / βk + 1 / βl) / 2
+    D[ic] * (bm * ck * γk - bp * cl * γl) * (1 / γk + 1 / γl) / 2
 end
 
 #=
@@ -110,15 +110,15 @@ ck/cl= bp/betaK  / bm/betal
 =#
 
 """
-    cflux(ic,dϕ,ck,cl,βk,βl,bar_ck,bar_cl,electrolyte)
+    cflux(ic,dϕ,ck,cl,γk,γl,bar_ck,bar_cl,electrolyte)
 
 Flux expression based on central differences, see Gaudeul/Fuhrmann 2022
 """
-function cflux(ic, dϕ, ck, cl, βk, βl, bar_ck, bar_cl, electrolyte)
+function cflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte)
     (; D, z, F, RT) = electrolyte
-    μk = rlog(ck / bar_ck, electrolyte) * RT
-    μl = rlog(cl / bar_cl, electrolyte) * RT
-    D[ic] * 0.5 * (ck+ cl) * (μk - μl +  dμex(βk, βl, electrolyte) + z[ic] * F * dϕ) / RT
+    μk = rlog(ck, electrolyte) * RT
+    μl = rlog(cl, electrolyte) * RT
+    D[ic] * 0.5 * (ck+ cl) * (μk - μl +  dμex(γk, γl, electrolyte) + z[ic] * F * dϕ) / RT
 end
 #=
 
@@ -147,7 +147,7 @@ function pnpflux(f, u, edge, electrolyte)
     f[iϕ] = ε * ε_0 * dϕ * !eneutral
     f[ip] = dp + (qk + ql) * dϕ / 2
 
-    βk, βl = 1.0, 1.0
+    γk, γl = 1.0, 1.0
     bikerman = !iszero(v)
 
     for ic = 1:nc
@@ -156,22 +156,22 @@ function pnpflux(f, u, edge, electrolyte)
         ck, cl = u[ic, 1], u[ic, 2]
         barv = 0.0
 
-        ## Calculate the reciprocal activity coefficients first,
+        ## Calculate the  activity coefficients first,
         ## as these expressions are less degenerating.
         if bikerman
             Mrel = M[ic] / M0
             barv=v[ic] + κ[ic]*v0
             tildev=barv - Mrel*v0
-            βk = exp(tildev * pk / (RT)) * (bar_ck / c0k)^Mrel
-            βl = exp(tildev * pl / (RT)) * (bar_cl / c0l)^Mrel
+            γk = exp(tildev * pk / (RT)) * (bar_ck / c0k)^Mrel*(1/bar_ck)
+            γl = exp(tildev * pl / (RT)) * (bar_cl / c0l)^Mrel*(1/bar_cl)
         end
 
         if scheme == :μex
-            f[ic] = sflux(ic, dϕ, ck, cl, βk, βl, bar_ck, bar_cl, electrolyte)
+            f[ic] = sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte)
         elseif electrolyte.scheme == :act
-            f[ic] = aflux(ic, dϕ, ck, cl, βk, βl, bar_ck, bar_cl, electrolyte)
+            f[ic] = aflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte)
         elseif electrolyte.scheme == :cent
-            f[ic] = cflux(ic, dϕ, ck, cl, βk, βl, bar_ck, bar_cl, electrolyte)
+            f[ic] = cflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte)
         else
             error("no such scheme: $(scheme)")
         end

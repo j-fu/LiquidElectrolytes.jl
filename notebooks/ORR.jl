@@ -67,7 +67,7 @@ md"""
 begin
     const vmin = -1V
     const vmax = 1V
-    const vdelta = 0.025 * V
+    const vdelta = 0.01 * V
     const molarity = 0.1
     const nref = 0
     const κ = 10
@@ -93,9 +93,9 @@ md"""
 
 # ╔═╡ a4e0379d-f7f6-4b61-bf38-5eb17f67505a
 solver_control = (max_round = 4,
-                  tol_round = 1.0e-8,
-                  reltol = 1.0e-8,
-                  abstol = 1.0e-9,
+                  tol_round = 1.0e-9,
+                  reltol = 1.0e-9,
+                  abstol = 1.0e-10,
                   verbose = "",
                   maxiters = 20)
 
