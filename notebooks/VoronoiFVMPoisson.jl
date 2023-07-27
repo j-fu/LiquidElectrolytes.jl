@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.26
+# v0.19.27
 
 using Markdown
 using InteractiveUtils
@@ -17,15 +17,29 @@ end
 # ╔═╡ 60941eaa-1aea-11eb-1277-97b991548781
 begin
     using PlutoUI, HypertextLiteral,UUIDs
-	using LinearAlgebra
-	using Interpolations
-	using VoronoiFVM,GridVisualize,ExtendableGrids
-	using LaTeXStrings
-	using CairoMakie
-	using LessUnitful,Unitful
+    using LinearAlgebra
+    using Interpolations
+    using VoronoiFVM,GridVisualize,ExtendableGrids
+    using LaTeXStrings
+    using LessUnitful,Unitful
+    
+    if isdefined(Main,:PlutoRunner)
+	using CairoMakie	
 	default_plotter!(CairoMakie)
 	CairoMakie.activate!(type="svg")
+    end
+
 end
+
+# ╔═╡ 66dc2136-a601-4291-9aa5-81616a4efdd7
+md"""
+# VoronoiFVMPoisson.jl
+"""
+
+# ╔═╡ c8ac41dd-df4d-47f6-909e-4e18e65ca994
+md"""
+Realization of Poisson-Boltzmann and Poisson-Bikerman equations based on plain VoronoiFVM.jl (without LiquidElectrolytes). This notebook is meant for demonstation purposes and may be moved to VoronoiFVM.jl.
+"""
 
 # ╔═╡ b181a82b-46e7-4dae-b0b1-6886dd40886a
 md"""
@@ -2511,6 +2525,8 @@ version = "3.5.0+0"
 """
 
 # ╔═╡ Cell order:
+# ╟─66dc2136-a601-4291-9aa5-81616a4efdd7
+# ╟─c8ac41dd-df4d-47f6-909e-4e18e65ca994
 # ╠═60941eaa-1aea-11eb-1277-97b991548781
 # ╟─b181a82b-46e7-4dae-b0b1-6886dd40886a
 # ╟─5a5e3586-2009-4381-ae9d-a0bd34539b65

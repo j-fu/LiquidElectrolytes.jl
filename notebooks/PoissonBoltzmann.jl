@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.26
+# v0.19.27
 
 using Markdown
 using InteractiveUtils
@@ -14,38 +14,35 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 4fc7fda6-423b-48ea-8f86-6718a9050ee0
+# ╔═╡ 60941eaa-1aea-11eb-1277-97b991548781
 begin
     import Pkg as _Pkg
-	# For development, activate notebooks evironment, otherwise
-	# use standard Pluto package handling
-    if isfile(joinpath(@__DIR__, "..", "src", "LiquidElectrolytes.jl")) &&
-       haskey(ENV, "PLUTO_DEVELOP")
-        _Pkg.activate(@__DIR__)
-	    push!(LOAD_PATH, joinpath(@__DIR__, ".."))
-        _Pkg.instantiate()
-        using Revise
-        _Pkg.develop(; path = joinpath(@__DIR__, ".."))
-    end
-    initialized = true
-end;
-
-# ╔═╡ 60941eaa-1aea-11eb-1277-97b991548781
-if initialized
+    haskey(ENV,"PLUTO_PROJECT") && _Pkg.activate(ENV["PLUTO_PROJECT"])
+    using Revise
     using PlutoUI, HypertextLiteral,UUIDs
 	using LinearAlgebra
 	using Interpolations
 	using VoronoiFVM,GridVisualize,ExtendableGrids
-	using CairoMakie
 	using LiquidElectrolytes
 	using LessUnitful,Unitful
-	if !haskey(ENV,"PLUTO_CI")
-	  default_plotter!(CairoMakie)
-	  CairoMakie.activate!(type="svg")
-	end
+    if isdefined(Main,:PlutoRunner)
+	using CairoMakie	
+		default_plotter!(CairoMakie)
+		CairoMakie.activate!(type="svg")
+    end
 
 	pkgdir(LiquidElectrolytes)
 end
+
+# ╔═╡ 25a19579-9cba-4416-87cb-83d00e5926f3
+md"""
+# PoissonBoltzmann.jl
+"""
+
+# ╔═╡ 1afa972d-74cf-47ce-86cf-8751a9e85218
+md"""
+Under development, may be removed, though. Same as VoronoiFVMPoisson, but with the intention do the same things with LiquidElectorlytes.jl
+"""
 
 # ╔═╡ b181a82b-46e7-4dae-b0b1-6886dd40886a
 md"""
@@ -275,6 +272,9 @@ plotsols(pbo_sols,pbo_v,pbo_molfrac)
 
 # ╔═╡ 5d15d24d-6317-4ad1-a53e-5af5c5bcf28a
 plotsols(pbi_sols,pbi_v,pbi_molfrac)
+
+# ╔═╡ 4fc7fda6-423b-48ea-8f86-6718a9050ee0
+
 
 # ╔═╡ f9b4d4dc-7def-409f-b40a-f4eba1163741
 TableOfContents()
@@ -2556,6 +2556,8 @@ version = "3.5.0+0"
 """
 
 # ╔═╡ Cell order:
+# ╟─25a19579-9cba-4416-87cb-83d00e5926f3
+# ╟─1afa972d-74cf-47ce-86cf-8751a9e85218
 # ╠═60941eaa-1aea-11eb-1277-97b991548781
 # ╟─b181a82b-46e7-4dae-b0b1-6886dd40886a
 # ╟─5a5e3586-2009-4381-ae9d-a0bd34539b65

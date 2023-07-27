@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.26
+# v0.19.27
 
 using Markdown
 using InteractiveUtils
@@ -14,47 +14,38 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 60941eaa-1aea-11eb-1277-97b991548781
+# ╔═╡ 14f8c67a-759a-4646-811c-01d03e3cf726
 begin
     import Pkg as _Pkg
-    if isfile(joinpath(@__DIR__, "..", "src", "LiquidElectrolytes.jl")) &&
-       haskey(ENV, "PLUTO_DEVELOP")
-        _Pkg.activate(@__DIR__)
-	    push!(LOAD_PATH, joinpath(@__DIR__, ".."))
-        _Pkg.instantiate()
-        using Revise
-        _Pkg.develop(; path = joinpath(@__DIR__, ".."))
+    haskey(ENV,"PLUTO_PROJECT") && _Pkg.activate(ENV["PLUTO_PROJECT"])
+	using Revise
+    using HypertextLiteral
+    using PlutoUI
+    using ExtendableGrids
+    using GridVisualize
+    using NLsolve
+    using VoronoiFVM
+    using LiquidElectrolytes
+    using LessUnitful
+    using Colors
+    if isdefined(Main,:PlutoRunner)
+	using CairoMakie	
+		default_plotter!(CairoMakie)
+		CairoMakie.activate!(type="svg")
     end
-    initialized = true
-end;
-
-# ╔═╡ 14f8c67a-759a-4646-811c-01d03e3cf726
-if initialized
-	using HypertextLiteral
-	using PlutoUI
-	using ExtendableGrids
-	using GridVisualize
-	using NLsolve
-	using VoronoiFVM
-	using LiquidElectrolytes
-	using LessUnitful
-    using CairoMakie
-	using Colors
-	if !haskey(ENV,"PLUTO_CI")
-	  default_plotter!(CairoMakie)
-	  CairoMakie.activate!(type="svg")
-	end
 end
 
-# ╔═╡ 882dda23-63b9-4b1e-a04e-69071deff69a
-md"This notebook is only relocateable together with the whole MultECatJulia project."
-
-# ╔═╡ f36552fd-affd-44e0-83b5-3401459f0560
-TableOfContents(title="")
+# ╔═╡ 6c4eac8c-e243-4e0b-9daf-2ef2d35fe873
+md"""
+# Equilibrium1D.jl
+"""
 
 # ╔═╡ 0f2a3eb0-9818-4bf8-9dde-ba28ea3dd2f5
 htl""" Description of the equilibrium problem: 
 <a href="./open?path=$(joinpath(@__DIR__,\"..\",\"src\",\"equilibrium.jl\"))" target="_blank"> here </a>"""
+
+# ╔═╡ f36552fd-affd-44e0-83b5-3401459f0560
+TableOfContents(title="")
 
 # ╔═╡ 5bce5b30-b5fd-4e13-8b20-8218edaa6c60
 md"""
@@ -2378,11 +2369,10 @@ version = "3.5.0+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─882dda23-63b9-4b1e-a04e-69071deff69a
-# ╠═60941eaa-1aea-11eb-1277-97b991548781
+# ╟─6c4eac8c-e243-4e0b-9daf-2ef2d35fe873
+# ╟─0f2a3eb0-9818-4bf8-9dde-ba28ea3dd2f5
 # ╠═14f8c67a-759a-4646-811c-01d03e3cf726
 # ╟─f36552fd-affd-44e0-83b5-3401459f0560
-# ╟─0f2a3eb0-9818-4bf8-9dde-ba28ea3dd2f5
 # ╟─5bce5b30-b5fd-4e13-8b20-8218edaa6c60
 # ╠═b43533f6-a948-418c-8539-2d54aa8e5943
 # ╟─5391c130-6706-4f06-8335-6474875fe210
