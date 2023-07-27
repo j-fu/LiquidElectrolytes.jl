@@ -78,7 +78,7 @@ function PBSystem(
     bcondition = default_bcondition,
     kwargs...
 )
-    @info "hi"
+
     sys = VoronoiFVM.System(
         grid;
         data = celldata,

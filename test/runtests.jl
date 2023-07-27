@@ -5,6 +5,7 @@ using ExtendableGrids
 using VoronoiFVM
 using LessUnitful
 using Pluto
+using UUIDs
 
 @phconstants N_A
 @unitfactors dm nm mol
@@ -109,13 +110,23 @@ end
 end
 
 
-
 notebooks=["ORR.jl"]
+
+function test_as_script(notebookname;verbose=false)
+    modname="mod"*string(uuid1())[1:8]
+    notebook="module $(modname)\n\n"
+    notebook*=read(notebookname,String)
+    notebook*="\nend"
+    t=@elapsed begin
+        @testset "$notebookname" begin
+            eval(Meta.parse(notebook))
+        end
+    end
+    @info "notebook executed in $(round(t,sigdigits=4)) seconds"
+end
 
 @testset "notebooks" begin
     for notebook in notebooks
-        @info "notebook $(notebook):"
-        @test test_as_script(joinpath(@__DIR__,"..","pluto-examples",notebook))
-        @info "notebook $(notebook) ok"
+        test_as_script(joinpath(@__DIR__,"..","notebooks",notebook))
     end
 end
