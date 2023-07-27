@@ -139,7 +139,7 @@ function dlcapsweep(sys;
         inival=pnpunknowns(sys)
     end 
 
-    inival = solve(sys; inival)
+    inival = solve(sys; inival, verbose="n",damp_initial=0.1)
     allprogress = sum(length, ranges)
     ϕprogress = 0
 
