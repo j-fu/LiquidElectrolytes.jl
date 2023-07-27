@@ -117,9 +117,6 @@ The diffusive mass fluxes are defined relative to the barycentric velocity \cite
 
 For the derivation of the numerical scheme we calculate the non-constant
 contribution to the excess chemical potential. 
-
-
-
 defined as the difference between the chemical potential $\mu^{ex}_i$.
 contribution to the driving force $\mu_i - \frac{M_i}{M_0}\mu_0$ and the term
 $RT \log c_i$ in order to be able to rewrite the the flux as
@@ -155,34 +152,10 @@ The excess chemical potential is linked to the \textit{activity coefficient} $\g
 These data allow to define various numerical flux approximations in the context of the Voronoi finite volume
 method \cite{Fuhrmann2015,GaudeulFuhrmannNM2022}.
 
-\subsection{Alternative $\mu_{ex}$}
-(this is for Dreyer/Guhlke/Landstorer on solvation effect (2014?) and probably
-doesn't need to be discussed further).
-\begin{align}
-  \mu_0 &= \mu_0^\circ + v_0(p-p^\circ) + RT \ln \frac{c_0}{\bar c}\\
-  \mu_i &= \mu_i^\circ + v_i(p-p^\circ) + RT \ln \frac{c_i}{\bar c} - \kappa_i RT \ln \frac{c_0}{\bar c}  & (i=1\dots N)
-\end{align}
-Then (again taking into account only non-constant contributions)
-\begin{align}
-  \mu_i^{exx} &=  \mu_i - \frac{M_i}{M_0} \mu_0  - RT \log \frac{c_i}{\bar c} \nonumber\\
-             &= \mu_i^\circ + v_i(p-p^\circ) + RT \ln \frac{c_i}{\bar c} - \kappa_i RT \ln \frac{c_0}{\bar c}
-               - \frac{M_i}{M_0}\left(\mu_0^\circ + v_0(p-p^\circ) + RT \ln \frac{c_0}{\bar c}\right)- RT \log \frac{c_0}{\bar c}\\
-             &= v_ip + RT \ln \frac{c_i}{\bar c} - \kappa_i RT \ln \frac{c_0}{\bar c}
-               - \frac{M_i}{M_0}\left(v_0 p + RT \ln \frac{c_0}{\bar c}\right)- RT \log \frac{c_i}{\bar c}\\
-             &= v_ip  - \kappa_i RT \ln \frac{c_0}{\bar c}
-               - \frac{M_i}{M_0}\left(v_0 p + RT \ln \frac{c_0}{\bar c}\right)\\
-             &= (v_i -\frac{M_i}{M_0}v_0)p  - \left(\frac{M_i}{M_0}+ \kappa_i\right)RT \ln \frac{c_0}{\bar c}
-\end{align}
-
-\begin{align}
-\mu_i^{exx}-\mu_i^{ex}&=(v_i -\frac{M_i}{M_0}v_0)p  - \left(\frac{M_i}{M_0}+ \kappa_i\right)RT \ln \frac{c_0}{\bar c}
-                        -  \left(\bar v_i-\frac{M_i}{M_0}v_0\right)p + \frac{M_i}{M_0}RT\log \frac{c_0}{\bar c}\\
-                      &= -\kappa_i \left(v_0p+RT\log \frac{c_0}{\bar c}\right)
-\end{align}
 
 \subsection{Equilibrium problem}
 \eqref{eq:flux} gives
-\begin{align}\label{eq:flux}
+\begin{align}\label{eq:fluxx}
   \mathbf N_i &= - D_i\frac{c_i}{RT}\nabla\left( \mu_i +  \mu_i^{ex} + z_i F \nabla \phi \right)
 \end{align}
 Zero flux gives 
