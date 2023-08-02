@@ -240,15 +240,23 @@ voltages_solutions(r::IVSweepResult) = TransientSolution(r.solutions, r.voltages
 
 Voltage- working electrode current curve for species as [`DiffEqArray`](https://docs.sciml.ai/RecursiveArrayTools/stable/array_types/#RecursiveArrayTools.DiffEqArray)
 """
-voltages_currents(r::IVSweepResult, ispec) = RecursiveArrayTools.DiffEqArray(currents(r, ispec), r.voltages)
+voltages_currents(r::IVSweepResult, ispec; electrode=:we) = RecursiveArrayTools.DiffEqArray(currents(r, ispec;electrode), r.voltages)
 
 """
     currents(result,ispec)
 
-Working electrode current  for species `ispec`.
+Electrode current  for species `ispec`.
 """
-currents(r::IVSweepResult, ispec) = [ph"F" * j[ispec] for j in r.j_we]
-
+function currents(r::IVSweepResult, ispec; electrode=:we)
+    if electrode==:we
+        [ph"F" * j[ispec] for j in r.j_we]
+    elseif electrode==:bulk
+        [ph"F" * j[ispec] for j in r.j_bulk]
+    else
+        error("no such electrode")
+    end
+end
+              
 """
      ivsweep(
           sys;
