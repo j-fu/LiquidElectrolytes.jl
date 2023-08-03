@@ -295,7 +295,6 @@ plotcurr(result)
 
 # ╔═╡ 9226027b-725d-446e-bc14-dd335a60ec09
 function plot1d(result,celldata, vshow)
-    !isdefined(Main,:PlutoRunner) && return
     vinter = linear_interpolation(result.voltages, [j[io2] for j in result.j_we])
     tsol=LiquidElectrolytes.voltages_solutions(result)
     vis = GridVisualizer(;
@@ -307,9 +306,8 @@ function plot1d(result,celldata, vshow)
     video="orr.gif"
     vrange=range(extrema(result.voltages)...; length = 101)
     
-    record(vis.context[:figure],video) do io
+    movie(vis,file="orr.gif") do vis
    	for vshow in vrange
-            
             sol = tsol(vshow)
             c0 = solventconcentration(sol, celldata)
             scale = 1.0 / (mol / dm^3)
@@ -333,10 +331,9 @@ function plot1d(result,celldata, vshow)
             scalarplot!(vis, grid, c0 * scale; color = :blue, clear = false,
                         label = "H2O")
 	    reveal(vis)
-	    recordframe!(io)  
 	end
     end
-    LocalResource(video)	
+	isdefined(Main,:PlutoRunner) && LocalResource("orr.gif")
 end
 
 # ╔═╡ 56eb52b1-9017-4485-83d6-b7ef15ad522f
