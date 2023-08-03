@@ -11,6 +11,10 @@ const NOTEBOOKS_MD=NOTEBOOKS.*".md"
 
 
 function build_all_notebooks()
+    thisdir=pwd()
+    Pkg.activate(NOTEBOOK_DIR)
+    Pkg.instantiate()
+    Pkg.activate(thisdir)
     println("Building notebooks in $NOTEBOOK_DIR")
     ENV["PLUTO_PROJECT"]=NOTEBOOK_DIR
     oopts = OutputOptions(; append_build_context=true)
@@ -25,7 +29,7 @@ function mkdocs()
     example_md_dir  = joinpath(@__DIR__,"src","examples")
     notebook_md_dir  = joinpath(@__DIR__,"src","notebooks")
 
-
+    
     
     rm(example_md_dir,force=true,recursive=true)
     rm(notebook_md_dir,force=true,recursive=true)
