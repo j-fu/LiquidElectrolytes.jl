@@ -295,47 +295,48 @@ plotcurr(result)
 
 # ╔═╡ 9226027b-725d-446e-bc14-dd335a60ec09
 function plot1d(result,celldata, vshow)
+    !isdefined(Main,:PlutoRunner) && return
     vinter = linear_interpolation(result.voltages, [j[io2] for j in result.j_we])
     tsol=LiquidElectrolytes.voltages_solutions(result)
-vis = GridVisualizer(;
+    vis = GridVisualizer(;
                          size = (600, 250),
                          yscale = :log,
                          limits = (1.0e-6, 100),
                          legend = :rt)
- 	
-	video="orr.gif"
-	vrange=range(extrema(result.voltages)...; length = 101)
-
-	record(vis.context[:figure],video) do io
+    
+    video="orr.gif"
+    vrange=range(extrema(result.voltages)...; length = 101)
+    
+    record(vis.context[:figure],video) do io
    	for vshow in vrange
-
-        sol = tsol(vshow)
-        c0 = solventconcentration(sol, celldata)
-        scale = 1.0 / (mol / dm^3)
-		ishow=vinter(vshow)
-        title = "Φ_we=$(round(vshow,digits=4)), I=$(round(vinter(vshow),digits=4))"
-		title = @sprintf("Φ_we=%+1.2f I=%+1.4f",vshow,ishow)
-
-    scalarplot!(vis, grid, sol[io2, :] * scale; color = :green, label = "O_2",title)
-    scalarplot!(vis,
-                grid,
-                sol[iso4, :] * scale;
-                color = :gray,
-                clear = false,
-                label = "SO4--")
-    scalarplot!(vis,
-                grid,
-                sol[ihplus, :] * scale;
-                color = :red,
-                clear = false,
-                label = "H+")
-    scalarplot!(vis, grid, c0 * scale; color = :blue, clear = false,
-                label = "H2O")
-		reveal(vis)
-		recordframe!(io)  
+            
+            sol = tsol(vshow)
+            c0 = solventconcentration(sol, celldata)
+            scale = 1.0 / (mol / dm^3)
+	    ishow=vinter(vshow)
+            title = "Φ_we=$(round(vshow,digits=4)), I=$(round(vinter(vshow),digits=4))"
+	    title = @sprintf("Φ_we=%+1.2f I=%+1.4f",vshow,ishow)
+            
+            scalarplot!(vis, grid, sol[io2, :] * scale; color = :green, label = "O_2",title)
+            scalarplot!(vis,
+                        grid,
+                        sol[iso4, :] * scale;
+                        color = :gray,
+                        clear = false,
+                        label = "SO4--")
+            scalarplot!(vis,
+                        grid,
+                        sol[ihplus, :] * scale;
+                        color = :red,
+                        clear = false,
+                        label = "H+")
+            scalarplot!(vis, grid, c0 * scale; color = :blue, clear = false,
+                        label = "H2O")
+	    reveal(vis)
+	    recordframe!(io)  
 	end
-	end
-	LocalResource(video)	
+    end
+    LocalResource(video)	
 end
 
 # ╔═╡ 56eb52b1-9017-4485-83d6-b7ef15ad522f
