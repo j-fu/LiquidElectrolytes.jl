@@ -16,28 +16,32 @@ end
 
 # ╔═╡ 60941eaa-1aea-11eb-1277-97b991548781
 begin
-    import Pkg as _Pkg
-    haskey(ENV,"PLUTO_PROJECT") && _Pkg.activate(ENV["PLUTO_PROJECT"])
-    using Revise
+    import Pkg as _Pkg # hide
+    haskey(ENV,"PLUTO_PROJECT") && _Pkg.activate(ENV["PLUTO_PROJECT"]) # hide
+    using Revise # hide
     using PlutoUI, HypertextLiteral
     using LiquidElectrolytes
+	using Printf
     using LessUnitful
     using ExtendableGrids
     using VoronoiFVM
     using GridVisualize
     using StaticArrays
     using Interpolations
-	using Test
- 	if isdefined(Main,:PlutoRunner)
-		using CairoMakie	
-   		default_plotter!(CairoMakie)
- 		   CairoMakie.activate!(type="svg")
-	end
+    using Test
+    if isdefined(Main,:PlutoRunner)
+        using CairoMakie	
+   	default_plotter!(CairoMakie)
+ 	CairoMakie.activate!(type="svg")
+    end
 end
 
 # ╔═╡ 1f5732a6-c15a-4df0-8927-f1e031643d26
 md"""
 # ORR.jl
+
+[Pluto source](https://raw.githubusercontent.com/j-fu/LiquidElectrolytes.jl/main/notebooks/ORR.jl)
+
 """
 
 # ╔═╡ b609ba76-e066-4192-a2fc-97b9e659fa12
@@ -293,17 +297,26 @@ plotcurr(result)
 function plot1d(result,celldata, vshow)
     vinter = linear_interpolation(result.voltages, [j[io2] for j in result.j_we])
     tsol=LiquidElectrolytes.voltages_solutions(result)
-    sol = tsol(vshow)
-    scale = 1.0 / (mol / dm^3)
-    title = "Φ_we=$(round(vshow,sigdigits=3)), I=$(round(vinter(vshow),sigdigits=3))"
-    vis = GridVisualizer(;
+vis = GridVisualizer(;
                          size = (600, 250),
                          yscale = :log,
                          limits = (1.0e-6, 100),
-                         legend = :rt,
-                         title)
-    c0 = solventconcentration(sol, celldata)
-    scalarplot!(vis, grid, sol[io2, :] * scale; color = :green, label = "O_2")
+                         legend = :rt)
+ 	
+	video="orr.gif"
+	vrange=range(extrema(result.voltages)...; length = 101)
+
+	record(vis.context[:figure],video) do io
+   	for vshow in vrange
+
+        sol = tsol(vshow)
+        c0 = solventconcentration(sol, celldata)
+        scale = 1.0 / (mol / dm^3)
+		ishow=vinter(vshow)
+        title = "Φ_we=$(round(vshow,digits=4)), I=$(round(vinter(vshow),digits=4))"
+		title = @sprintf("Φ_we=%+1.2f I=%+1.4f",vshow,ishow)
+
+    scalarplot!(vis, grid, sol[io2, :] * scale; color = :green, label = "O_2",title)
     scalarplot!(vis,
                 grid,
                 sol[iso4, :] * scale;
@@ -318,7 +331,11 @@ function plot1d(result,celldata, vshow)
                 label = "H+")
     scalarplot!(vis, grid, c0 * scale; color = :blue, clear = false,
                 label = "H2O")
-    reveal(vis)
+		reveal(vis)
+		recordframe!(io)  
+	end
+	end
+	LocalResource(video)	
 end
 
 # ╔═╡ 56eb52b1-9017-4485-83d6-b7ef15ad522f
@@ -500,6 +517,7 @@ LessUnitful = "f29f6376-6e90-4d80-80c9-fb8ec61203d5"
 LiquidElectrolytes = "5a7dfd8c-b3af-4c8d-a082-d3a774d75e72"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
@@ -523,9 +541,9 @@ VoronoiFVM = "~1.13.1"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.9.2"
+julia_version = "1.10.0-beta1"
 manifest_format = "2.0"
-project_hash = "cc8b23e0dcdd8edfacbda47f670e95a573813ec4"
+project_hash = "bd1709f7c5439c06ceaca81d40a1307b1ac81a97"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "f5c25e8a5b29b5e941b7408bc8cc79fea4d9ef9a"
@@ -1515,12 +1533,12 @@ version = "0.6.1"
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
-version = "0.6.3"
+version = "0.6.4"
 
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
-version = "7.84.0+0"
+version = "8.0.1+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "NetworkOptions", "Printf", "SHA"]
@@ -1741,7 +1759,7 @@ version = "0.3.4"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2022.10.11"
+version = "2023.1.10"
 
 [[deps.Multisets]]
 git-tree-sha1 = "8d852646862c96e226367ad10c8af56099b4047e"
@@ -1808,7 +1826,7 @@ version = "1.3.5+1"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.21+4"
+version = "0.3.23+0"
 
 [[deps.OpenEXR]]
 deps = ["Colors", "FileIO", "OpenEXR_jll"]
@@ -1924,7 +1942,7 @@ version = "0.42.2+0"
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.9.2"
+version = "1.10.0"
 
 [[deps.PkgVersion]]
 deps = ["Pkg"]
@@ -2042,7 +2060,7 @@ deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.Random]]
-deps = ["SHA", "Serialization"]
+deps = ["SHA"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [[deps.RandomExtensions]]
@@ -2297,6 +2315,7 @@ version = "1.1.1"
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+version = "1.10.0"
 
 [[deps.SparseDiffTools]]
 deps = ["ADTypes", "Adapt", "ArrayInterface", "Compat", "DataStructures", "FiniteDiff", "ForwardDiff", "Graphs", "LinearAlgebra", "Reexport", "Requires", "SciMLOperators", "Setfield", "SparseArrays", "StaticArrayInterface", "StaticArrays", "Tricks", "VertexSafeGraphs"]
@@ -2420,7 +2439,7 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.SuiteSparse_jll]]
 deps = ["Artifacts", "Libdl", "Pkg", "libblastrampoline_jll"]
 uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
-version = "5.10.1+6"
+version = "7.2.0+0"
 
 [[deps.SymbolicIndexingInterface]]
 deps = ["DocStringExtensions"]
@@ -2722,7 +2741,7 @@ version = "1.3.7+1"
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
-version = "1.48.0+0"
+version = "1.52.0+0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -2767,8 +2786,8 @@ version = "3.5.0+0"
 # ╠═763c393c-e0c8-447e-92e4-f2a5f0de2a30
 # ╟─22bc5f42-1a21-41a5-a059-b4ac44a29566
 # ╟─7891a252-8fdf-40df-a205-64ca4078a542
-# ╟─d7b10140-7db7-4be0-88c3-53ba1f203310
-# ╟─56eb52b1-9017-4485-83d6-b7ef15ad522f
+# ╠═d7b10140-7db7-4be0-88c3-53ba1f203310
+# ╠═56eb52b1-9017-4485-83d6-b7ef15ad522f
 # ╟─556c47ee-e172-483b-b922-a6422a0c405f
 # ╟─300ed474-76c5-47e9-b15a-8c4c93082268
 # ╟─f1857d7d-cec5-42a5-88d6-1d1f620f894c

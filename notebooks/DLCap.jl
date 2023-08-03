@@ -6,9 +6,9 @@ using InteractiveUtils
 
 # ╔═╡ 4fc7fda6-423b-48ea-8f86-6718a9050ee0
 begin
-    import Pkg as _Pkg
-    haskey(ENV,"PLUTO_PROJECT") && _Pkg.activate(ENV["PLUTO_PROJECT"])
-    using Revise
+    import Pkg as _Pkg # hide
+    haskey(ENV,"PLUTO_PROJECT") && _Pkg.activate(ENV["PLUTO_PROJECT"]) # hide
+    using Revise # hide
     using PlutoUI,HypertextLiteral,UUIDs, Markdown
     using LinearAlgebra
     using LessUnitful
@@ -30,6 +30,8 @@ md"""
 # DLCap.jl
 
 Comparison of equilibrium results for different flux and equilibrium implementations
+
+[Pluto source](https://raw.githubusercontent.com/j-fu/LiquidElectrolytes.jl/main/notebooks/DLCap.jl)
 """
 
 # ╔═╡ e04f6d4c-144c-4de2-83b4-11190ad0b07d
