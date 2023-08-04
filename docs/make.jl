@@ -1,7 +1,7 @@
 
 push!(LOAD_PATH,joinpath(@__DIR__,".."))
 push!(LOAD_PATH,joinpath(@__DIR__,"..","examples"))
-using Documenter, LiquidElectrolytes, LessUnitful,Literate, Revise, PlutoStaticHTML
+using Documenter, LiquidElectrolytes, LessUnitful,Literate, Revise, PlutoStaticHTML,Pkg
 
 
 const NOTEBOOK_DIR = joinpath(@__DIR__, "..", "notebooks")
