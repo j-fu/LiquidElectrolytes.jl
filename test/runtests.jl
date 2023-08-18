@@ -114,8 +114,8 @@ notebooks=[ "DLCap.jl",
             "ORR.jl",
             "Equilibrium1D.jl",
             "PoissonBoltzmann.jl",
-            "Example112_surface-kinetics.jl",
-            "Example102_BufferReactions.jl"]
+            "SurfaceKinetics_draft.jl",
+            "BufferReactions.jl"]
 
 function test_as_script(notebookname;verbose=false)
     nbb=basename(notebookname)

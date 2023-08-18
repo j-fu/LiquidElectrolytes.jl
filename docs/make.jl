@@ -5,7 +5,7 @@ using Documenter, LiquidElectrolytes, LessUnitful,Literate, Revise, PlutoStaticH
 
 
 const NOTEBOOK_DIR = joinpath(@__DIR__, "..", "notebooks")
-const NOTEBOOKS=["DLCap", "ORR"]
+const NOTEBOOKS=["DLCap", "ORR", "BufferReactions", "SurfaceKinetics_draft"]
 const NOTEBOOKS_JL=NOTEBOOKS.*".jl"
 const NOTEBOOKS_MD=NOTEBOOKS.*".md"
 
@@ -100,7 +100,7 @@ function mkdocs()
                  "Notebooks" => notebooks,
              ])
     if !isinteractive()
-        deploydocs(repo = "github.com/j-fu/LiquidElectrolytes.jl.git", devbranch = "main")
+       deploydocs(repo = "github.com/j-fu/LiquidElectrolytes.jl.git", devbranch = "main")
     end
 
 end
