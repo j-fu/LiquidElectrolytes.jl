@@ -5,6 +5,7 @@ version = "0.2.3"
 
 [deps]
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
+DynamicQuantities = "06fc5a27-2a28-4c7c-a15d-362465fb6821"
 ExtendableGrids = "cfc395e8-590f-11e8-1f13-43a2532b2fa8"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"

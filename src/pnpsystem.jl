@@ -200,7 +200,7 @@ function PNPSystem(grid; celldata = ElectrolyteData(), bcondition = default_bcon
     end
 
     sys = VoronoiFVM.System(grid;
-                            data = celldata,
+                            data = ustrip(celldata),
                             flux = pnpflux,
                             reaction = _pnpreaction,
                             storage = pnpstorage,

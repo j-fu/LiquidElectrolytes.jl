@@ -14,14 +14,14 @@ Methods called:
 - [`PNPSystem`](@@ref)
 =#
 module Example101_DLCap
-using LessUnitful
+using DynamicQuantities
 using VoronoiFVM,ExtendableGrids,GridVisualize
 using LiquidElectrolytes
 using Colors
 
 
-function main(;voltages=-2:0.01:2,           ## Voltages/V
-              molarities=[0.001,0.01,0.1,1], ## Molarities/M
+function main(;voltages=collect(-2:0.01:2)*u"V",           ## Voltages/V
+              molarities=[0.001,0.01,0.1,1]*u"mol/dm^3", ## Molarities/M
 	      nref=0,	                     ## Refinement level
 	      scheme=:μex,	             ## Flux calculation scheme
 	      κ=10.0,                        ## Solvation number
@@ -30,8 +30,13 @@ function main(;voltages=-2:0.01:2,           ## Voltages/V
               )
     
     ## Obtain unit factors from LessUnitful.jl
-    @local_unitfactors nm cm μF V M m
-    
+
+    nm=u"nm"|>ustrip
+    cm=u"cm"|>ustrip
+    m=u"m"|>ustrip
+    μF=u"μF"|>ustrip
+    V=u"V"|>ustrip
+    M=u"mol/dm^3"|>ustrip
     
     ## Create a standard 1D grid with grid spacing following geometric progression
     hmin=1.0e-1*nm*2.0^(-nref)
@@ -57,10 +62,12 @@ function main(;voltages=-2:0.01:2,           ## Voltages/V
 			     Γ_bulk=2;
 			     scheme,
                              κ=fill(κ,2),
-                             c_bulk=fill(0.01M,2))
-
+                             c_bulk=fill(0.01,2)*u"mol/dm^3")
+    
     ## Create Poisson-Nernst-Planck system
     cell=PNPSystem(grid;bcondition,celldata)
+
+    @show electrolytedata(cell)
     
     ## Visualization
     vis=GridVisualizer(;resolution=(500,300),
@@ -77,19 +84,20 @@ function main(;voltages=-2:0.01:2,           ## Voltages/V
         
 	result=dlcapsweep(cell;
                           δ=1.0e-6,
-                          voltages=collect(voltages)*V,
-                          molarity=molarities[imol]*M,
+                          voltages=collect(voltages),
+                          molarity=molarities[imol],
                           kwargs...)
 
 	cdl0=dlcap0(celldata)
-        
-	scalarplot!(vis,result.voltages/V,result.dlcaps/(μF/cm^2);
+	scalarplot!(vis,
+                    result.voltages .|> ustrip,
+                    result.dlcaps .|> uconvert(us"μF/cm^2") .|>ustrip;
                     color,
                     clear=false,
                     label="$(molarities[imol])M",
                     markershape=:none)
         
-	scalarplot!(vis,[0],[cdl0]/(μF/cm^2);
+	scalarplot!(vis,[0],[cdl0].|>uconvert(us"μF/cm^2")|>ustrip;
                     clear=false,
                     markershape=:circle,
                     label="")

@@ -3,7 +3,7 @@ $(TYPEDEF)
 
 Abstract super type for electrolytes
 """
-abstract type AbstractElectrolyteData end
+abstract type AbstractElectrolyteData{Q} end
 
 """
 $(TYPEDEF)
@@ -16,7 +16,7 @@ has keyword constructors like
 
 $(TYPEDFIELDS)
 """
-@kwdef mutable struct ElectrolyteData <: AbstractElectrolyteData
+@kwdef mutable struct ElectrolyteData{Q} <: AbstractElectrolyteData{Q}
     "Number of ionic species."
     nc::Int = 2
 
@@ -30,61 +30,61 @@ $(TYPEDFIELDS)
     ip::Int = nc + na + 2
 
     "Mobility coefficient"
-    D::Vector{Float64} = fill(2.0e-9 * ufac"m^2/s", nc)
+    D::Vector{Q} = fill(2.0e-9 * u"m^2/s", nc) |> Vector
 
     "Charge numbers of ions"
     z::Vector{Int} = [(-1)^(i - 1) for i = 1:nc]
 
     "Molar weight of solvent"
-    M0::Float64 = 18.0153 * ufac"g/mol"
+    M0::Q = 18.0153 * u"g/mol"
 
     "Molar weight of ions"
-    M::Vector{Float64} = fill(M0, nc)
+    M::Vector{Q} = fill(M0, nc)  |> Vector
 
     "Molar volume of solvent"
-    v0::Float64 = 1 / (55.4 * ufac"M")
+    v0::Q = 1 / (55.4 * u"mol/dm^3")
 
     "Molar volumes of ions"
-    v::Vector{Float64} = fill(v0, nc)
+    v::Vector{Q} = fill(v0, nc)  |> Vector
 
     "Solvation numbers"
-    κ::Vector{Float64} = fill(10.0, nc)
+    κ::Vector{Float64} = fill(10.0, nc)  |> Vector
 
     "Bulk ion concentrations"
-    c_bulk::Vector{Float64} = fill(0.1 * ufac"M", nc)
+    c_bulk::Vector{Q} = fill(0.1 * u"mol/L", nc)  |> Vector
 
     "Bulk voltage"
-    ϕ_bulk::Float64 = 0.0 * ufac"V"
+    ϕ_bulk::Q = 0.0 * u"V"
 
     "Bulk pressure"
-    p_bulk::Float64 = 0.0 * ufac"Pa"
+    p_bulk::Q = 0.0 * u"Pa"
 
     "Bulk boundary number"
     Γ_bulk::Int = 2
 
     "Working electrode voltage"
-    ϕ_we::Float64 = 0.0 * ufac"V"
+    ϕ_we::Q = 0.0 * u"V"
 
     "Working electrode  boundary number"
     Γ_we::Int = 1
 
     "Temperature"
-    T::Float64 = (273.15 + 25) * ufac"K"
+    T::Q = (273.15 + 25) * u"K"
 
     "Molar gas constant scaled with temperature"
-    RT::Float64 = ph"R" * T
+    RT::Q = Constants.R * T
 
     "Faraday constant"
-    F::Float64 = ph"N_A*e"
+    F::Q = Constants.N_A*Constants.e
 
     "Dielectric permittivity of solvent"
     ε::Float64 = 78.49
 
     "Dielectric permittivity of vacuum"
-    ε_0::Float64 = ph"ε_0"
+    ε_0::Q = Constants.eps_0
 
     "Pressure scaling factor"
-    pscale::Float64 = 1.0e9
+    pscale::Q = 1.0e9*u"Pa"
 
     "Local electroneutrality switch"
     eneutral::Bool = false
@@ -102,12 +102,16 @@ $(TYPEDFIELDS)
     Regularization parameter used in [`rlog`](@ref)
     """
     epsreg::Float64 = 1.0e-20
-
     """
     Species weights for norms in solver control.
     """
-    weights::Vector{Float64} = [v..., zeros(na)..., 1.0, 0.0]
+    weights::Vector{Float64} = [ones(nc)..., zeros(na)..., 1.0, 0.0]
 end
+ustrip(q::Number)=q
+ustrip(s::Symbol)=s
+ustrip(vq::AbstractVector)=[ustrip(q) for q in vq]
+ustrip(this::AbstractElectrolyteData{Q}) where {Q} = ElectrolyteData{Float64}([ustrip(getfield(this,name)) for name in fieldnames(ElectrolyteData)]...)
+
 
 function Base.show(io::IO, this::ElectrolyteData)
     showstruct(io, this)

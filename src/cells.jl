@@ -118,11 +118,15 @@ function dlcapsweep(sys;
                     data=electrolytedata(sys),
                     inival = nothing,
                     iϕ = data.iϕ,
-                    voltages = (-1:0.1:1) * ufac"V",
+                    voltages = (-1:0.1:1) * u"V",
                     δ = 1.0e-4,
-                    molarity = 0.1 * ufac"mol/dm^3",
+                    molarity = 0.1 * u"mol/dm^3",
                     store_solutions = false,
                     solver_kwargs...)
+    ensuresamedimension(voltages[1],u"V")
+    ensuresamedimension(molarity,u"mol/dm^3")
+    voltages=ustrip(voltages)
+    
     ranges = splitz(voltages)
     vplus = zeros(0)
     cdlplus = zeros(0)
@@ -133,7 +137,7 @@ function dlcapsweep(sys;
 
     data.ϕ_we = 0
 
-    data.c_bulk .= molarity
+    data.c_bulk .= ustrip(molarity)
 
     if isnothing(inival)
         inival=pnpunknowns(sys)
@@ -155,7 +159,7 @@ function dlcapsweep(sys;
         success = true
         for ϕ in range
             try
-                data.ϕ_we = ϕ
+                data.ϕ_we = ustrip(ϕ)
                 sol = solve(sys; inival = sol, control)
             catch e
                 println(e)
@@ -198,8 +202,8 @@ function dlcapsweep(sys;
         end
     end
 
-    volts = vcat(reverse(vminus), vplus)
-    cdls = vcat(reverse(cdlminus), cdlplus)
+    volts = vcat(reverse(vminus), vplus[2:end])*u"V"
+    cdls = vcat(reverse(cdlminus), cdlplus[2:end])*u"F/m^2"
     GC.gc()
     DLCapSweepResult(volts, cdls, store_solutions ? vcat(reverse(sminus), splus) : nothing)
 end
