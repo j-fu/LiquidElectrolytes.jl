@@ -14,8 +14,8 @@ begin if isdefined(Main, :PlutoRunner)
     using ExtendableGrids
     using LinearAlgebra
     using NLsolve
-    using LessUnitful
     using Unitful
+    using LessUnitful
     using LessUnitful.MoreUnitful
 end end
 

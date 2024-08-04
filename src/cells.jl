@@ -273,7 +273,7 @@ function ivsweep(sys;
                  store_solutions = false,
                  solver_kwargs...)
     ranges = splitz(voltages)
-    F = ph"N_A*e"
+    F = ph"N_A"*ph"e"
     data = sys.physics.data
 
     factory = VoronoiFVM.TestFunctionFactory(sys)
