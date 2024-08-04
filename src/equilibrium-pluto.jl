@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.27
+# v0.19.45
 
 using Markdown
 using InteractiveUtils
@@ -14,7 +14,9 @@ begin if isdefined(Main, :PlutoRunner)
     using ExtendableGrids
     using LinearAlgebra
     using NLsolve
+    using Unitful
     using LessUnitful
+    using LessUnitful.MoreUnitful
 end end
 
 # ╔═╡ ef660f6f-9de3-4896-a65e-13c60df5de1e

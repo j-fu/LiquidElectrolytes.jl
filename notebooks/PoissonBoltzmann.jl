@@ -58,7 +58,7 @@ See LessUnitful.jl  `ph` and `ufac` and Unitful.jl for `u`
 begin
 	const ε=78.49
 	const ε_0=ph"ε_0"
-	const F=ph"N_A*e"	
+	const F=ph"N_A"*ph"e"	
 	const K=ufac"K"
 	const nm=ufac"nm"
 	const dm=ufac"dm"

@@ -75,7 +75,7 @@ $(TYPEDFIELDS)
     RT::Float64 = ph"R" * T
 
     "Faraday constant"
-    F::Float64 = ph"N_A*e"
+    F::Float64 = ph"N_A"*ph"e"
 
     "Dielectric permittivity of solvent"
     ε::Float64 = 78.49
