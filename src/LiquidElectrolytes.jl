@@ -5,7 +5,7 @@ using ProgressLogging
 using StaticArrays
 using LinearAlgebra
 using NLsolve
-using LessUnitful
+using Unitful, LessUnitful
 using Base: @kwdef
 
 function __init__()
