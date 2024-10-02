@@ -135,7 +135,7 @@ md"""
 """
 
 # ╔═╡ 5befbcff-2e7c-48db-a327-27dbb6779d63
-function pb_flux(y,u,edge)
+function pb_flux(y,u,edge, data)
 	y[1]= ε*ε_0*(u[1,1]-u[1,2])
 end
 
@@ -152,7 +152,7 @@ function pbo_spacecharge(ϕ)
 end
 
 # ╔═╡ 95e49176-6c34-4c89-b156-5972080f82bb
-function pbo_reaction(y,u,node)
+function pbo_reaction(y,u,node, data)
 	y[1]=pbo_spacecharge(u[1])
 end
 
@@ -160,7 +160,7 @@ end
 const bcvals=[0.0,0.0]
 
 # ╔═╡ ddbb2a10-f22e-4474-b02d-e7b514852e58
-function pbbc(y,u,bnode)
+function pbbc(y,u,bnode, data)
 	boundary_dirichlet!(y,u,bnode,species=1,region=2,value=bcvals[2])
 	boundary_dirichlet!(y,u,bnode,species=1,region=1,value=bcvals[1])
 end
@@ -225,7 +225,7 @@ function pbi_spacecharge(ϕ)
 end
 
 # ╔═╡ 77e92a09-66e8-4502-8115-c892eef1f597
-function pbi_reaction(y,u,node)
+function pbi_reaction(y,u,node, data)
 	y[1]=pbi_spacecharge(u[1])
 end
 

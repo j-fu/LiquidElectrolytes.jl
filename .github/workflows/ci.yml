@@ -41,7 +41,7 @@ jobs:
           arch: ${{ matrix.arch }}
       - run: |
           julia --project=notebooks -e "using Pkg; Pkg.instantiate()"
-      - uses: actions/cache@v1
+      - uses: julia-actions/cache@v2
         env:
           PYTHON: ""
           cache-name: cache-artifacts
