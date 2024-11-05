@@ -5,7 +5,7 @@ docs/build
 docs/src/examples
 docs/src/notebooks
 notebooks/*.gif
-Manifest.toml
+Manifest*.toml
 *~
 .repl_history.jl
 .vscode
