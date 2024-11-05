@@ -49,4 +49,5 @@ export calc_φ, calc_p, calc_cmol, calc_c0mol, calc_cnum, calc_QBL, ysum, Cdl0
 export dlcapsweep_equi
 include("equilibrium-supplement.jl")
 
+include("RotatingElectrodes/RotatingElectrodes.jl")
 end # module
