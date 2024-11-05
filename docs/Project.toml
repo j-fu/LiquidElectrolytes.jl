@@ -13,6 +13,7 @@ Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 LessUnitful = "f29f6376-6e90-4d80-80c9-fb8ec61203d5"
 LiquidElectrolytes = "5a7dfd8c-b3af-4c8d-a082-d3a774d75e72"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
+NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 PlutoStaticHTML = "359b1769-a58e-495b-9770-312e911026ad"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
@@ -25,4 +26,4 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 VoronoiFVM = "82b139dc-5afc-11e9-35da-9b9bdfd336f3"
 
 [compat]
-ExampleJuggler = "2"
+ExampleJuggler = "2.1"

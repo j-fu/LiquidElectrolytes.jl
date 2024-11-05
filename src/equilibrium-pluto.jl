@@ -7,8 +7,7 @@ using InteractiveUtils
 # ╔═╡ 60941eaa-1aea-11eb-1277-97b991548781
 begin if isdefined(Main, :PlutoRunner)
     using Pkg
-    Pkg.activate(joinpath(@__DIR__, "..", "notebooks"))
-    push!(LOAD_PATH, joinpath(@__DIR__, ".."))
+    Pkg.activate(joinpath(@__DIR__, "..", "docs"))
     using PlutoUI
     using VoronoiFVM
     using ExtendableGrids

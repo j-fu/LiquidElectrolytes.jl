@@ -24,7 +24,7 @@ function make(;with_notebooks=true, with_examples=true)
         notebooks=[
             "DLCap.jl",
             "ORR.jl"] #, "BufferReactions.jl", "SurfaceKinetics_draft.jl"]
-        notebook_examples = @docplutonotebooks(notebookdir, notebooks, iframe=false)
+        notebook_examples = @docplutonotebooks(notebookdir, notebooks, iframe=false,  append_build_context=false)
         size_threshold_ignore = last.(notebook_examples)
         push!(pages,"Notebooks" => notebook_examples)
     end
