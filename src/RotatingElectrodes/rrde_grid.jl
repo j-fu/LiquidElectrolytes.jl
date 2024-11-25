@@ -12,14 +12,14 @@ const    b_ring=5   # ring electrode
 const    b_symm=6   # symmetry (r=0)
 const    b_max=b_symm
 
-function rrde_grid_zequi(geom,
-                         n_ref,
-                         nz=20;
-                         esmall=0.015,
-                         elarge=0.15,
-                         exlarge=0.4
-                         )
-    hz=1/nz
+function rrde_grid(geom;
+                   nref=0,
+                   hz=(0.05, 0.05),
+                   esmall=0.015,
+                   elarge=0.15,
+                   exlarge=0.4
+                   )
+
     allmaskmin=[0.0,0.0,0.0]
     allmaskmax=[geom.r_4,geom.h_cyl,2.0*3.15]
 
@@ -38,7 +38,7 @@ function rrde_grid_zequi(geom,
     outmaskmin=[geom.r_4,0,0.0]
     outmaskmax=[geom.r_4,geom.h_cyl,2*3.15]
 
-    D=1.0/2.0^(n_ref)
+    D=1.0/2.0^(nref)
     d_ring=(geom.r_3-geom.r_2)
     d_gap=(geom.r_2-geom.r_1)
     d_shr=(geom.r_4-geom.r_3)
@@ -57,11 +57,12 @@ function rrde_grid_zequi(geom,
         rcoord=glue(rcoord,linspace(  geom.r_4-geom.w_gap,     geom.r_4,                  2))
     end
     rSize=length(rcoord)
+    zcoord=geomspace(0.0,geom.h_cyl, D*hz[1]*geom.h_cyl,D*hz[2]*geom.h_cyl)
 
     println("Points inbetween gap and ring: ", endPawel-startPawel)
     println("Points in r-direction: $rSize, i.e. Boxes in r-Direction: ", rSize-1)
-    println("Points in z-direction: ", nz+1, ", i.e. Boxes in z-Direction: $nz")
-    zcoord=collect(0.0:hz*geom.h_cyl:geom.h_cyl)
+    println("Points in z-direction: ", length(zcoord))
+
 
     grid = VoronoiFVM.Grid(rcoord,zcoord)
     bfacemask!(grid, allmaskmin,allmaskmax,b_inert,tol=1.0e-10, allow_new=false)
@@ -79,11 +80,7 @@ end
 function rescale_z!(grid, delta)
     coord=coordinates(grid)
     maxz=coord[2,end]
-    #println("zmax before=$maxz")
-
     new_zscale=delta*2/maxz
-#     println("z-reduction factor=$new_zscale")
-
     for i=1:size(coord,2)
         coord[2,i]=coord[2,i]*new_zscale
     end
@@ -92,7 +89,7 @@ end
 
 
 
-function rrde_grid2(geom,n_ref)
+function rrde_grid_zgeom(geom,n_ref)
     allmaskmin=[0.0,0.0,0.0]
     allmaskmax=[geom.r_4,geom.h_cyl,2.0*3.15]
     

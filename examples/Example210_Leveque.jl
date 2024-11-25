@@ -7,6 +7,7 @@ using DelimitedFiles
 using LiquidElectrolytes.RotatingElectrodes
 using LiquidElectrolytes.RotatingElectrodes.UnitsConstants
 using GridVisualize
+using Test
 
 function main(;
               nref=0,
@@ -15,6 +16,7 @@ function main(;
               plotsolution=false,
               microscale=false,
               verbose=true,
+              plotpesh=true,
               xyscale=1.0,
               Pe=1.0,
               PeMax=1.0e15
@@ -151,38 +153,33 @@ function main(;
         inival.=solution
     end
 
-    if ispyplot(Plotter)
+    if plotpesh
         PyPlot=Plotter
         pdelib_data=joinpath(@__DIR__,"..","assets","pdelib-macro.dat")
-        pesh="leveque-macro.pdf"
+        pesh="leveque-macro.png"
         if microscale
             pdelib_data=joinpath(@__DIR__,"..","assets","pdelib-micro.dat")
-            pesh="leveque-micro.pdf"
+            pesh="leveque-micro.png"
         end
         
         refdata=transpose(readdlm(pdelib_data, comments=true, comment_char='#'))
         function leveque(x)
             return 0.8075491*(x^(1.0/3.0))
         end
-        
-        PyPlot.clf() 
-        PyPlot.loglog(Pes,leveque.(Pes),"g-",label="Leveque asymptotics")
-        PyPlot.loglog(Pes,Shs,"ro-",label="RRDE-Julia",markersize=4)
-        PyPlot.loglog(refdata[1,:],refdata[2,:], "b-",label="pdelib")
-        PyPlot.ylabel("Sh")
-        PyPlot.xlabel("Pe")
-        PyPlot.grid()
-        PyPlot.legend(loc="upper left")
-        PyPlot.tight_layout()
-        PyPlot.savefig(pesh)
-        PyPlot.pause(1.0e-10)
 
+        vis=GridVisualizer(;Plotter, xscale=:log, yscale=:log, xlabel="Pe", ylabel="Sh", legend=:lt)
+        scalarplot!(vis, Pes,leveque.(Pes), color=:darkgreen,label="Leveque asymptotics")
+        scalarplot!(vis, Pes,Shs, color=:red, markevery=1, markersize=8,label="RRDE-Julia", clear=false, markershape=:circle)
+        scalarplot!(vis, refdata[1,:],refdata[2,:], color=:darkblue,label="pdelib", clear=false, markershape=:none)
+        reveal(vis)
+        save(pesh,vis)
     end
     return sum(Shs)
 end
 
-function test()
-    main(microscale=false, verbose=false)≈2.1918830162624043e8 && main(microscale=true, verbose=false)≈716700.6425206012
+function runtests()
+    @test main(microscale=false, verbose=false)≈2.1918830162624043e8
+    @test main(microscale=true, verbose=false)≈716700.6425206012
 end
 
 function create_plots()

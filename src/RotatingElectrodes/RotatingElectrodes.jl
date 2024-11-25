@@ -20,7 +20,7 @@ include("discspec.jl")
 export DiscSpec
 
 include("rrde_grid.jl")
-export rrde_grid_zequi,rescale_z!
+export rrde_grid,rescale_z!
 export b_inert,b_in,b_out,b_disk,b_ring,b_symm,b_max
 
 

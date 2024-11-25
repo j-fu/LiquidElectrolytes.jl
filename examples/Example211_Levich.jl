@@ -32,15 +32,22 @@ function main(;
               minfreq=1.0,
               maxfreq=256, 
               Plotter=nothing,
-              verbose=true
+              verbose=true,
+              adjust_grid=true
               )
 
     
     geom=DiscSpec(disktype)
-    grid=rrde_grid_zequi(geom,nref,88)
+    if adjust_grid
+        hz=(0.05,0.05)
+    else
+        hz=(0.005,0.1)
+    end
+    grid=rrde_grid(geom;nref, hz)
     grid_points=num_nodes(grid)
+
     if plot_grid
-        gridplot(grid,Plotter=Plotter,edges=false)
+        gridplot(grid,Plotter=Plotter,edges=false, linewidth=0.1)
         return
     end
     
@@ -90,20 +97,19 @@ function main(;
         omega=freq*2.0*π
         @printf("---- rotation frequency: %.2f omega: %.2e  -------\n",freq,omega)
 
-
-        #!!     adjustment of the grid relative to rotation frequency
-        delta=1.61*(nu)^(1/6)*(Diff)^(1/3)/sqrt(omega)
-
-        rescale_z!(grid,delta)
+        if adjust_grid
+            #!!     adjustment of the grid relative to rotation frequency
+            delta=1.61*(nu)^(1/6)*(Diff)^(1/3)/sqrt(omega)
+            rescale_z!(grid,delta)
+            update_grid!(rdcell)
+        end
         xmin=minimum(grid[Coordinates][1,:])
         xmax=maximum(grid[Coordinates][1,:])
         zmin=minimum(grid[Coordinates][2,:])
         zmax=maximum(grid[Coordinates][2,:])
         aspect=0.5*(xmax-xmin)/(zmax-zmin)
-        update_grid!(rdcell)
-
+        
         KarmanData!(karman_data,omega,nu)
-        f0(r,z)=(0,0)
         fkarman(r,z)=fKarman(karman_data,r,z)
         RotatingElectrodes.update!(rrde_data,grid,fkarman)
 
@@ -227,8 +233,8 @@ function main(;
         println("")
         
     end
-    @info res_idisk_sim
-   if ispyplot(Plotter)
+
+    if ispyplot(Plotter)
         PyPlot = Plotter
         PyPlot.figure(1)
         PyPlot.clf()
@@ -263,6 +269,7 @@ function main(;
         PyPlot.clf()
         PyPlot.grid(true,color="gray", linestyle="dotted")
         PyPlot.title("Collection Efficiency ($(disktype))")
+        PyPlot.ylim(0.2,0.3)
         PyPlot.xlabel("sqrt(f/Hz)")
         PyPlot.ylabel("I/mA")
         frame=PyPlot.gca()
