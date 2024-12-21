@@ -5,6 +5,7 @@ docs/build
 docs/src/examples
 docs/src/notebooks
 notebooks/*.gif
+notebooks/*.png
 Manifest*.toml
 *~
 .repl_history.jl
@@ -14,3 +15,5 @@ Manifest*.toml
 *.log
 bvcompare.pdf
 jfsettings.tex
+*.pdf
+*.png
