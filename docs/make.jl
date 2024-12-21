@@ -14,9 +14,9 @@ function make(;with_notebooks=true, with_examples=true)
         "Internal API"=>"internal.md",
     ]
     
+    cleanexamples()
     exampledir = joinpath(@__DIR__,"..","examples")
     notebookdir = joinpath(@__DIR__, "..", "notebooks")
-    cleanexamples()
 
     
     size_threshold_ignore=[]
@@ -54,6 +54,7 @@ function make(;with_notebooks=true, with_examples=true)
              pages
              )
     
+    cleanexamples()
     if !isinteractive()
        deploydocs(repo = "github.com/j-fu/LiquidElectrolytes.jl.git", devbranch = "main")
     end
