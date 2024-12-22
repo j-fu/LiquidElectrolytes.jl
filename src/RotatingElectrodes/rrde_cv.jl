@@ -226,5 +226,6 @@ end
 
 
 
-plot_cvresults(cvresults;file="cv.png",clear=true)=pyplot_cv(cvresults.frequencies,cvresults.vdisks,cvresults.idisks,cvresults.irings,file=file,clear=clear)
+plot_cvresults(cvresults;Plotter=nothing, file="cv.png",clear=true)=pyplot_cv(cvresults.frequencies,cvresults.vdisks,cvresults.idisks,cvresults.irings;
+                                                                              Plotter, file=file,clear=clear)
 

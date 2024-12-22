@@ -5,10 +5,15 @@
     For each frequency, plot  disc curret and ring current vs. disk voltage.
 """
 function pyplot_cv(freqs,vdisks,idisks,irings;
+                   Plotter=nothing,
                    file="cv.pdf",
                    clear=true,
                    size_inches=(7,9)
                    )
+    if !(typeof(Plotter) == Module) && isdefined(Plotter, :Gcf)
+        return
+    end
+    PyPlot=Plotter
     fig=PyPlot.figure(1)
     if clear
         PyPlot.clf()

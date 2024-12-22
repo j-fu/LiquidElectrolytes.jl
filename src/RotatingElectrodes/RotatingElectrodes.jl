@@ -5,7 +5,6 @@ using Printf
 using ExtendableGrids
 using VoronoiFVM
 using ProgressMeter
-using PyPlot
 using DocStringExtensions
 
 include("units.jl")
