@@ -13,6 +13,7 @@ mutable struct DiscSpec
 end
 
 function DiscSpec(self,disktype)
+    @local_unitfactors μm mm cm
     println("Loading specs for RRDE type $(disktype)")
     if disktype == "E6R1"
         # Pine E6 Series ChangeDisk RRDE Tips

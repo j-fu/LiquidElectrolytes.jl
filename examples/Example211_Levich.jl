@@ -5,7 +5,8 @@ using Printf
 using LinearAlgebra
 using GridVisualize
 using LiquidElectrolytes.RotatingElectrodes
-using LiquidElectrolytes.RotatingElectrodes.UnitsConstants
+using LessUnitful
+using Test
 
 """
     main(;
@@ -35,7 +36,8 @@ function main(;
               verbose=true,
               adjust_grid=true
               )
-
+    @local_unitfactors nm μm mm cm m s mA
+    FaradayConstant=ph"AvogadroConstant"*ph"ElementaryCharge"
     
     geom=DiscSpec(disktype)
     if adjust_grid
@@ -283,11 +285,9 @@ function main(;
     return sum(res_idisk_sim)+sum(res_iring_sim)+sum(res_coleff_sim)
 
 end
-function test()
+function runtests()
     result=main(maxfreq=4.0,verbose=false)
-    @show result
-    result≈0.5176440119887701
-    #result≈0.5163386427344875
+    @test result ≈ 0.5180855490694214 
 end
 
 

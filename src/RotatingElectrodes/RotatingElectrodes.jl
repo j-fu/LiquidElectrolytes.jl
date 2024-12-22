@@ -6,10 +6,7 @@ using ExtendableGrids
 using VoronoiFVM
 using ProgressMeter
 using DocStringExtensions
-
-include("units.jl")
-using .UnitsConstants
-
+using LessUnitful
 
 
 include("asymptotics.jl")
