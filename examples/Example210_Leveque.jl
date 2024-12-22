@@ -4,9 +4,8 @@ using VoronoiFVM
 using Printf
 using ExtendableGrids
 using DelimitedFiles
-using LiquidElectrolytes.RotatingElectrodes
-using LiquidElectrolytes.RotatingElectrodes.UnitsConstants
 using GridVisualize
+using LessUnitful
 using Test
 
 function main(;
@@ -16,12 +15,13 @@ function main(;
               plotsolution=false,
               microscale=false,
               verbose=true,
-              plotpesh=true,
               xyscale=1.0,
               Pe=1.0,
-              PeMax=1.0e15
+              PeMax=1.0e15,
+              dir="./"
               )
-
+    @local_unitfactors nm μm mm m s
+    
     binert=1
     bin=3
     bout=2
@@ -153,20 +153,19 @@ function main(;
         inival.=solution
     end
 
-    if plotpesh
-        PyPlot=Plotter
+    if !isnothing(Plotter)
         pdelib_data=joinpath(@__DIR__,"..","assets","pdelib-macro.dat")
-        pesh="leveque-macro.png"
+        pesh=joinpath(dir,"leveque-macro.png")
         if microscale
             pdelib_data=joinpath(@__DIR__,"..","assets","pdelib-micro.dat")
-            pesh="leveque-micro.png"
+            pesh=joinpath(dir,"leveque-micro.png")
         end
         
         refdata=transpose(readdlm(pdelib_data, comments=true, comment_char='#'))
         function leveque(x)
             return 0.8075491*(x^(1.0/3.0))
         end
-
+        
         vis=GridVisualizer(;Plotter, xscale=:log, yscale=:log, xlabel="Pe", ylabel="Sh", legend=:lt)
         scalarplot!(vis, Pes,leveque.(Pes), color=:darkgreen,label="Leveque asymptotics")
         scalarplot!(vis, Pes,Shs, color=:red, markevery=1, markersize=8,label="RRDE-Julia", clear=false, markershape=:circle)
@@ -182,9 +181,13 @@ function runtests()
     @test main(microscale=true, verbose=false)≈716700.6425206012
 end
 
-function create_plots()
-    main(microscale=false, plotpesh=true)
-    main(microscale=true, plotpesh=true)
-end
+function generateplots(dir; Plotter = nothing, kwargs...)    #hide
+    if ismakie(Plotter)                                      #hide
+        Plotter.activate!(; type = "png", visible = false)   #hide
+        main(;Plotter, microscale=false,dir)          #hide
+        main(;Plotter, microscale=true,dir)           #hide
+    end                                                      #hide
+    nothing                                                  #hide
+end                                                          #hide
 
 end
