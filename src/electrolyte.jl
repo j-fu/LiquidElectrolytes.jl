@@ -303,7 +303,7 @@ Reaction rate expression
 
     rrate(R0,β,A)=R0*(exp(-β*A) - exp((1-β)*A))
 """
-rrate(R0, β, A) = R0 * (rexp(-β * A) - rexp((1 - β) * A))
+rrate(R0, β, A) = R0 * (exp(-β * A) - exp((1 - β) * A))
 
 """
     wnorm(u,w,p)
