@@ -286,7 +286,7 @@ end
 Regularized exponential. Linear continuation for `x>trunc`,  
 returns 1/rexp(-x) for `x<-trunc`.
 """
-function rexp(x; trunc = 20.0)
+function rexp(x; trunc = 500.0)
     if x < -trunc
         1.0 / rexp(-x; trunc)
     elseif x <= trunc
