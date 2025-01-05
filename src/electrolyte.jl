@@ -230,10 +230,10 @@ end
 Calculate vector of solvent concentrations from solution array.
 """
 function solventconcentration(U::Array, electrolyte)
-    c0 = similar(U[1, :])
+    @views c0 = similar(U[1, :])
     c0 .= 1.0 / electrolyte.v0
     for ic = 1:(electrolyte.nc)
-        c0 -= U[ic, :] .* vrel(ic, electrolyte)
+        @views  c0 .-= U[ic, :] .* vrel(ic, electrolyte)
     end
     c0
 end
