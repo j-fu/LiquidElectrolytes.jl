@@ -1,3 +1,4 @@
+
 function kernel_stokes_cartesian!(result, u_ops, qpinfo)
     μ = qpinfo.params[1]
     ∇u, p = view(u_ops, 1:4), view(u_ops, 5)
@@ -223,4 +224,3 @@ function multiply_r!(result, input, qpinfo)
     result .= input * x[1]
     return nothing
 end
-

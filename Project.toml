@@ -5,6 +5,7 @@ version = "0.2.4"
 
 [deps]
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
+ExtendableFEM = "a722555e-65e0-4074-a036-ca7ce79a4aed"
 ExtendableGrids = "cfc395e8-590f-11e8-1f13-43a2532b2fa8"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
@@ -14,6 +15,7 @@ Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
 PhysicalConstants = "5ad8b20f-a522-5ce9-bfc9-ddf1d5bda6ab"
 ProgressLogging = "33c8b6b6-d38a-422a-b730-caa89a2f386c"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
@@ -21,6 +23,7 @@ VoronoiFVM = "82b139dc-5afc-11e9-35da-9b9bdfd336f3"
 
 [compat]
 DocStringExtensions = "0.9.3"
+ExtendableFEM = "0.8"
 ExtendableGrids = "0.9.17,1"
 ForwardDiff = "0.10.35,0.11"
 LessUnitful = "1.1"
