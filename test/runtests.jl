@@ -9,8 +9,6 @@ using ExampleJuggler
 ExampleJuggler.verbose!(true)
 
 
-
-
 @phconstants N_A
 @unitfactors dm nm mol
 
@@ -114,13 +112,16 @@ end
 end
 
 
-notebooks=[ "DLCap.jl",
-            "ORR.jl",
-            "Equilibrium1D.jl",
-            "PoissonBoltzmann.jl",
-            "SurfaceKinetics_draft.jl",
-            "BufferReactions.jl"
-            ]
+notebooks=[
+    "DLCap.jl",
+    "ORR.jl",
+    "Equilibrium1D.jl",
+    "PoissonBoltzmann.jl",
+    "SurfaceKinetics_draft.jl",
+    "BufferReactions.jl",
+    "ElectroOsmosis.jl",
+]
+
 
 @testset "Notebooks" begin
     @testscripts(joinpath(@__DIR__, "..", "notebooks"), notebooks)

@@ -104,7 +104,7 @@ Flux expression based on  activities, see Fuhrmann, CPC 2015
 function aflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
     (; D, z, F, RT) = electrolyte
     Dx=D[ic] * (1 / γk + 1 / γl) / 2
-    bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT - evelo/Dx)
+    bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT - evelo/D[ic])
     Dx * (bm * ck * γk - bp * cl * γl)
 end
 

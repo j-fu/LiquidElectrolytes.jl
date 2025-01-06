@@ -10,7 +10,8 @@ function flowsolver end
 function extended_unknowns end
 function voltage! end
 function charge! end
-function fvm_pressure end
+function node_pressure end
+function node_velocity end
 function fvm_velocities end
 function flowplot end
 function velocity_unknown end
@@ -39,7 +40,9 @@ function PNPStokesSolver(;
     PNPStokesSolver(flowslv,pnpslv)
 end
 
-function SciMLBase.solve(pnpssolver::PNPStokesSolver; niter=10, kwargs...)
+function SciMLBase.solve(pnpssolver::PNPStokesSolver; damp0=0.1,
+                         embed=(data,λ)->nothing,
+                         nembed=0, niter=20, damp_initial=1, kwargs...)
     (;flowsolver, pnpsolver)=pnpssolver
     pnpstate=VoronoiFVM.SystemState(pnpsolver)
     pnpdata=pnpsolver.physics.data
@@ -50,18 +53,30 @@ function SciMLBase.solve(pnpssolver::PNPStokesSolver; niter=10, kwargs...)
     pnpsol=unknowns(pnpsolver, inival=0)
     t_pnp=0.0
     t_stokes=0.0
+    t_project=0.0
     
     q=zeros(num_nodes(pnpgrid))
     for iter=1:niter
-        t_pnp += @elapsed pnpsol=solve!(pnpstate; inival=pnpsol,  data=pnpdata, kwargs...)
+        if iter==1
+            inidamp=damp0
+        else
+            inidamp=damp_initial
+        end
+        if iter<nembed
+            λ=iter/nembed
+            embed(pnpdata,λ)
+        else
+            embed(pnpdata,1.0)
+        end
+        t_pnp += @elapsed pnpsol=solve!(pnpstate; inival=pnpsol,  damp_initial=inidamp, data=pnpdata, kwargs...)
         @views voltage!(flowsol, flowsolver,view(pnpsol,iϕ,:))
         charge!(flowsol,flowsolver,charge!(q,pnpsol, pnpdata))
         t_stokes +=@elapsed solve!(flowsol, flowsolver; verbosity=-1)
-        evelo,bfvelo=fvm_velocities(flowsol, flowsolver; reconst =false)
+        t_project+= @elapsed evelo,bfvelo=fvm_velocities(flowsol, flowsolver; reconst =false)
         pnpdata.edgevelocity.=evelo
-        pnpdata.pressure.= fvm_pressure(flowsol, flowsolver)
+        pnpdata.pressure.= node_pressure(flowsol, flowsolver)
 #        pnpdata.bfvelo.=bfvelo
     end
-    @info "t_pnp=$(myround(t_pnp)), t_stokes=$(myround(t_stokes))"
+    @info "t_pnp=$(myround(t_pnp)), t_stokes=$(myround(t_stokes)) t_project=$(myround(t_project))"
     pnpsol, flowsol
 end

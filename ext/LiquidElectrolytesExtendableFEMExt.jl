@@ -68,7 +68,7 @@ function LiquidElectrolytes.flowsolver(grid::ExtendableGrid; μ = 1, velospace =
     problem = ProblemDescription("incompressible Stokes problem")
     assign_unknown!(problem, u)
     assign_unknown!(problem, p)
-    
+
     stokes_op = BilinearOperator(
         kernel_stokes_cartesian!,
         [grad(u), id(p)], [grad(u), id(p)],
@@ -184,57 +184,12 @@ function LiquidElectrolytes.fvm_velocities(
     return evelo, bfvelo
 end
 
-LiquidElectrolytes.fvm_pressure(flowsol, flowsolver) = view(nodevalues(flowsol[flowsolver.p]), 1,:)
+LiquidElectrolytes.node_pressure(flowsol, flowsolver) = view(nodevalues(flowsol[flowsolver.p]), 1,:)
+LiquidElectrolytes.node_velocity(flowsol, flowsolver) = nodevalues(flowsol[flowsolver.u])
 
 function LiquidElectrolytes.flowplot(sol::FEVector, fs::FlowSolver; kwargs...)
     return ExtendableFEM.plot([id(fs.u), id(fs.p)], sol; kwargs...) |> reveal
 end
 
-
-
-#############################################
-# Deprecated
-
-function stokes_operator(u, p; cyl = false, μ = 1)
-    if cyl
-        return BilinearOperator(
-            kernel_stokes_cylindrical!,
-            [id(u), grad(u), id(p)],
-            bonus_quadorder = 2, store = false,
-            params = [μ]
-        )
-    else
-        return BilinearOperator(
-            kernel_stokes_cartesian!,
-            [grad(u), id(p)],
-            bonus_quadorder = 2, store = false,
-            params = [μ]
-        )
-    end
-end
-
-function stokes_problem(u, p; cyl = false, μ = 1)
-    op = stokes_operator(u, p; cyl, μ)
-    problem = ProblemDescription("incompressible Stokes problem")
-    assign_unknown!(problem, u)
-    assign_unknown!(problem, p)
-    assign_operator!(problem, op)
-    return problem
-end
-
-function stokes_space(grid)
-    u = Unknown("u"; name = "velocity")
-    p = Unknown("p"; name = "pressure")
-    FE_u = H1BR{2}
-    FE_p = L2P0{1}
-    return u, p, [FESpace{FE_u}(grid), FESpace{FE_p}(grid; broken = true)]
-end
-
-
-function multiply_r!(result, input, qpinfo)
-    x = qpinfo.x
-    result .= input * x[1]
-    return nothing
-end
 
 end
