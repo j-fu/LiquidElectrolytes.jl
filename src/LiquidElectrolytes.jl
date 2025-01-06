@@ -6,9 +6,7 @@ using StaticArrays
 using LinearAlgebra
 using NLsolve
 using Unitful, LessUnitful
-
-using SciMLBase
-using ExtendableFEM
+import SciMLBase
 
 using Base: @kwdef
 
@@ -53,8 +51,6 @@ export calc_φ, calc_p, calc_cmol, calc_c0mol, calc_cnum, calc_QBL, ysum, Cdl0
 export dlcapsweep_equi
 include("equilibrium-supplement.jl")
 
-
-include("flowsolver.jl")
 include("pnpstokes.jl")
 
 end # module

@@ -112,7 +112,15 @@ $(TYPEDFIELDS)
     Edge velocity projection
     """
     edgevelocity::Union{Float64, Vector{Float64}} = 0.0
+
+    """
+    Pressure (if calculated with flow solver)
+    """
+    pressure::Vector{Float64}=zeros(0)
+    
 end
+
+solvepressure(electrolyte)= length(electrolyte.pressure)==0
 
 function edgevelocity(electrolyte,i)
     evelo(v::Number,i)=v
