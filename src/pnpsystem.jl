@@ -57,11 +57,7 @@ default_reaction(f, u, node, electrolyte) = nothing
 Calculate differences of excess chemical potentials from activity coefficients
 """
 @inline function dμex(γk, γl, electrolyte)
-    if γk > γl
-        rlog(γk / γl, electrolyte) * (electrolyte.RT)
-    else
-        -rlog(γl / γk, electrolyte) * (electrolyte.RT)
-    end
+    return (rlog(γk, electrolyte)-rlog(γl, electrolyte))* (electrolyte.RT)
 end
 
 """

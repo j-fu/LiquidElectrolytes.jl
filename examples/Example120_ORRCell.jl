@@ -26,7 +26,6 @@ using Colors
 using StaticArrays
 using LessUnitful
 
-
 function main(;
               voltages = -1:0.1:1,
               compare = false,
@@ -74,7 +73,7 @@ function main(;
     κ = [κ, κ, 0]
 
     
-    function halfcellbc(f, u, bnode, data)
+    function halfcellbc(f, u::VoronoiFVM.AbstractNodeData{Tu}, bnode, data) where Tu
         bulkbcondition(f, u, bnode, data)
         (; iϕ, eneutral, ϕ_we, Γ_we, RT) = data
 
@@ -90,7 +89,7 @@ function main(;
                     value = data.ϕ_we,
                 )
             end
-            μh2o, μ = chemical_potentials!(MVector{4,eltype(u)}(undef), u, data)
+            @time μh2o, μ = chemical_potentials!(MVector{3,Tu}(undef), u, data)
             A =
                 (4 * μ[ihplus] + μ[io2] - 2μh2o + Δg + 4*eneutral * F * (u[iϕ] - data.ϕ_we)) /
                 (RT)

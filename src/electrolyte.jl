@@ -230,10 +230,10 @@ end
 Calculate vector of solvent concentrations from solution array.
 """
 function solventconcentration(U::Array, electrolyte)
-    c0 = similar(U[1, :])
+    @views c0 = similar(U[1, :])
     c0 .= 1.0 / electrolyte.v0
     for ic = 1:(electrolyte.nc)
-        c0 -= U[ic, :] .* vrel(ic, electrolyte)
+        @views  c0 .-= U[ic, :] .* vrel(ic, electrolyte)
     end
     c0
 end
@@ -286,7 +286,7 @@ end
 Regularized exponential. Linear continuation for `x>trunc`,  
 returns 1/rexp(-x) for `x<-trunc`.
 """
-function rexp(x; trunc = 20.0)
+function rexp(x; trunc = 500.0)
     if x < -trunc
         1.0 / rexp(-x; trunc)
     elseif x <= trunc
@@ -303,7 +303,7 @@ Reaction rate expression
 
     rrate(R0,β,A)=R0*(exp(-β*A) - exp((1-β)*A))
 """
-rrate(R0, β, A) = R0 * (rexp(-β * A) - rexp((1 - β) * A))
+rrate(R0, β, A) = R0 * (exp(-β * A) - exp((1 - β) * A))
 
 """
     wnorm(u,w,p)

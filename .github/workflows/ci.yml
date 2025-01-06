@@ -40,7 +40,7 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - run: |
-          julia --project=notebooks -e "using Pkg; Pkg.instantiate()"
+          julia --project=docs -e "using Pkg; Pkg.instantiate()"
       - uses: julia-actions/cache@v2
         env:
           PYTHON: ""
@@ -66,8 +66,6 @@ jobs:
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1'
-      - run: |
-          julia --project=docs docs/addnursery.jl
       - run: |
           julia --project=docs -e '
             using Pkg
