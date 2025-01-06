@@ -16,13 +16,13 @@ begin
     using LinearAlgebra
     using PlutoUI
     import CairoMakie
+	using CairoMakie: lines!
     using ExtendableFEM
     using VoronoiFVM
     using LessUnitful
     using Test
 
     if isdefined(Main,:PlutoRunner)
-        using PyPlot
         import CairoMakie	
   	 	default_plotter!(CairoMakie)
  		CairoMakie.activate!(type="png")
@@ -243,51 +243,70 @@ function midvelo(flowsol,pnpsol, solver)
     return c_p, c_m, ϕ, p, u
 end
 
-# ╔═╡ 7ec54237-a222-44e6-8edc-ab71d840ee4a
-begin
-	gcu=nothing
-	dglu=nothing
-    if isdefined(Main,:PlutoRunner)
+# ╔═╡ 98a70371-71b0-4416-8395-6a03eb6873c0
+if isdefined(Main, :PlutoRunner)
+	fig=CairoMakie.Figure(size=(650,300))
+	c_p, c_m, ϕ, p, u = midvelo(gcflowsol,gcpnpsol, gcsolver)
+	ax1=CairoMakie.Axis(fig[1,1],
+		yaxisposition=:left,
+		xticks=[0,1,2,3,4,5],
+		ylabel="u/(m/s)",
+		xlabel="x/nm",
+		title="Zero ion size"
+		)
+	CairoMakie.ylims!(ax1,0,0.8)
+	CairoMakie.xlims!(ax1,0,5)
+	ax2=CairoMakie.Axis(fig[1,1],
+		yaxisposition=:right,
+		ylabel="c/(mol/L); ϕ/(10mV)"
+		)
+	CairoMakie.ylims!(ax2,0,10)
+	CairoMakie.xlims!(ax2,0,5)
 
-        fig1, (ax1, ax3) = PyPlot.subplots(1,2)
-        fig1.set_size_inches(6.5,3)
-		c_p, c_m, ϕ, p, u = midvelo(gcflowsol,gcpnpsol, gcsolver)
-        ax2 = ax1.twinx()
-		ax1.set_title("zero ion size")
-        ax1.set_ylim(0, 0.8)
-        ax1.set_ylabel("u/(m/s)")
-        ax1.set_xlabel("x/nm")
-        ax1.set_xlim(0, 5)
-        ax2.set_ylim(0, 10)
-        ax2.set_ylabel("c/(mol/L); ϕ/(10mV)")
-        ax2.plot(pnpX / nm, c_p / (mol / dm^3), "red", label = "c^+", linewidth = 1)
-        ax2.plot(pnpX / nm, c_m / (mol / dm^3), "blue", label = "c^-", linewidth = 1)
-        ax2.plot(pnpX / nm, ϕ / (10mV), "black", label = "ϕ/(10mV)", linewidth = 1)
-        ax1.plot(pnpX / nm, u, "green", label = "u_z", linewidth = 1)
-		gcu=u
-			
+	data=[
+lines!(ax1, pnpX / nm, u, color=:green,linewidth = 2)
+ lines!(ax2, pnpX / nm, c_p / (mol / dm^3), color=:red, linewidth = 2)
+ lines!(ax2, pnpX / nm, c_m / (mol / dm^3), color=:blue, linewidth = 2)
+lines!(ax2, pnpX / nm, ϕ / (10mV), color=:black, linewidth = 2)
+	]
+CairoMakie.axislegend(ax1, data, ["u_z","c^+","c^-","Φ"], position=:ct, backgroundcolor = :transparent)
+
+	
 		c_p, c_m, ϕ, p, u = midvelo(dglflowsol,dglpnpsol, dglsolver)
-        ax4 = ax3.twinx()
-		ax3.set_title("finite ion size,\nsolvation")
-        ax3.set_ylim(0, 0.8)
-        ax3.set_ylabel("u/(m/s))")
-        ax3.set_xlabel("x/nm")
-        ax4.set_xlabel("x/nm")
-        ax3.set_xlim(0, 5)
-        ax4.set_ylim(0, 10)
-        ax4.set_ylabel("c/(mol/L); ϕ/(10mV)")
-        ax4.plot(pnpX / nm, c_p / (mol / dm^3), "red", label = "c^+", linewidth = 1)
-        ax4.plot(pnpX / nm, c_m / (mol / dm^3), "blue", label = "c^-", linewidth = 1)
-        ax4.plot(pnpX / nm, ϕ / (10mV), "black", label = "ϕ/(10mV)", linewidth = 1)
-        ax3.plot(pnpX / nm, u, "green", label = "u_z", linewidth = 1)
-		dglu=u
-        PyPlot.tight_layout()
-        PyPlot.gcf()
-    end
+	ax1=CairoMakie.Axis(fig[1,2],
+		yaxisposition=:left,
+		xticks=[0,1,2,3,4,5],
+		ylabel="u/(m/s)",
+		xlabel="x/nm",
+		title="Finite ion size\n Solvation"
+		)
+	CairoMakie.ylims!(ax1,0,0.8)
+	CairoMakie.xlims!(ax1,0,5)
+	ax2=CairoMakie.Axis(fig[1,2],
+		yaxisposition=:right,
+		ylabel="c/(mol/L); ϕ/(10mV)"
+		)
+	CairoMakie.ylims!(ax2,0,10)
+	CairoMakie.xlims!(ax2,0,5)
+
+	data=[
+lines!(ax1, pnpX / nm, u, color=:green, linewidth = 2),
+ lines!(ax2, pnpX / nm, c_p / (mol / dm^3), color=:red,linewidth = 2),
+ lines!(ax2, pnpX / nm, c_m / (mol / dm^3), color=:blue, linewidth = 2),
+lines!(ax2, pnpX / nm, ϕ / (10mV), color=:black, linewidth = 2)
+	]
+CairoMakie.axislegend(ax1, data, ["u_z","c^+","c^-","Φ"], position=:ct, backgroundcolor = :transparent)
+	fig
+	
 end
 
 # ╔═╡ 43b89443-58ad-4321-8db7-ead924a4b17b
-@test gcu[1]<dglu[1]
+begin
+	gc_c_p, gc_c_m, gc_ϕ, gc_p, gc_u = midvelo(gcflowsol,gcpnpsol, gcsolver)
+	dgl_c_p, dgl_c_m, dgl_ϕ, dgl_p, dgl_u = midvelo(dglflowsol,dglpnpsol, dglsolver)
+	@test gc_u[1]<dgl_u[1]
+	@test gc_c_p[end]>dgl_c_p[end]
+end
 
 # ╔═╡ 8af12f1c-d35b-4cc9-8185-1bb5adbb69e8
 html"""<hr>"""
@@ -364,7 +383,7 @@ end;
 # ╠═00d1e5e7-f53f-4aa4-b06f-d283b9cde21a
 # ╠═a91c5744-e744-4c25-a748-30d7155e9b63
 # ╠═fe4a9591-0842-42ac-9c77-76f6125d6688
-# ╠═7ec54237-a222-44e6-8edc-ab71d840ee4a
+# ╠═98a70371-71b0-4416-8395-6a03eb6873c0
 # ╠═43b89443-58ad-4321-8db7-ead924a4b17b
 # ╟─8af12f1c-d35b-4cc9-8185-1bb5adbb69e8
 # ╟─baa3e08e-5d64-4c8f-9f6d-5fdb40e97bc5
