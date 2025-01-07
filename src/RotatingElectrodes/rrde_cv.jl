@@ -1,4 +1,3 @@
-
 mutable struct CVContext
     reaction     # Disk/ring  reaction
     bulk_reaction # Reaction in bulk
@@ -38,8 +37,7 @@ function CVContext(reaction,
     cvcontext.I_disk=I_disk
     cvcontext.I_ring=I_ring
     geom=DiscSpec(disktype)
-    nz=10*2.0^nref
-    cvcontext.grid=rrde_grid_zequi(geom,nref,nz)
+    cvcontext.grid=rrde_grid(geom;nref)
 
 
     function bstorage(f,u,node,data)
@@ -121,6 +119,10 @@ function run_cv(cvcontext;
                 verbose=true,
                 control=FVMNewtonControl()
                 )
+    @local_phconstants AvogadroConstant MolarGasConstant ElementaryCharge
+    FaradayConstant = AvogadroConstant*ElementaryCharge
+    @local_unitfactors mA
+    
     
     period=2*abs(phi_max-phi_min)/scanrate
     sampling_times=[ i*period/2 for i=0:2*num_periods]
@@ -162,7 +164,7 @@ function run_cv(cvcontext;
 
     # solve for  inititial state 
     cvcontext.set_voltage(phi_cv(time))
-    solve!(solution,inival,cvcontext.rdcell)
+    solution=solve(cvcontext.rdcell; inival)
     inival.=solution
     I_disk=VoronoiFVM.integrate(cvcontext.rdcell,cvcontext.tfc[b_disk],solution)*FaradayConstant
     I_ring=VoronoiFVM.integrate(cvcontext.rdcell,cvcontext.tfc[b_ring],solution)*FaradayConstant
@@ -183,9 +185,9 @@ function run_cv(cvcontext;
     I_disk_old=zeros(cvcontext.num_bulk_species)
     I_ring=[]
     di=0.0
-    function delta(solution, oldsolution, time,tstep)
-        I_disk=VoronoiFVM.integrate(cvcontext.rdcell,cvcontext.tfc[b_disk],solution,oldsolution,tstep)*FaradayConstant
-        I_ring=VoronoiFVM.integrate(cvcontext.rdcell,cvcontext.tfc[b_ring],solution,oldsolution,tstep)*FaradayConstant
+    function delta(sys, solution, oldsolution, time,tstep)
+        I_disk=VoronoiFVM.integrate(sys,cvcontext.tfc[b_disk],solution,oldsolution,tstep)*FaradayConstant
+        I_ring=VoronoiFVM.integrate(sys,cvcontext.tfc[b_ring],solution,oldsolution,tstep)*FaradayConstant
         di=abs(cvcontext.I_disk(I_disk_old)-cvcontext.I_disk(I_disk))/mA
     end
     
@@ -206,7 +208,7 @@ function run_cv(cvcontext;
         I_disk_old=I_disk
     end
 
-    evolve!(solution,inival,cvcontext.rdcell,sampling_times, control=control, pre=pre,post=post,delta=delta)
+    solve(cvcontext.rdcell; inival, times=sampling_times, control=control, pre=pre,post=post,delta=delta)
 
     ProgressMeter.finish!(pmeter)            
     (frequency=frequency,vdisk=vdisk,iring=iring,idisk=idisk)

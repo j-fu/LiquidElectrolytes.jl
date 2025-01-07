@@ -10,6 +10,7 @@ function pyplot_cv(freqs,vdisks,idisks,irings;
                    clear=true,
                    size_inches=(7,9)
                    )
+    @local_unitfactors mA V
     if !(typeof(Plotter) == Module) && isdefined(Plotter, :Gcf)
         return
     end
