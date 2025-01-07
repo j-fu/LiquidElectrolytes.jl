@@ -122,6 +122,9 @@ notebooks=[
     "ElectroOsmosis.jl",
 ]
 
+using Pkg
+Pkg.activate(joinpath(@__DIR__, "..", "docs"))
+Pkg.instantiate()
 
 @testset "Notebooks" begin
     @testscripts(joinpath(@__DIR__, "..", "notebooks"), notebooks)
