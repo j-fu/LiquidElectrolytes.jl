@@ -1,5 +1,6 @@
 using Test
 using LiquidElectrolytes
+using ExtendableFEM
 using LinearAlgebra
 using ExtendableGrids
 using VoronoiFVM
@@ -7,7 +8,6 @@ using LessUnitful
 using UUIDs
 using ExampleJuggler
 ExampleJuggler.verbose!(true)
-
 
 @phconstants N_A
 @unitfactors dm nm mol
@@ -111,7 +111,6 @@ end
     
 end
 
-
 notebooks=[
     "DLCap.jl",
     "ORR.jl",
@@ -125,6 +124,8 @@ notebooks=[
 using Pkg
 Pkg.activate(joinpath(@__DIR__, "..", "docs"))
 Pkg.instantiate()
+using LiquidElectrolytes
+using ExtendableFEM
 
 @testset "Notebooks" begin
     @testscripts(joinpath(@__DIR__, "..", "notebooks"), notebooks)
