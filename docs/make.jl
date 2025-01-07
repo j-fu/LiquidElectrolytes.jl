@@ -3,6 +3,7 @@ push!(LOAD_PATH,joinpath(@__DIR__,"..","examples"))
 
 using Documenter, ExampleJuggler, CairoMakie, LiquidElectrolytes, PlutoStaticHTML
 ExampleJuggler.verbose!(true)
+thisdir=pwd()
 
 function make(;with_notebooks=true, with_examples=true)
     
@@ -23,7 +24,9 @@ function make(;with_notebooks=true, with_examples=true)
     if with_notebooks
         notebooks=[
             "DLCap.jl",
-            "ORR.jl"] #, "BufferReactions.jl", "SurfaceKinetics_draft.jl"]
+            "ORR.jl",
+            "ElectroOsmosis.jl"
+        ] #, "BufferReactions.jl", "SurfaceKinetics_draft.jl"]
         notebook_examples = @docplutonotebooks(notebookdir, notebooks, iframe=false,  append_build_context=false)
         size_threshold_ignore = last.(notebook_examples)
         push!(pages,"Notebooks" => notebook_examples)
@@ -42,6 +45,7 @@ function make(;with_notebooks=true, with_examples=true)
 
     DocMeta.setdocmeta!(LiquidElectrolytes, :DocTestSetup, :(using LiquidElectrolytes, Unitful, LessUnitful); recursive=true)
 
+    cd(thisdir)
     makedocs(;sitename="LiquidElectrolytes.jl",
              modules = [LiquidElectrolytes],
              format = Documenter.HTML(;mathengine=MathJax3(),size_threshold_ignore),

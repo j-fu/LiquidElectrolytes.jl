@@ -34,7 +34,7 @@ begin
     if isdefined(Main,:PlutoRunner)
         import CairoMakie	
    	default_plotter!(CairoMakie)
- 	CairoMakie.activate!(type="svg")
+ 	CairoMakie.activate!(type="png")
     end
 end
 
@@ -313,7 +313,7 @@ function plot1d(result,celldata, vshow)
             title = "Φ_we=$(round(vshow,digits=4)), I=$(round(vinter(vshow),sigdigits=4))"
 	#    title = @sprintf("Φ_we=%+1.2f I=%+1.4f",vshow,ishow)
             
-            scalarplot!(vis, grid, sol[io2, :] * scale; color = :green, label = "O_2",title)
+            scalarplot!(vis, grid, sol[io2, :] * scale .+ 1.0e-16; color = :green, label = "O_2",title)
             scalarplot!(vis,
                         grid,
                         sol[iso4, :] * scale;
@@ -356,7 +356,7 @@ function plot1d(result,celldata)
             title = "Φ_we=$(round(vshow,digits=4)), I=$(round(vinter(vshow),digits=4))"
 	    title = @sprintf("Φ_we=%+1.2f I=%+1.4f",vshow,ishow)
             
-            scalarplot!(vis, grid, sol[io2, :] * scale; color = :green, label = "O_2",title)
+            scalarplot!(vis, grid, sol[io2, :] * scale.+1.0e-16; color = :green, label = "O_2",title)
             scalarplot!(vis,
                         grid,
                         sol[iso4, :] * scale;
@@ -589,7 +589,7 @@ hrule()
 # ╠═33ee0ded-5bc8-4fe7-bd2f-1cc44bc73f78
 # ╟─6a0ff3ea-25af-4682-a8f6-40c481b53d8d
 # ╠═63dd0cef-7acd-4507-bbc6-3976181a143d
-# ╟─c7185947-56ea-4e79-a619-03bf77d5219d
+# ╠═c7185947-56ea-4e79-a619-03bf77d5219d
 # ╟─c6b9f3ce-dd3e-474e-b947-3daacc5cd1d0
 # ╟─b729b190-a7ed-48b9-9584-fe5271e5dfa4
 # ╟─42dda2f6-ea60-4cbc-8372-fafd4a1218a8
