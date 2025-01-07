@@ -30,7 +30,12 @@ Finite volume reaction term
 function pnpreaction(f, u, node, electrolyte)
     ## Charge density
     f[electrolyte.iϕ] = -charge(u, electrolyte)
-    f[electrolyte.ip] = 0
+    if solvepressure(electrolyte)
+        f[electrolyte.ip] = 0
+    else
+        f[electrolyte.ip] = u[electrolyte.ip] - electrolyte.pressure[node.index]
+    end
+    
     for ic = 1:(electrolyte.nc)
         f[ic] = 0
     end
@@ -57,11 +62,7 @@ default_reaction(f, u, node, electrolyte) = nothing
 Calculate differences of excess chemical potentials from activity coefficients
 """
 @inline function dμex(γk, γl, electrolyte)
-    if γk > γl
-        rlog(γk / γl, electrolyte) * (electrolyte.RT)
-    else
-        -rlog(γl / γk, electrolyte) * (electrolyte.RT)
-    end
+    return (rlog(γk, electrolyte)-rlog(γl, electrolyte))* (electrolyte.RT)
 end
 
 """
@@ -76,9 +77,9 @@ Appearantly first described by Yu, Zhiping  and Dutton, Robert, SEDAN III, www-t
 
 Verification calculation is in the paper.
 """
-function sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte)
+function sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
     (; D, z, F, RT) = electrolyte
-    bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(γk, γl, electrolyte) /RT)
+    bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(γk, γl, electrolyte) /RT - evelo/D[ic])
     D[ic]*(bm * ck - bp * cl)
 end
 
@@ -97,11 +98,14 @@ ck/cl = bp/bm = exp(z ϕk*F/RT + μex_k/RT)/exp(z ϕl*F/RT + μex_l/RT)
     aflux(ic,dϕ,ck,cl,γk,γl,bar_ck,bar_cl,electrolyte)
 
 Flux expression based on  activities, see Fuhrmann, CPC 2015
+??? Do we need to divide the velocity by the inverse activity coefficient ?
+
 """
-function aflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte)
+function aflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
     (; D, z, F, RT) = electrolyte
-    bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT)
-    D[ic] * (bm * ck * γk - bp * cl * γl) * (1 / γk + 1 / γl) / 2
+    Dx=D[ic] * (1 / γk + 1 / γl) / 2
+    bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT - evelo/D[ic])
+    Dx * (bm * ck * γk - bp * cl * γl)
 end
 
 #=
@@ -114,11 +118,11 @@ ck/cl= bp/betaK  / bm/betal
 
 Flux expression based on central differences, see Gaudeul/Fuhrmann 2022
 """
-function cflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte)
+function cflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
     (; D, z, F, RT) = electrolyte
     μk = rlog(ck, electrolyte) * RT
     μl = rlog(cl, electrolyte) * RT
-    D[ic] * 0.5 * (ck+ cl) * (μk - μl +  dμex(γk, γl, electrolyte) + z[ic] * F * dϕ) / RT
+    D[ic] * 0.5 * (ck+ cl) * ((μk - μl +  dμex(γk, γl, electrolyte) + z[ic] * F * dϕ) / RT - evelo/D[ic])
 end
 #=
 
@@ -133,7 +137,8 @@ function pnpflux(f, u, edge, electrolyte)
     iϕ = electrolyte.iϕ # index of potential
     ip = electrolyte.ip
     (; ip, iϕ, v0, v, M0, M, κ, ε_0, ε, RT, nc, eneutral, pscale, p_bulk, scheme) = electrolyte
-
+    evelo=edgevelocity(electrolyte, edge.index)
+    
     pk, pl = u[ip, 1] * pscale-p_bulk, u[ip, 2] * pscale-p_bulk
     ϕk, ϕl = u[iϕ, 1], u[iϕ, 2]
 
@@ -145,8 +150,11 @@ function pnpflux(f, u, edge, electrolyte)
     dp = pk - pl
 
     f[iϕ] = ε * ε_0 * dϕ * !eneutral
-    f[ip] = dp + (qk + ql) * dϕ / 2
 
+    if solvepressure(electrolyte)
+        f[ip] = dp + (qk + ql) * dϕ / 2
+    end
+    
     γk, γl = 1.0, 1.0
     bikerman = !iszero(v)
 
@@ -167,11 +175,11 @@ function pnpflux(f, u, edge, electrolyte)
         end
 
         if scheme == :μex
-            f[ic] = sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte)
+            f[ic] = sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
         elseif electrolyte.scheme == :act
-            f[ic] = aflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte)
+            f[ic] = aflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
         elseif electrolyte.scheme == :cent
-            f[ic] = cflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte)
+            f[ic] = cflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
         else
             error("no such scheme: $(scheme)")
         end

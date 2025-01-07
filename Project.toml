@@ -16,13 +16,23 @@ PhysicalConstants = "5ad8b20f-a522-5ce9-bfc9-ddf1d5bda6ab"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 ProgressLogging = "33c8b6b6-d38a-422a-b730-caa89a2f386c"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 VoronoiFVM = "82b139dc-5afc-11e9-35da-9b9bdfd336f3"
 
+
+
+[weakdeps]
+ExtendableFEM = "a722555e-65e0-4074-a036-ca7ce79a4aed"
+
+[extensions]
+LiquidElectrolytesExtendableFEMExt = "ExtendableFEM"
+
 [compat]
 DocStringExtensions = "0.9.3"
+ExtendableFEM = "0.8"
 ExtendableGrids = "0.9.17,1"
 ForwardDiff = "0.10.35,0.11"
 LessUnitful = "1.1"

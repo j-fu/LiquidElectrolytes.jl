@@ -6,18 +6,20 @@ using StaticArrays
 using LinearAlgebra
 using NLsolve
 using Unitful, LessUnitful
+import SciMLBase
+
 using Base: @kwdef
 
 function __init__()
     LessUnitful.ensureSIBase()
 end
 
-function showstruct(io::IO, this)
-    myround(x; kwargs...) = round(x; kwargs...)
-    myround(s::Symbol; kwargs...) = s
-    myround(i::Int; kwargs...) = i
-    myround(b::Bool; kwargs...) = b
+myround(x; kwargs...) = round(x; kwargs...)
+myround(s::Symbol; kwargs...) = s
+myround(i::Int; kwargs...) = i
+myround(b::Bool; kwargs...) = b
 
+function showstruct(io::IO, this)
     for name in fieldnames(typeof(this))
         println(io, "$(lpad(name,20)) = $(myround.(getfield(this,name),sigdigits=5))")
     end
@@ -49,5 +51,8 @@ export calc_φ, calc_p, calc_cmol, calc_c0mol, calc_cnum, calc_QBL, ysum, Cdl0
 export dlcapsweep_equi
 include("equilibrium-supplement.jl")
 
+include("pnpstokes.jl")
+
 include("RotatingElectrodes/RotatingElectrodes.jl")
+
 end # module

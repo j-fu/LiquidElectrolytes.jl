@@ -168,7 +168,7 @@ function dlcapsweep(sys;
             if !success
                 break
             end
-            Q = integrate(sys, sys.physics.reaction, sol)
+            Q = VoronoiFVM.integrate(sys, sys.physics.reaction, sol)
 
             try
                 data.ϕ_we = ϕ + δ
@@ -181,7 +181,7 @@ function dlcapsweep(sys;
             if !success
                 break
             end
-            Qδ = integrate(sys, sys.physics.reaction, sol)
+            Qδ =  VoronoiFVM.integrate(sys, sys.physics.reaction, sol)
             cdl = (Qδ[iϕ] - Q[iϕ]) / δ
 
             if range[end] > range[1]
@@ -316,9 +316,9 @@ function ivsweep(sys;
             end
 
             function post(sol, oldsol, ϕ, Δϕ)
-                I=-integrate(sys, sys.physics.breaction, sol; boundary = true)
+                I=- VoronoiFVM.integrate(sys, sys.physics.breaction, sol; boundary = true)
                 I_react=I[:,data.Γ_we]                
-                I_bulk = -integrate(sys, tf_bulk, sol)
+                I_bulk = - VoronoiFVM.integrate(sys, tf_bulk, sol)
                 if dir > 0
                     push!(vplus, data.ϕ_we)
                     push!(iplus, I_react)

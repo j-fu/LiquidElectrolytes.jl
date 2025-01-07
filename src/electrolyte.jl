@@ -107,7 +107,27 @@ $(TYPEDFIELDS)
     Species weights for norms in solver control.
     """
     weights::Vector{Float64} = [v..., zeros(na)..., 1.0, 0.0]
+
+    """
+    Edge velocity projection
+    """
+    edgevelocity::Union{Float64, Vector{Float64}} = 0.0
+
+    """
+    Pressure (if calculated with flow solver)
+    """
+    pressure::Vector{Float64}=zeros(0)
+    
 end
+
+solvepressure(electrolyte)= length(electrolyte.pressure)==0
+
+function edgevelocity(electrolyte,i)
+    evelo(v::Number,i)=v
+    evelo(v::Vector,i)=v[i]
+    evelo(electrolyte.edgevelocity,i)
+end
+
 
 function Base.show(io::IO, this::ElectrolyteData)
     showstruct(io, this)
@@ -153,13 +173,29 @@ debyelength(data) = sqrt(data.ε * data.ε_0 * data.RT / (data.F^2 * data.c_bulk
 
 Calculate charge from vector of concentrations
 """
-function charge(u, electrolyte::AbstractElectrolyteData)
+function charge(u::AbstractVector, electrolyte::AbstractElectrolyteData)
     q = zero(eltype(u))
     for ic = 1:(electrolyte.nc)
         q += u[ic] * electrolyte.z[ic]
     end
     q * electrolyte.F
 end
+
+"""
+    charge!(q, sol,electrolyte)
+
+Calculate vector of charge from solution
+"""
+function charge!(q::AbstractVector, u::AbstractMatrix, electrolyte::AbstractElectrolyteData)
+    nnodes=size(u,2)
+    for i=1:nnodes
+        @views q[i]=charge(u[:,i],electrolyte)
+    end
+    q
+end
+
+charge(u::AbstractMatrix, electolyte::AbstractElectrolyteData)=charge!(zeros(size(u,2)),u,electrolyte)
+
 
 @doc raw"""
 	vrel(ic,electrolyte)
@@ -230,10 +266,10 @@ end
 Calculate vector of solvent concentrations from solution array.
 """
 function solventconcentration(U::Array, electrolyte)
-    c0 = similar(U[1, :])
+    @views c0 = similar(U[1, :])
     c0 .= 1.0 / electrolyte.v0
     for ic = 1:(electrolyte.nc)
-        c0 -= U[ic, :] .* vrel(ic, electrolyte)
+        @views  c0 .-= U[ic, :] .* vrel(ic, electrolyte)
     end
     c0
 end
@@ -286,7 +322,7 @@ end
 Regularized exponential. Linear continuation for `x>trunc`,  
 returns 1/rexp(-x) for `x<-trunc`.
 """
-function rexp(x; trunc = 20.0)
+function rexp(x; trunc = 500.0)
     if x < -trunc
         1.0 / rexp(-x; trunc)
     elseif x <= trunc
@@ -303,7 +339,7 @@ Reaction rate expression
 
     rrate(R0,β,A)=R0*(exp(-β*A) - exp((1-β)*A))
 """
-rrate(R0, β, A) = R0 * (rexp(-β * A) - rexp((1 - β) * A))
+rrate(R0, β, A) = R0 * (exp(-β * A) - exp((1 - β) * A))
 
 """
     wnorm(u,w,p)
