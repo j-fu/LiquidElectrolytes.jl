@@ -2,7 +2,9 @@
 
 
 ```@docs
-LiquidElectrolytes.charge
+LiquidElectrolytes.solvepressure
+LiquidElectrolytes.edgevelocity
+LiquidElectrolytes.charge!
 LiquidElectrolytes.vrel
 LiquidElectrolytes.rlog
 LiquidElectrolytes.rexp
