@@ -1,6 +1,6 @@
 name = "LiquidElectrolytes"
 uuid = "5a7dfd8c-b3af-4c8d-a082-d3a774d75e72"
-authors = ["Jürgen Fuhrmann <juergen-fuhrmann@web.de>", "R. Kehl"]
+authors = ["Jürgen Fuhrmann <juergen-fuhrmann@web.de>", "S. Maaß","R. Kehl", "H. Zhao"]
 version = "0.2.4"
 
 [deps]

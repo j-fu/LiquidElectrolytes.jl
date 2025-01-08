@@ -46,7 +46,7 @@ end
 
 Default boundary condition amounts to `nothing`
 """
-default_bcondition(f, u, bnode, electrolyte) = nothing
+default_bcondition = nothing
 
 """
     default_reaction(f, u, bnode, electrolyte)
@@ -189,7 +189,8 @@ end
 """
     PNPSystem(grid;
              celldata=ElectrolyteData(),
-             bcondition=default_bcondition,
+             bcondition=(f, u, n, e)-> nothing,
+             reaction=(f, u, n, e)-> nothing,
              kwargs...)
 
 Create VoronoiFVM system for generalized Poisson-Nernst-Planck. Input:
@@ -199,7 +200,11 @@ Create VoronoiFVM system for generalized Poisson-Nernst-Planck. Input:
 - `reaction` : reactions of the bulk species
 - `kwargs`: Keyword arguments of VoronoiFVM.System
 """
-function PNPSystem(grid; celldata = ElectrolyteData(), bcondition = default_bcondition, reaction = default_reaction, kwargs...)
+function PNPSystem(grid;
+                   celldata = ElectrolyteData(),
+                   bcondition = (f, u, n, e)-> nothing,
+                   reaction = (f, u, n, e)-> nothing,
+                   kwargs...)
 
     function _pnpreaction(f, u, node, electrolyte)
         pnpreaction(f, u, node, electrolyte)
