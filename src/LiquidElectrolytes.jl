@@ -5,6 +5,7 @@ using ProgressLogging
 using StaticArrays
 using LinearAlgebra
 using NLsolve
+using RecursiveArrayTools
 using Unitful, LessUnitful
 import SciMLBase
 
@@ -27,7 +28,7 @@ end
 
 include("electrolyte.jl")
 export ElectrolyteData, AbstractElectrolyteData
-export dlcap0, charge, chemical_potentials!, rrate, debyelength, chemical_potential, c0_barc
+export dlcap0, chargedensity, chemical_potentials!, rrate, debyelength, chemical_potential, c0_barc
 export showstruct, rlog, electrolyte, solventconcentration
 export isincompressible, iselectroneutral
 

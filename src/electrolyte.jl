@@ -199,12 +199,12 @@ function charge(u::AbstractVector, electrolyte::AbstractElectrolyteData)
 end
 
 """
-    charge!(q, sol,electrolyte)
+    chargedensity!(q, sol,electrolyte)
 
 Calculate charge density from solution (on the whole grid), putting the resulti
 into `q` and returning this vector.
 """
-function charge!(q::AbstractVector, u::AbstractMatrix, electrolyte::AbstractElectrolyteData)
+function chargedensity!(q::AbstractVector, u::AbstractMatrix, electrolyte::AbstractElectrolyteData)
     nnodes = size(u, 2)
     for i in 1:nnodes
         @views q[i] = charge(u[:, i], electrolyte)
@@ -213,12 +213,26 @@ function charge!(q::AbstractVector, u::AbstractMatrix, electrolyte::AbstractElec
 end
 
 """
-    charge(sol,electrolyte)
+    chargedensity(sol,electrolyte)
 
 Calculate charge density vector from solution (on whole grid)
 """
-charge(u::AbstractMatrix, electrolyte::AbstractElectrolyteData) = charge!(zeros(size(u, 2)), u, electrolyte)
+function chargedensity(u::AbstractMatrix, electrolyte::AbstractElectrolyteData)
+    return chargedensity!(zeros(size(u, 2)), u, electrolyte)
+end
 
+
+"""
+    chargedensity(tsol,electrolyte)
+
+Calculate charge densities from  from time/voltage dependent solution solution (on whole grid)
+"""
+function chargedensity(tsol::TransientSolution, electrolyte)
+    nv=length(tsol.t)
+    nx=size(tsol.u[1],2)
+    charges=[ reshape( chargedensity(tsol.u[i], electrolyte),(1,nx)) for i in  1:nv]
+    return TransientSolution(charges,tsol.t)
+end
 
 @doc raw"""
 	vrel(ic,electrolyte)
