@@ -283,7 +283,7 @@ such that local electroneutrality $\sum_{i=1}^N z_ic_i^{bulk}=0$ is fulfilled an
 Applying a potential at the working electrode leads to  a  Dirichlet boundary conditions
 for the electrostatic potential:
 \begin{subequations}\label{sys:PNPbc}
-\begin{align}
+\begin{align}\label{eq:PNPpot}
   \phi|_{x=0}=U.
 \end{align}
 For the pressure we set ``do nothing'' boundary conditons
@@ -375,7 +375,7 @@ With the affinity
   \mathcal A_\nu = \frac{1}{RT}\sum_{i=-1}^Ns_{\nu,i}\mu_i
 \end{align}
 one writes the rate expression as
-\begin{align}
+\begin{align}\label{eq:rrate}
   R_\nu(\mu_0\dots\mu_N)= k_{\nu,0}\left(\exp(-\alpha_\nu\mathcal A_\nu) - \exp((1-\alpha_\nu)\mathcal A_\nu)\right)
 \end{align}
 In the electroneutral case, one writes due to the equilibrium conditions in the boundary layer:
@@ -386,7 +386,19 @@ In the electroneutral case, one writes due to the equilibrium conditions in the 
 \end{align}
 
 
-\subsection{Redox reaction with background electrolyte}
+
+\section{Numerical experiments}
+
+\subsection{Double layer capacitance}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.45\textwidth]{example_dlcap_molvar.png}
+  \includegraphics[width=0.45\textwidth]{example_dlcap_kappavar.png}
+\caption{Double layer capacitance for varying molarities (left) and varying solvation numbers (right)}
+\end{figure}
+\clearpage
+\subsection{Redox reaction: comparison between PNP and NNP}
 Assume an aqeuous solution with reacting species
 $O, R$  with $z_O= z_R+n$,  background electrolyte  $S, X$ with   $z_S=-1$, $z_X=1$.
 The redox reaction is
@@ -401,32 +413,27 @@ with affinity
 
 In the electroneutral case, this leads to 
 \begin{align}\label{eq:MBVneux}
-  R(\mu_O,\mu_R,\phi)= R_0\left(\exp\left(-\alpha\frac{\mu_R-\mu_O+nF(\phi-U)}{RT}\right)-\exp\left((1-\alpha)\frac{\mu_R-\mu_O+nF(\phi-U)}{RT}\right)\right).
+  R_{redox}(\mu_O,\mu_R,\phi)= k_0\left(\exp\left(-\alpha\frac{\mu_R-\mu_O+nF(\phi-U)}{RT}\right)-\exp\left((1-\alpha)\frac{\mu_R-\mu_O+nF(\phi-U)}{RT}\right)\right).
 \end{align}
+
 Expressed in concentrations, one yields (setting $\alpha=\frac12$)
 \begin{align}
-  R(c_O,c_R,\phi)&= k_0\left( \left(\frac{c_O}{c_R}\right)^{\frac12}\exp\left(-\frac{zF(\phi-U)}{2RT}\right)-\left(\frac{c_R}{c_O}\right)^{\frac12}\exp\left(\frac{zF(\phi-U)}{2RT}\right)\right)\\
-                 &= \frac{\bar ck_0}{(c_Oc_R)^{\frac12}}\left(\exp\left(-\frac{zF(\phi-U)}{2RT}\right)\frac{c_O}{\bar c}-\exp\left(\frac{zF(\phi-U)}{2RT}\right)\frac{c_R}{\bar c}\right)
+  R_{redox}(c_O,c_R,\phi)&= k_0\left( \left(\frac{c_O}{c_R}\right)^{\frac12}\exp\left(\frac{zF(U-\phi)}{2RT}\right) - \left(\frac{c_R}{c_O}\right)^{\frac12}\exp\left(-\frac{zF(U-\phi)}{2RT}\right)\right)\\
+                 &= \frac{\bar ck_0}{(c_Oc_R)^{\frac12}}\left(\exp\left(\frac{zF(U-\phi)}{2RT}\right)\frac{c_O}{\bar c} - \exp\left(-\frac{zF(U-\phi)}{2RT}\right)\frac{c_R}{\bar c}\right)
 \label{eq:MBVohm}
 \end{align}
 Replacing $\frac{\bar ck_0}{(c_Oc_R)^{\frac12}}$ by $j_0=\frac{\bar ck_0}{(c_O^\text{bulk}c_R^\text{bulk})^{\frac12}}$
-yields a well known form of the Butler-Volmer equation.
+yields a well known form of the Butler-Volmer equation \cite{BardFaulkner}.
 
-
-\section{Numerical experiments}
-
-\subsection{Double layer capacitance}
-
-\begin{figure}
-  \begin{center}
-  \includegraphics[width=0.45\textwidth]{example_dlcap_molvar.png}
-  \includegraphics[width=0.45\textwidth]{example_dlcap_kappavar.png}
-\end{center}
-\caption{Double layer capacitance for varying molarities (left) and varying solvation numbers (right)}
-\end{figure}
-
-\subsection{Redox reaction: comparison between PNP and NNP}
-
+We adapt system \eqref{sys:PNP} and boundary condtions \eqref{sys:PNPbc} and regard the fluxes of the four species
+with the following boundary conditions
+\begin{align*}
+  \mathbf N_O|_{x=0} \cdot \vec n &= -R_{redox} & c_O|_{x=L}= c_O^{bulk}\\
+  \mathbf N_R|_{x=0} \cdot \vec n &= R_{redox}  & c_R|_{x=L}= c_R^{bulk}\\
+  \mathbf N_S|_{x=0} \cdot \vec n &= 0  & c_S|_{x=L}= c_S^{bulk}\\
+  \mathbf N_X|_{x=0} \cdot \vec n &= 0  & c_X|_{x=L}= c_X^{bulk}.
+\end{align*}
+In the electroneutral case, we omit the boundary conditions for the electrostatic potential.
 
 
 \clearpage
