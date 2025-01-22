@@ -9,7 +9,6 @@ end
 function flowsolver end
 function extended_unknowns end
 function voltage! end
-function charge! end
 function node_pressure end
 function node_velocity end
 function fvm_velocities end
@@ -70,7 +69,7 @@ function SciMLBase.solve(pnpssolver::PNPStokesSolver; damp0=0.1,
         end
         t_pnp += @elapsed pnpsol=solve!(pnpstate; inival=pnpsol,  damp_initial=inidamp, data=pnpdata, kwargs...)
         @views voltage!(flowsol, flowsolver,view(pnpsol,iϕ,:))
-        charge!(flowsol,flowsolver,charge!(q,pnpsol, pnpdata))
+        chargedensity!(flowsol,flowsolver,chargedensity!(q,pnpsol, pnpdata))
         t_stokes +=@elapsed solve!(flowsol, flowsolver; verbosity=-1)
         t_project+= @elapsed evelo,bfvelo=fvm_velocities(flowsol, flowsolver; reconst =false)
         pnpdata.edgevelocity.=evelo

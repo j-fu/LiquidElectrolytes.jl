@@ -5,7 +5,6 @@ using ProgressLogging
 using StaticArrays
 using LinearAlgebra
 using NLsolve
-using RecursiveArrayTools
 using Unitful, LessUnitful
 import SciMLBase
 
@@ -15,21 +14,12 @@ function __init__()
     LessUnitful.ensureSIBase()
 end
 
-myround(x; kwargs...) = round(x; kwargs...)
-myround(s::Symbol; kwargs...) = s
-myround(i::Int; kwargs...) = i
-myround(b::Bool; kwargs...) = b
-
-function showstruct(io::IO, this)
-    for name in fieldnames(typeof(this))
-        println(io, "$(lpad(name,20)) = $(myround.(getfield(this,name),sigdigits=5))")
-    end
-end
+include("tools.jl")
 
 include("electrolyte.jl")
 export ElectrolyteData, AbstractElectrolyteData
 export dlcap0, chargedensity, chemical_potentials!, rrate, debyelength, chemical_potential, c0_barc
-export showstruct, rlog, electrolyte, solventconcentration
+export showstruct, electrolyte, solventconcentration
 export isincompressible, iselectroneutral
 
 include("pnpsystem.jl")
@@ -46,7 +36,7 @@ export AbstractSimulationResult, DLCapSweepResult, IVSweepResult
 
 include("equilibrium-pluto.jl")
 export EquilibriumData, apply_voltage!, set_molarity!, update_derived!
-export iφ, ip, iA, iC
+#export iφ, ip, iA, iC
 export create_equilibrium_system, solve_equilibrium_system, create_equilibrium_pp_system
 export calc_φ, calc_p, calc_cmol, calc_c0mol, calc_cnum, calc_QBL, ysum, Cdl0
 export dlcapsweep_equi

@@ -139,9 +139,7 @@ function dlcapsweep(sys;
         inival=pnpunknowns(sys)
     end 
 
-    inival = solve(sys; inival,damp_initial=0.1, verbose="n")
-    allprogress = sum(length, ranges)
-    ϕprogress = 0
+    inival = solve(sys; inival,damp_initial=0.1, solver_kwargs...)
 
     function show_error(u, δ)
         @show u[iϕ, 1:5]
@@ -150,10 +148,12 @@ function dlcapsweep(sys;
     end
 
     control = VoronoiFVM.SolverControl(; max_round = 3, tol_round = 1.0e-9, solver_kwargs...)
-    @withprogress for range in ranges
+    for range in ranges
         sol = inival
         success = true
-        for ϕ in range
+        allprogress = length(range)
+        ϕprogress = 0
+        @withprogress name="sweep $(range[1])V -> $(range[end])V" for ϕ in range
             try
                 data.ϕ_we = ϕ
                 sol = solve(sys; inival = sol, control)
@@ -194,7 +194,7 @@ function dlcapsweep(sys;
                 push!(cdlminus, cdl)
             end
             ϕprogress += 1
-            @logprogress ϕprogress / allprogress
+            @logprogress ϕprogress / allprogress V=ϕprogress
         end
     end
 
@@ -275,7 +275,6 @@ function ivsweep(sys;
     ranges = splitz(voltages)
     F = ph"N_A"*ph"e"
     data = sys.physics.data
-
     factory = VoronoiFVM.TestFunctionFactory(sys)
     tf_bulk = testfunction(factory, [data.Γ_we], [data.Γ_bulk])
 
@@ -295,10 +294,11 @@ function ivsweep(sys;
                             Δp_min = 1.0e-3,
                             Δp = 1.0e-2,
                             Δp_grow = 1.2,
-                            Δu_opt = 1.0e-2,
+                  #          Δu_opt = 1.0e-2,
                             unorm = u -> wnorm(u, data.weights, Inf),
                             rnorm = u -> wnorm(u, data.weights, 1),
                             solver_kwargs...)
+
     iϕ = data.iϕ
     @info "Solving for 0V..."
     inival = solve(sys; inival = pnpunknowns(sys), control)

@@ -1,6 +1,6 @@
 name = "LiquidElectrolytes"
 uuid = "5a7dfd8c-b3af-4c8d-a082-d3a774d75e72"
-authors = ["Jürgen Fuhrmann <juergen-fuhrmann@web.de>", "S. Maaß","R. Kehl", "H. Zhao"]
+authors = ["Jürgen Fuhrmann <juergen-fuhrmann@web.de>", "S. Maaß", "R. Kehl", "H. Zhao"]
 version = "0.2.4"
 
 [deps]
@@ -21,8 +21,6 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 VoronoiFVM = "82b139dc-5afc-11e9-35da-9b9bdfd336f3"
-
-
 
 [weakdeps]
 ExtendableFEM = "a722555e-65e0-4074-a036-ca7ce79a4aed"

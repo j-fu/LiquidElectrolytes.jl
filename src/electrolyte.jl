@@ -186,11 +186,11 @@ round(debyelength(ely),sigdigits=5) |> u"nm"
 debyelength(data) = sqrt(data.ε * data.ε_0 * data.RT / (data.F^2 * data.c_bulk[1]))
 
 """
-    charge(c,electrolyte)
+    chargedensity(c,electrolyte)
 
 Calculate charge density from vector of concentrations  (in one grid point).
 """
-function charge(u::AbstractVector, electrolyte::AbstractElectrolyteData)
+function chargedensity(u::AbstractVector, electrolyte::AbstractElectrolyteData)
     q = zero(eltype(u))
     for ic in 1:(electrolyte.nc)
         q += u[ic] * electrolyte.z[ic]
@@ -207,7 +207,7 @@ into `q` and returning this vector.
 function chargedensity!(q::AbstractVector, u::AbstractMatrix, electrolyte::AbstractElectrolyteData)
     nnodes = size(u, 2)
     for i in 1:nnodes
-        @views q[i] = charge(u[:, i], electrolyte)
+        @views q[i] = chargedensity(u[:, i], electrolyte)
     end
     return q
 end
@@ -283,19 +283,6 @@ Calls rlog(u;eps=electrolyte.epsreg)
 """
 rlog(x, electrolyte::AbstractElectrolyteData) = rlog(x; eps = electrolyte.epsreg)
 
-"""
-    rlog(u; eps=1.0e-20)
-
-Regularized logarithm. Smooth linear continuation for `x<eps`.
-This means we can calculate a "logarithm"  of a small negative number.
-"""
-function rlog(x; eps = 1.0e-20)
-    if x < eps
-        return log(eps) + (x - eps) / eps
-    else
-        return log(x)
-    end
-end
 
 """
        solventconcentration(U::Array, electrolyte)
@@ -312,15 +299,15 @@ function solventconcentration(U::Array, electrolyte)
 end
 
 @doc raw"""
-        chemical_potential(c, barc, p, v, electrolye)
+        chemical_potential(c, barc, p, barv, electrolyte)
 
 Calculate chemical potential of species with concentration c
 
 ```math
-        μ = v(p-p_{ref}) + RT\log \frac{c}{\bar c}
+        μ = \bar v(p-p_{ref}) + RT\log \frac{c}{\bar c}
 ```
 """
-chemical_potential(c, barc, p, v, data) = rlog(c / barc, data) * data.RT + v * data.pscale * (p - data.p_bulk)
+chemical_potential(c, barc, p, barv, data) = rlog(c / barc, data) * data.RT  + barv * data.pscale * (p - data.p_bulk)
 
 """
     chemical_potentials!(μ,u,electrolyte)
@@ -342,32 +329,58 @@ round(μ0, sigdigits = 5), round.(μ, sigdigits = 5)
 
 (-0.89834, [-21359.0, -21359.0])
 ```
+
+!!! note "Breaking change between v0.2 and 0.3"
+    This function has been corrected in version 0.3.  Before it used the molar
+    volume ``v`` instead of the effective molar volume ``\\bar v = v + κv_0``
+    to calculate the ion chemical potentials. Examples with κ=0 are not affected.
 """
-function chemical_potentials!(μ, u, data::AbstractElectrolyteData)
+function chemical_potentials!(μ, u::AbstractVector, data::AbstractElectrolyteData)
     (; ip, pscale, RT, v0, v, nc) = data
     c0, barc = c0_barc(u, data)
     μ0 = chemical_potential(c0, barc, u[ip], data.v0, data)
     for i in 1:nc
-        μ[i] = chemical_potential(u[i], barc, u[ip], data.v[i], data)
+        μ[i] = chemical_potential(u[i], barc, u[ip], data.v[i]+data.κ[i]*data.v0, data)
     end
     return μ0, μ
 end
 
 """
-    rexp(x;trunc=500.0)
+    chemical_potentials(solution, electrolyte)
 
-Regularized exponential. Linear continuation for `x>trunc`,  
-returns 1/rexp(-x) for `x<-trunc`.
+Calculate chemical potentials from solution.
+Returns `μ0, μ`,  where `μ0` is the vector of solvent chemical potentials,
+and `μ` is the `nc×nnodes` matrix of solute chemical potentials.
 """
-function rexp(x; trunc = 500.0)
-    return if x < -trunc
-        1.0 / rexp(-x; trunc)
-    elseif x <= trunc
-        exp(x)
-    else
-        exp(trunc) * (x - trunc + 1)
+function chemical_potentials(u::AbstractMatrix, data::AbstractElectrolyteData)
+    nn=size(u,2)
+    μ=zeros(data.nc,nn)
+    μ0=zeros(nn)
+    for i=1:nn
+        μ0[i], _ = chemical_potentials!(view(μ,:,i), u[:,i], data)
     end
+    return μ0, μ
 end
+
+"""
+    electrochemical_potentials(solution, electrolyte)
+
+Calculate electrochemical potentials from solution.
+and  `nc×nnodes` matrix of solute electrochemical potentials.
+"""
+function electrochemical_potentials(u::AbstractMatrix, data::AbstractElectrolyteData)
+    μ0,μ=chemical_potentials(u,data)
+    (;iϕ, nc, z, F, RT, M, M0)=data
+    nn=size(u,2)
+    for i=1:nn
+        for ic=1:nc
+            μ[ic,i]+=z[ic]*F*u[iϕ,i] - μ0[i]*M[ic]/M0
+        end
+    end
+    return μ
+end
+
+
 
 """
     rrate(R0,β,A)

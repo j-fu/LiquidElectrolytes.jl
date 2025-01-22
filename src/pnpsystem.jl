@@ -29,7 +29,7 @@ Finite volume reaction term
 """
 function pnpreaction(f, u, node, electrolyte)
     ## Charge density
-    f[electrolyte.iϕ] = -charge(u, electrolyte)
+    f[electrolyte.iϕ] = -chargedensity(u, electrolyte)
     if solvepressure(electrolyte)
         f[electrolyte.ip] = 0
     else
@@ -62,7 +62,7 @@ default_reaction(f, u, node, electrolyte) = nothing
 Calculate differences of excess chemical potentials from activity coefficients
 """
 @inline function dμex(γk, γl, electrolyte)
-    return (rlog(γk, electrolyte)-rlog(γl, electrolyte))* (electrolyte.RT)
+    return (log(γk)-log(γl))* (electrolyte.RT)
 end
 
 """
@@ -120,8 +120,8 @@ Flux expression based on central differences, see Gaudeul/Fuhrmann 2022
 """
 function cflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
     (; D, z, F, RT) = electrolyte
-    μk = rlog(ck, electrolyte) * RT
-    μl = rlog(cl, electrolyte) * RT
+    μk = log(ck) * RT
+    μl = log(cl) * RT
     D[ic] * 0.5 * (ck+ cl) * ((μk - μl +  dμex(γk, γl, electrolyte) + z[ic] * F * dϕ) / RT - evelo/D[ic])
 end
 #=
@@ -142,7 +142,7 @@ function pnpflux(f, u, edge, electrolyte)
     pk, pl = u[ip, 1] * pscale-p_bulk, u[ip, 2] * pscale-p_bulk
     ϕk, ϕl = u[iϕ, 1], u[iϕ, 2]
 
-    @views qk, ql = charge(u[:, 1], electrolyte), charge(u[:, 2], electrolyte)
+    @views qk, ql = chargedensity(u[:, 1], electrolyte), chargedensity(u[:, 2], electrolyte)
     @views c0k, bar_ck = c0_barc(u[:, 1], electrolyte)
     @views c0l, bar_cl = c0_barc(u[:, 2], electrolyte)
 
