@@ -62,7 +62,7 @@ default_reaction(f, u, node, electrolyte) = nothing
 Calculate differences of excess chemical potentials from activity coefficients
 """
 @inline function dμex(γk, γl, electrolyte)
-    return (log(γk)-log(γl))* (electrolyte.RT)
+    return (log(abs(γk))-log(abs(γl)))* (electrolyte.RT)
 end
 
 """
@@ -155,9 +155,6 @@ function pnpflux(f, u, edge, electrolyte)
         f[ip] = dp + (qk + ql) * dϕ / 2
     end
     
-    γk, γl = 1.0, 1.0
-    bikerman = !iszero(v)
-
     for ic = 1:nc
         f[ic] = 0.0
         ## Regularize ck,cl so they don't become zero
@@ -166,13 +163,11 @@ function pnpflux(f, u, edge, electrolyte)
 
         ## Calculate the  activity coefficients first,
         ## as these expressions are less degenerating.
-        if bikerman
-            Mrel = M[ic] / M0
-            barv=v[ic] + κ[ic]*v0
-            tildev=barv - Mrel*v0
-            γk = exp(tildev * pk / (RT)) * (bar_ck / c0k)^Mrel*(1/bar_ck)
-            γl = exp(tildev * pl / (RT)) * (bar_cl / c0l)^Mrel*(1/bar_cl)
-        end
+        Mrel = M[ic] / M0
+        barv=v[ic] + κ[ic]*v0
+        tildev=barv - Mrel*v0
+        γk = exp(tildev * pk / (RT)) * (bar_ck / c0k)^Mrel*(1/bar_ck)
+        γl = exp(tildev * pl / (RT)) * (bar_cl / c0l)^Mrel*(1/bar_cl)
 
         if scheme == :μex
             f[ic] = sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
