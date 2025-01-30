@@ -307,7 +307,7 @@ Calculate chemical potential of species with concentration c
         μ = \bar v(p-p_{ref}) + RT\log \frac{c}{\bar c}
 ```
 """
-chemical_potential(c, barc, p, barv, data) = rlog(c / barc, data) * data.RT  + barv * data.pscale * (p - data.p_bulk)
+chemical_potential(c, barc, p, barv, data) = log(abs(c / barc)) * data.RT  + barv * data.pscale * (p - data.p_bulk)
 
 """
     chemical_potentials!(μ,u,electrolyte)
@@ -366,7 +366,7 @@ end
     electrochemical_potentials(solution, electrolyte)
 
 Calculate electrochemical potentials from solution.
-and  `nc×nnodes` matrix of solute electrochemical potentials.
+and return `nc×nnodes` matrix of solute electrochemical potentials measured in Volts.
 """
 function electrochemical_potentials(u::AbstractMatrix, data::AbstractElectrolyteData)
     μ0,μ=chemical_potentials(u,data)
@@ -374,7 +374,8 @@ function electrochemical_potentials(u::AbstractMatrix, data::AbstractElectrolyte
     nn=size(u,2)
     for i=1:nn
         for ic=1:nc
-            μ[ic,i]+=z[ic]*F*u[iϕ,i] - μ0[i]*M[ic]/M0
+            μ[ic,i]/=F
+            μ[ic,i]+=z[ic]*u[iϕ,i]  - μ0[i]*M[ic]/(M0*F)
         end
     end
     return μ
