@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.3
+# v0.20.4
 
 using Markdown
 using InteractiveUtils
@@ -33,7 +33,7 @@ begin
     if isdefined(Main,:PlutoRunner)
 	using CairoMakie	
 	default_plotter!(CairoMakie)
-	CairoMakie.activate!(type="svg")
+	CairoMakie.activate!(type="png")
     end
 end
 
@@ -60,7 +60,9 @@ begin
 	const eV=ufac"eV"
 	const nm=ufac"nm"
 	const cm=ufac"cm"
-	const μF=ufac"μF"
+    const μF=ufac"μF"
+    const iA=1
+    const iC=2
 end
 
 
