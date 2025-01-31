@@ -12,6 +12,8 @@ ExampleJuggler.verbose!(true)
 @phconstants N_A
 @unitfactors dm nm mol
 
+thisproject=dirname(Base.active_project())
+
 @testset "cdl0" begin
     ely=ElectrolyteData(c_bulk=fill(0.01*mol/dm^3,2).|>unitfactor)
     @test dlcap0(ely)≈ 0.22846691848825248
@@ -123,6 +125,7 @@ notebooks=[
 
 using Pkg
 Pkg.activate(joinpath(@__DIR__, "..", "docs"))
+Pkg.develop(path=joinpath(@__DIR__, ".."))
 Pkg.instantiate()
 using LiquidElectrolytes
 using ExtendableFEM
