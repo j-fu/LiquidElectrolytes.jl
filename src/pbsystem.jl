@@ -6,14 +6,14 @@ Space charge expression for Poisson-Boltzmann
 function pbspacecharge(φ, p, data)
     c0_bulk, barc_bulk = c0_barc(data.c_bulk, data)
     pscaled = (p * data.pscale - data.p_bulk)
-    c0 = c0_bulk * exp(-data.v0 * pscaled / (data.RT))
+    c0 = c0_bulk * rexp(-data.v0 * pscaled / (data.RT))
     sumyz = zero(p)
     sumyv = data.v0 * c0
     for α in 1:data.nc
         barv = data.v[α] + data.κ[α] * data.v0
         η_p = barv * pscaled
         η_φ = data.z[α] * data.F * (φ - data.ϕ_bulk)
-        y = data.c_bulk[α] * exp(-(η_φ + η_p) / (data.RT))
+        y = data.c_bulk[α] * rexp(-(η_φ + η_p) / (data.RT))
         sumyz += data.z[α] * y
         sumyv += barv * y
     end
