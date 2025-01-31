@@ -16,7 +16,7 @@ function pbspacecharge(φ, p, data)
             # be equivalent...
             Mrel = data.M[α] / data.M0
             tildev = barv - Mrel * data.v0
-            η_p = tildev * pscaled - Mrel * data.RT * log(c0 / barc_bulk)
+            η_p = tildev * pscaled - Mrel * data.RT * rlog(c0 / barc_bulk, data)
         else
             η_p = barv * pscaled
         end

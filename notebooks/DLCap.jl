@@ -100,11 +100,13 @@ result = dlcapsweep(
     inival = unknowns(pbsys),
     iϕ = 1, voltages,
     molarity = molarity * ufac"mol/dm^3",
-    damp_initial = 0.1
+    damp_initial = 0.5,
+	verbose="ne"
 )
 
 # ╔═╡ 6b0adcfd-a279-4b58-b029-db07fca60b0f
 begin
+	@info "EquilibriumSystem"
     ecell = create_equilibrium_system(grid, EquilibriumData(celldata))
     evolts, ecaps = dlcapsweep_equi(
         ecell;
@@ -117,7 +119,7 @@ end;
 
 # ╔═╡ f57cb1f9-3505-45e1-9524-ba37af47637b
 function pnpsweep(scheme)
-
+	@info scheme
     function pnp_bcondition(f, u, bnode, data::ElectrolyteData)
         (; iϕ, Γ_we, ϕ_we) = data
         boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_we, value = ϕ_we)
@@ -130,7 +132,8 @@ function pnpsweep(scheme)
         μcell;
         voltages,
         molarity = molarity * ufac"mol/dm^3",
-        δ = 1.0e-4, damp_initial = 0.1
+        δ = 1.0e-4, damp_initial = 0.5,
+		verbose="ne"
     )
 end;
 
