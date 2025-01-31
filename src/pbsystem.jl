@@ -11,15 +11,7 @@ function pbspacecharge(φ, p, data)
     sumyv = data.v0 * c0
     for α in 1:data.nc
         barv = data.v[α] + data.κ[α] * data.v0
-        if false
-            # from flux equilibrium condition, seems to
-            # be equivalent...
-            Mrel = data.M[α] / data.M0
-            tildev = barv - Mrel * data.v0
-            η_p = tildev * pscaled - Mrel * data.RT * rlog(c0 / barc_bulk, data)
-        else
-            η_p = barv * pscaled
-        end
+        η_p = barv * pscaled
         η_φ = data.z[α] * data.F * (φ - data.ϕ_bulk)
         y = data.c_bulk[α] * exp(-(η_φ + η_p) / (data.RT))
         sumyz += data.z[α] * y
@@ -37,7 +29,8 @@ function pbreaction(f, u, node, electrolyte)
     iϕ, ip = 1, 2
     ## Charge density
     f[iϕ] = -pbspacecharge(u[iϕ], u[ip], electrolyte)
-    return f[ip] = 0
+    f[ip] = 0
+    return 
 end
 
 """
@@ -55,7 +48,8 @@ function pbflux(f, u, edge, data)
         q2 = pbspacecharge(u[iφ, 2], u[ip, 2], data)
         qavg = (q1 + q2) / 2
     end
-    return f[ip] = (u[ip, 1] - u[ip, 2]) * data.pscale + (u[iφ, 1] - u[iφ, 2]) * qavg
+    f[ip] = (u[ip, 1] - u[ip, 2]) + (u[iφ, 1] - u[iφ, 2]) * qavg / data.pscale 
+    return 
 end
 
 

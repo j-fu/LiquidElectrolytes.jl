@@ -150,17 +150,15 @@ function pnpflux(f, u, edge, electrolyte)
     @views c0l, bar_cl = c0_barc(u[:, 2], electrolyte)
 
     dϕ = ϕk - ϕl
-    dp = pk - pl
-
+  
     f[iϕ] = ε * ε_0 * dϕ * !eneutral
 
     if solvepressure(electrolyte)
-        f[ip] = dp + (qk + ql) * dϕ / 2
+        f[ip] = u[ip, 1] - u[ip, 2] + (qk + ql) * dϕ / (2 * pscale)
     end
 
     for ic in 1:nc
         f[ic] = 0.0
-        ## Regularize ck,cl so they don't become zero
         ck, cl = u[ic, 1], u[ic, 2]
         barv = 0.0
 
