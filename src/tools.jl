@@ -27,13 +27,12 @@ function rexp(x; trunc = 500.0)
 end
 
 """
-    rlog(u; eps=1.0e-20)
+    rlog(u; eps=1.0e-40)
 
 Regularized logarithm. Smooth linear continuation for `x<eps`.
 This means we can calculate a "logarithm"  of a small negative number.
 """
-function rlog(x; eps = 1.0e-20)
-    return log(abs(x))
+function rlog(x; eps = 1.0e-40)
     if x < eps
         return log(eps) + (x - eps) / eps
     else

@@ -6,9 +6,10 @@ Finite volume storage term
 function pnpstorage(f, u, node, electrolyte)
     f[electrolyte.iϕ] = zero(eltype(u))
     f[electrolyte.ip] = zero(eltype(u))
-    for ic = 1:(electrolyte.nc)
+    for ic in 1:(electrolyte.nc)
         f[ic] = u[ic]
     end
+    return
 end
 
 """
@@ -17,9 +18,10 @@ end
 Finite volume boundary storage term
 """
 function pnpbstorage(f, u, node, electrolyte)
-    for ia = (electrolyte.nc + 1):(electrolyte.nc + electrolyte.na)
+    for ia in (electrolyte.nc + 1):(electrolyte.nc + electrolyte.na)
         f[ia] = u[ia]
     end
+    return
 end
 
 """
@@ -35,10 +37,11 @@ function pnpreaction(f, u, node, electrolyte)
     else
         f[electrolyte.ip] = u[electrolyte.ip] - electrolyte.pressure[node.index]
     end
-    
-    for ic = 1:(electrolyte.nc)
+
+    for ic in 1:(electrolyte.nc)
         f[ic] = 0
     end
+    return
 end
 
 """
@@ -62,7 +65,7 @@ default_reaction(f, u, node, electrolyte) = nothing
 Calculate differences of excess chemical potentials from activity coefficients
 """
 @inline function dμex(γk, γl, electrolyte)
-    return (log(abs(γk))-log(abs(γl)))* (electrolyte.RT)
+    return (rlog(γk, electrolyte) - rlog(γl, electrolyte)) * (electrolyte.RT)
 end
 
 """
@@ -79,8 +82,8 @@ Verification calculation is in the paper.
 """
 function sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
     (; D, z, F, RT) = electrolyte
-    bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(γk, γl, electrolyte) /RT - evelo/D[ic])
-    D[ic]*(bm * ck - bp * cl)
+    bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(γk, γl, electrolyte) / RT - evelo / D[ic])
+    return D[ic] * (bm * ck - bp * cl)
 end
 
 #=
@@ -103,9 +106,9 @@ Flux expression based on  activities, see Fuhrmann, CPC 2015
 """
 function aflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
     (; D, z, F, RT) = electrolyte
-    Dx=D[ic] * (1 / γk + 1 / γl) / 2
-    bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT - evelo/D[ic])
-    Dx * (bm * ck * γk - bp * cl * γl)
+    Dx = D[ic] * (1 / γk + 1 / γl) / 2
+    bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT - evelo / D[ic])
+    return Dx * (bm * ck * γk - bp * cl * γl)
 end
 
 #=
@@ -122,7 +125,7 @@ function cflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
     (; D, z, F, RT) = electrolyte
     μk = log(ck) * RT
     μl = log(cl) * RT
-    D[ic] * 0.5 * (ck+ cl) * ((μk - μl +  dμex(γk, γl, electrolyte) + z[ic] * F * dϕ) / RT - evelo/D[ic])
+    return D[ic] * 0.5 * (ck + cl) * ((μk - μl + dμex(γk, γl, electrolyte) + z[ic] * F * dϕ) / RT - evelo / D[ic])
 end
 #=
 
@@ -137,9 +140,9 @@ function pnpflux(f, u, edge, electrolyte)
     iϕ = electrolyte.iϕ # index of potential
     ip = electrolyte.ip
     (; ip, iϕ, v0, v, M0, M, κ, ε_0, ε, RT, nc, eneutral, pscale, p_bulk, scheme) = electrolyte
-    evelo=edgevelocity(electrolyte, edge.index)
-    
-    pk, pl = u[ip, 1] * pscale-p_bulk, u[ip, 2] * pscale-p_bulk
+    evelo = edgevelocity(electrolyte, edge.index)
+
+    pk, pl = u[ip, 1] * pscale - p_bulk, u[ip, 2] * pscale - p_bulk
     ϕk, ϕl = u[iϕ, 1], u[iϕ, 2]
 
     @views qk, ql = chargedensity(u[:, 1], electrolyte), chargedensity(u[:, 2], electrolyte)
@@ -154,8 +157,8 @@ function pnpflux(f, u, edge, electrolyte)
     if solvepressure(electrolyte)
         f[ip] = dp + (qk + ql) * dϕ / 2
     end
-    
-    for ic = 1:nc
+
+    for ic in 1:nc
         f[ic] = 0.0
         ## Regularize ck,cl so they don't become zero
         ck, cl = u[ic, 1], u[ic, 2]
@@ -164,10 +167,10 @@ function pnpflux(f, u, edge, electrolyte)
         ## Calculate the  activity coefficients first,
         ## as these expressions are less degenerating.
         Mrel = M[ic] / M0
-        barv=v[ic] + κ[ic]*v0
-        tildev=barv - Mrel*v0
-        γk = exp(tildev * pk / (RT)) * (bar_ck / c0k)^Mrel*(1/bar_ck)
-        γl = exp(tildev * pl / (RT)) * (bar_cl / c0l)^Mrel*(1/bar_cl)
+        barv = v[ic] + κ[ic] * v0
+        tildev = barv - Mrel * v0
+        γk = exp(tildev * pk / (RT)) * (bar_ck / c0k)^Mrel * (1 / bar_ck)
+        γl = exp(tildev * pl / (RT)) * (bar_cl / c0l)^Mrel * (1 / bar_cl)
 
         if scheme == :μex
             f[ic] = sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
@@ -179,6 +182,7 @@ function pnpflux(f, u, edge, electrolyte)
             error("no such scheme: $(scheme)")
         end
     end
+    return
 end
 
 """
@@ -195,30 +199,34 @@ Create VoronoiFVM system for generalized Poisson-Nernst-Planck. Input:
 - `reaction` : reactions of the bulk species
 - `kwargs`: Keyword arguments of VoronoiFVM.System
 """
-function PNPSystem(grid;
-                   celldata = ElectrolyteData(),
-                   bcondition = (f, u, n, e)-> nothing,
-                   reaction = (f, u, n, e)-> nothing,
-                   kwargs...)
+function PNPSystem(
+        grid;
+        celldata = ElectrolyteData(),
+        bcondition = (f, u, n, e) -> nothing,
+        reaction = (f, u, n, e) -> nothing,
+        kwargs...
+    )
 
     function _pnpreaction(f, u, node, electrolyte)
         pnpreaction(f, u, node, electrolyte)
         reaction(f, u, node, electrolyte)
-        nothing
+        return nothing
     end
 
-    sys = VoronoiFVM.System(grid;
-                            data = celldata,
-                            flux = pnpflux,
-                            reaction = _pnpreaction,
-                            storage = pnpstorage,
-                            bcondition,
-                            species = [1:(celldata.nc)..., celldata.iϕ, celldata.ip],
-                            kwargs...)
-    for ia = (celldata.nc + 1):(celldata.nc + celldata.na)
+    sys = VoronoiFVM.System(
+        grid;
+        data = celldata,
+        flux = pnpflux,
+        reaction = _pnpreaction,
+        storage = pnpstorage,
+        bcondition,
+        species = [1:(celldata.nc)..., celldata.iϕ, celldata.ip],
+        kwargs...
+    )
+    for ia in (celldata.nc + 1):(celldata.nc + celldata.na)
         enable_boundary_species!(sys, ia, [celldata.Γ_we])
     end
-    sys
+    return sys
 end
 
 """
@@ -237,11 +245,11 @@ function pnpunknowns(sys)
     u = unknowns(sys)
     @views u[iϕ, :] .= 0
     @views u[ip, :] .= 0
-    for ic = 1:nc
+    for ic in 1:nc
         @views u[ic, :] .= c_bulk[ic]
     end
-    for ia = (nc + 1):(nc + na)
+    for ia in (nc + 1):(nc + na)
         @views u[ia, :] .= 0
     end
-    u
+    return u
 end

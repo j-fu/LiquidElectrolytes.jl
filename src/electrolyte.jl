@@ -103,7 +103,7 @@ $(TYPEDFIELDS)
     """
     Regularization parameter used in [`rlog`](@ref)
     """
-    epsreg::Float64 = 1.0e-20
+    epsreg::Float64 = 1.0e-40
 
     """
     Species weights for norms in solver control.
@@ -307,7 +307,7 @@ Calculate chemical potential of species with concentration c
         μ = \bar v(p-p_{ref}) + RT\log \frac{c}{\bar c}
 ```
 """
-chemical_potential(c, barc, p, barv, data) = log(abs(c / barc)) * data.RT  + barv * data.pscale * (p - data.p_bulk)
+chemical_potential(c, barc, p, barv, data) = rlog(c / barc, data) * data.RT  + barv * data.pscale * (p - data.p_bulk)
 
 """
     chemical_potentials!(μ,u,electrolyte)
