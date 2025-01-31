@@ -30,4 +30,5 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 VoronoiFVM = "82b139dc-5afc-11e9-35da-9b9bdfd336f3"
 
 [compat]
+CairoMakie = "0.12"
 ExampleJuggler = "2.1"

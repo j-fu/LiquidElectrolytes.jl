@@ -228,10 +228,10 @@ end
 Calculate charge densities from  from time/voltage dependent solution solution (on whole grid)
 """
 function chargedensity(tsol::TransientSolution, electrolyte)
-    nv=length(tsol.t)
-    nx=size(tsol.u[1],2)
-    charges=[ reshape( chargedensity(tsol.u[i], electrolyte),(1,nx)) for i in  1:nv]
-    return TransientSolution(charges,tsol.t)
+    nv = length(tsol.t)
+    nx = size(tsol.u[1], 2)
+    charges = [ reshape(chargedensity(tsol.u[i], electrolyte), (1, nx)) for i in 1:nv]
+    return TransientSolution(charges, tsol.t)
 end
 
 @doc raw"""
@@ -307,7 +307,7 @@ Calculate chemical potential of species with concentration c
         μ = \bar v(p-p_{ref}) + RT\log \frac{c}{\bar c}
 ```
 """
-chemical_potential(c, barc, p, barv, data) = rlog(c / barc, data) * data.RT  + barv * data.pscale * (p - data.p_bulk)
+chemical_potential(c, barc, p, barv, data) = rlog(c / barc, data) * data.RT + barv * data.pscale * (p - data.p_bulk)
 
 """
     chemical_potentials!(μ,u,electrolyte)
@@ -340,7 +340,7 @@ function chemical_potentials!(μ, u::AbstractVector, data::AbstractElectrolyteDa
     c0, barc = c0_barc(u, data)
     μ0 = chemical_potential(c0, barc, u[ip], data.v0, data)
     for i in 1:nc
-        μ[i] = chemical_potential(u[i], barc, u[ip], data.v[i]+data.κ[i]*data.v0, data)
+        μ[i] = chemical_potential(u[i], barc, u[ip], data.v[i] + data.κ[i] * data.v0, data)
     end
     return μ0, μ
 end
@@ -353,11 +353,11 @@ Returns `μ0, μ`,  where `μ0` is the vector of solvent chemical potentials,
 and `μ` is the `nc×nnodes` matrix of solute chemical potentials.
 """
 function chemical_potentials(u::AbstractMatrix, data::AbstractElectrolyteData)
-    nn=size(u,2)
-    μ=zeros(data.nc,nn)
-    μ0=zeros(nn)
-    for i=1:nn
-        μ0[i], _ = chemical_potentials!(view(μ,:,i), u[:,i], data)
+    nn = size(u, 2)
+    μ = zeros(data.nc, nn)
+    μ0 = zeros(nn)
+    for i in 1:nn
+        μ0[i], _ = chemical_potentials!(view(μ, :, i), u[:, i], data)
     end
     return μ0, μ
 end
@@ -369,18 +369,17 @@ Calculate electrochemical potentials from solution.
 and return `nc×nnodes` matrix of solute electrochemical potentials measured in Volts.
 """
 function electrochemical_potentials(u::AbstractMatrix, data::AbstractElectrolyteData)
-    μ0,μ=chemical_potentials(u,data)
-    (;iϕ, nc, z, F, RT, M, M0)=data
-    nn=size(u,2)
-    for i=1:nn
-        for ic=1:nc
-            μ[ic,i]/=F
-            μ[ic,i]+=z[ic]*u[iϕ,i]  - μ0[i]*M[ic]/(M0*F)
+    μ0, μ = chemical_potentials(u, data)
+    (; iϕ, nc, z, F, RT, M, M0) = data
+    nn = size(u, 2)
+    for i in 1:nn
+        for ic in 1:nc
+            μ[ic, i] /= F
+            μ[ic, i] += z[ic] * u[iϕ, i] - μ0[i] * M[ic] / (M0 * F)
         end
     end
     return μ
 end
-
 
 
 """

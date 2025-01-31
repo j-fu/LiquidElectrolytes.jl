@@ -11,7 +11,7 @@ import SciMLBase
 using Base: @kwdef
 
 function __init__()
-    LessUnitful.ensureSIBase()
+    return LessUnitful.ensureSIBase()
 end
 
 include("tools.jl")

@@ -5,8 +5,9 @@ myround(b::Bool; kwargs...) = b
 
 function showstruct(io::IO, this)
     for name in fieldnames(typeof(this))
-        println(io, "$(lpad(name,20)) = $(myround.(getfield(this,name),sigdigits=5))")
+        println(io, "$(lpad(name, 20)) = $(myround.(getfield(this, name), sigdigits = 5))")
     end
+    return
 end
 
 
