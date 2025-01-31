@@ -95,6 +95,8 @@ end
 pbsys = PBSystem(grid; celldata = deepcopy(celldata), bcondition)
 
 # ╔═╡ 2ad3f1ad-3bc9-4ced-a9d8-11c770f9710f
+begin
+	@info "PBSystem"
 result = dlcapsweep(
     pbsys;
     inival = unknowns(pbsys),
@@ -103,6 +105,7 @@ result = dlcapsweep(
     damp_initial = 0.5,
 	verbose="ne"
 )
+end
 
 # ╔═╡ 6b0adcfd-a279-4b58-b029-db07fca60b0f
 begin
