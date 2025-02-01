@@ -27,19 +27,18 @@ using StaticArrays
 using LessUnitful
 
 function main(;
-              voltages = -1:0.1:1,
-              compare = false,
-              molarity = 0.1,
-              nref = 0,
-              κ = 10.0,
-              vfac = 1.0,
-              eneutral = false,
-              scheme = :μex,
-              Plotter = nothing,
-              R0::Float64 = 4.0e-15,
-              epsreg = 1.0e-20,
-              kwargs...,
-              )
+        voltages = -1:0.1:1,
+        compare = false,
+        molarity = 0.1,
+        nref = 0,
+        κ = 10.0,
+        vfac = 1.0,
+        eneutral = false,
+        scheme = :μex,
+        Plotter = nothing,
+        R0::Float64 = 4.0e-15,
+        kwargs...,
+    )
 
     @local_phconstants R N_A e
     @local_unitfactors nm cm μF mol dm s
@@ -72,12 +71,12 @@ function main(;
     z = [1, -2, 0]
     κ = [κ, κ, 0]
 
-    
-    function halfcellbc(f, u::VoronoiFVM.AbstractNodeData{Tu}, bnode, data) where Tu
+
+    function halfcellbc(f, u::VoronoiFVM.AbstractNodeData{Tu}, bnode, data) where {Tu}
         bulkbcondition(f, u, bnode, data)
         (; iϕ, eneutral, ϕ_we, Γ_we, RT) = data
 
-        if bnode.region == Γ_we
+        return if bnode.region == Γ_we
             f .= 0.0
             if !data.eneutral
                 boundary_dirichlet!(
@@ -89,9 +88,9 @@ function main(;
                     value = data.ϕ_we,
                 )
             end
-            @time μh2o, μ = chemical_potentials!(MVector{3,Tu}(undef), u, data)
+            @time μh2o, μ = chemical_potentials!(MVector{3, Tu}(undef), u, data)
             A =
-                (4 * μ[ihplus] + μ[io2] - 2μh2o + Δg + 4*eneutral * F * (u[iϕ] - data.ϕ_we)) /
+                (4 * μ[ihplus] + μ[io2] - 2μh2o + Δg + 4 * eneutral * F * (u[iϕ] - data.ϕ_we)) /
                 (RT)
 
             r = rrate(R0, β, A)
@@ -101,13 +100,14 @@ function main(;
     end
 
 
+    celldata = ElectrolyteData(;
+        nc = 3,
+        z, κ, Γ_we = 1, Γ_bulk = 2,
+        eneutral, scheme, log = RLog()
+    )
 
+    celldata.v *= vfac
 
-    celldata =
-        ElectrolyteData(; nc = 3, z, κ, Γ_we = 1, Γ_bulk = 2, eneutral, scheme, epsreg)
-
-    celldata.v*=vfac
-    
     (; iϕ, c_bulk) = celldata
 
 
@@ -124,15 +124,15 @@ function main(;
     ## Compare electroneutral and double layer cases
     if compare
         celldata.eneutral = false
-        sol=ivsweep(cell; voltages, kwargs...)
-        currs=currents(sol,io2)
-        volts=sol.voltages
-        
+        sol = ivsweep(cell; voltages, kwargs...)
+        currs = currents(sol, io2)
+        volts = sol.voltages
+
         celldata.eneutral = true
-        nsol  = ivsweep(cell; voltages, kwargs...)
-        ncurrs=currents(nsol,io2)
-        nvolts=nsol.voltages
-        
+        nsol = ivsweep(cell; voltages, kwargs...)
+        ncurrs = currents(nsol, io2)
+        nvolts = nsol.voltages
+
         vis = GridVisualizer(;
             Plotter,
             resolution = (600, 400),
@@ -164,18 +164,18 @@ function main(;
     end
 
     ## IVsweep
-    vis = GridVisualizer(;Plotter, resolution = (1000, 300), layout = (1, 4))
-    
-    result = ivsweep(cell; voltages,store_solutions=true, kwargs...)
-    currs=LiquidElectrolytes.currents(result,io2)
-    sol=LiquidElectrolytes.voltages_solutions(result)
-    volts=result.voltages
+    vis = GridVisualizer(; Plotter, resolution = (1000, 300), layout = (1, 4))
+
+    result = ivsweep(cell; voltages, store_solutions = true, kwargs...)
+    currs = LiquidElectrolytes.currents(result, io2)
+    sol = LiquidElectrolytes.voltages_solutions(result)
+    volts = result.voltages
 
     xmax = 10 * nm
     xlimits = [0, xmax]
     aspect = 2 * xmax / (volts[end] - volts[begin])
 
-    
+
     scalarplot!(
         vis[1, 1],
         currs,
@@ -189,7 +189,7 @@ function main(;
         vis[1, 2],
         cell,
         sol;
-        scale= 1.0/(mol/dm^3),
+        scale = 1.0 / (mol / dm^3),
         species = io2,
         aspect,
         xlimits,
@@ -202,7 +202,7 @@ function main(;
         sol;
         species = ihplus,
         aspect,
-        scale= 1.0/(mol/dm^3),
+        scale = 1.0 / (mol / dm^3),
         xlimits,
         title = "H+",
         colormap = :summer,
@@ -210,7 +210,7 @@ function main(;
 
     scalarplot!(
         vis[1, 4],
-        sol[io2, 1, :]*1000,
+        sol[io2, 1, :] * 1000,
         volts,
         xlabel = "c",
         label = "1000 O2",
@@ -227,7 +227,7 @@ function main(;
         ylabel = "V",
         label = "H+",
         color = :red,
-        clear=false,
+        clear = false,
     )
     scalarplot!(
         vis[1, 4],
@@ -239,22 +239,18 @@ function main(;
         legend = :rc,
     )
 
-    reveal(vis)
+    return reveal(vis)
 end
 
 function generateplots(dir; Plotter = nothing, kwargs...)    #hide
     if ismakie(Plotter)                                      #hide
         Plotter.activate!(; type = "svg", visible = false)   #hide
-        p=main(;Plotter)                                     #hide
+        p = main(; Plotter)                                     #hide
         Plotter.save(joinpath(dir, "Example120_ORRCell_1.svg"), p)  #hide
-        p=main(;compare=true,Plotter)     #hide
+        p = main(; compare = true, Plotter)     #hide
         Plotter.save(joinpath(dir, "Example120_ORRCell_2.svg"), p)  #hide
     end                                                      #hide
-    nothing                                                  #hide
+    return nothing                                                  #hide
 end                                                          #hide
 
 end
-
-
-
-

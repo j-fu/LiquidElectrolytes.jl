@@ -171,6 +171,7 @@ begin
                                Γ_we = 1,
                                Γ_bulk = 2,
                                eneutral = false,
+	                            log=RLog(),
                                scheme)
 
     celldata.v .*= vfac

@@ -15,7 +15,7 @@ ExampleJuggler.verbose!(true)
 thisproject=dirname(Base.active_project())
 
 @testset "cdl0" begin
-    ely=ElectrolyteData(c_bulk=fill(0.01*mol/dm^3,2).|>unitfactor)
+    ely=ElectrolyteData(c_bulk=fill(0.01*mol/dm^3,2).|>unitfactor, exp=RExp())
     @test dlcap0(ely)≈ 0.22846691848825248
     edata=EquilibriumData()
     LiquidElectrolytes.set_molarity!(edata,0.01)

@@ -59,7 +59,7 @@ begin
         nc = 2,
         Γ_we = 1,
         Γ_bulk = 2,
-		exp=RExp()
+		exp=RExp(trunc=400.0)
     )
 
     celldata.c_bulk .= molarity * mol / dm^3
@@ -103,8 +103,7 @@ result = dlcapsweep(
     inival = unknowns(pbsys),
     iϕ = 1, voltages,
     molarity = molarity * ufac"mol/dm^3",
-    damp_initial = 0.5,
-	verbose="ne"
+    verbose="ne"
 )
 end
 
