@@ -58,8 +58,7 @@ begin
     celldata = ElectrolyteData(;
         nc = 2,
         Γ_we = 1,
-        Γ_bulk = 2,
-		exp=RExp(trunc=400.0)
+        Γ_bulk = 2
     )
 
     celldata.c_bulk .= molarity * mol / dm^3
@@ -100,7 +99,7 @@ begin
 	@info "PBSystem"
 result = dlcapsweep(
     pbsys;
-    inival = unknowns(pbsys),
+    inival = unknowns(pbsys, inival=0),
     iϕ = 1, voltages,
     molarity = molarity * ufac"mol/dm^3",
     verbose="ne"
