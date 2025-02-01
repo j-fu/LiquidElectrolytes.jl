@@ -13,7 +13,7 @@ function pbspacecharge(φ, p, electrolyte)
         barv = electrolyte.v[α] + electrolyte.κ[α] * electrolyte.v0
         η_p = barv * pscaled
         η_φ = electrolyte.z[α] * electrolyte.F * (φ - electrolyte.ϕ_bulk)
-        y = electrolyte.c_bulk[α] * rexp(-(η_φ + η_p) / (electrolyte.RT))
+        y = electrolyte.c_bulk[α] * electrolyte.exp(-(η_φ + η_p) / (electrolyte.RT))
         sumyz += electrolyte.z[α] * y
         sumyv += barv * y
     end

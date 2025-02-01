@@ -28,7 +28,7 @@ end
 function (rexp::RExp)(x)
     (;trunc) = rexp
     if x < -trunc
-        return 1.0 / rexp(-x; trunc)
+        return 1.0 / rexp(-x)
     elseif x <= trunc
         return exp(x)
     else
