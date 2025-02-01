@@ -65,7 +65,7 @@ default_reaction(f, u, node, electrolyte) = nothing
 Calculate differences of excess chemical potentials from activity coefficients
 """
 @inline function dμex(γk, γl, electrolyte)
-    return (rlog(γk, electrolyte) - rlog(γl, electrolyte)) * (electrolyte.RT)
+    return (electrolyte.log(γk) - electrolyte.log(γl)) * (electrolyte.RT)
 end
 
 """
@@ -123,8 +123,8 @@ Flux expression based on central differences, see Gaudeul/Fuhrmann 2022
 """
 function cflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
     (; D, z, F, RT) = electrolyte
-    μk = log(ck) * RT
-    μl = log(cl) * RT
+    μk = electrolyte.log(ck) * RT
+    μl = electrolyte.log(cl) * RT
     return D[ic] * 0.5 * (ck + cl) * ((μk - μl + dμex(γk, γl, electrolyte) + z[ic] * F * dϕ) / RT - evelo / D[ic])
 end
 #=
@@ -167,8 +167,8 @@ function pnpflux(f, u, edge, electrolyte)
         Mrel = M[ic] / M0
         barv = v[ic] + κ[ic] * v0
         tildev = barv - Mrel * v0
-        γk = exp(tildev * pk / (RT)) * (bar_ck / c0k)^Mrel * (1 / bar_ck)
-        γl = exp(tildev * pl / (RT)) * (bar_cl / c0l)^Mrel * (1 / bar_cl)
+        γk = electrolyte.exp(tildev * pk / (RT)) * (bar_ck / c0k)^Mrel * (1 / bar_ck)
+        γl = electrolyte.exp(tildev * pl / (RT)) * (bar_cl / c0l)^Mrel * (1 / bar_cl)
 
         if scheme == :μex
             f[ic] = sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)

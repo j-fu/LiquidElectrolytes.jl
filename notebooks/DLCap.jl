@@ -58,7 +58,8 @@ begin
     celldata = ElectrolyteData(;
         nc = 2,
         Γ_we = 1,
-        Γ_bulk = 2
+        Γ_bulk = 2,
+		exp=RExp()
     )
 
     celldata.c_bulk .= molarity * mol / dm^3

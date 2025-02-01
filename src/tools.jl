@@ -1,7 +1,11 @@
+abstract type RFunction<:Function end
+
 myround(x; kwargs...) = round(x; kwargs...)
 myround(s::Symbol; kwargs...) = s
 myround(i::Int; kwargs...) = i
 myround(b::Bool; kwargs...) = b
+myround(f::Function; kwargs...) = string(f)
+
 
 function showstruct(io::IO, this)
     for name in fieldnames(typeof(this))
@@ -10,30 +14,43 @@ function showstruct(io::IO, this)
     return
 end
 
-
 """
-    rexp(x;trunc=500.0)
+    RExp(trunc)
 
-Regularized exponential. Linear continuation for `x>trunc`,  
-returns 1/rexp(-x) for `x<-trunc`.
+Functor struct for regularized exponential. Linear continuation for `x>trunc`,  
+returns 1/rexp(-x) for `x<-trunc`. Objects of this type are meant to replace
+the exponential function.
 """
-function rexp(x; trunc = 500.0)
-    return if x < -trunc
-        1.0 / rexp(-x; trunc)
+Base.@kwdef struct RExp{T<:AbstractFloat} <: RFunction
+    trunc::T=500.0
+end
+
+function (rexp::RExp)(x)
+    (;trunc) = rexp
+    if x < -trunc
+        return 1.0 / rexp(-x; trunc)
     elseif x <= trunc
-        exp(x)
+        return exp(x)
     else
-        exp(trunc) * (x - trunc + 1)
+        return exp(trunc) * (x - trunc + 1)
     end
 end
 
-"""
-    rlog(u; eps=1.0e-40)
 
-Regularized logarithm. Smooth linear continuation for `x<eps`.
-This means we can calculate a "logarithm"  of a small negative number.
+
 """
-function rlog(x; eps = 1.0e-40)
+    RLog(eps)
+
+Functor struct for regularized  logarithm. Smooth linear continuation for `x<eps`.
+This means we can calculate a "logarithm"  of a small negative number.
+Objects of this type are meant to replace the logarithm function.
+"""
+Base.@kwdef struct RLog{T<:AbstractFloat} <: RFunction
+    eps::T=1.0e-40
+end
+
+function (rlog::RLog)(x)
+    (;eps)=rlog
     if x < eps
         return log(eps) + (x - eps) / eps
     else

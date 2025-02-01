@@ -90,11 +90,10 @@ begin
     const vdelta = 0.025 * V
     const molarity = 0.1
     const nref = 0
-    const κ = 10
+    const κ = 10.0
     const vfac = 1
     const scheme = :μex
     const R0 = 5.0e-16mol / (cm^2 * s)
-    const epsreg = 1.0e-20
 
     const Δg = 0.0
     const β = 0.5
@@ -172,8 +171,7 @@ begin
                                Γ_we = 1,
                                Γ_bulk = 2,
                                eneutral = false,
-                               scheme,
-                               epsreg)
+                               scheme)
 
     celldata.v .*= vfac
     celldata.weights[celldata.ip] = 0

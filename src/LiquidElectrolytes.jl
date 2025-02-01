@@ -15,6 +15,7 @@ function __init__()
 end
 
 include("tools.jl")
+export RExp, RLog
 
 include("electrolyte.jl")
 export ElectrolyteData, AbstractElectrolyteData

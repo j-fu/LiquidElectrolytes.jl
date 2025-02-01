@@ -18,7 +18,7 @@ Fields (for default values, see below):
 
 $(TYPEDFIELDS)
 """
-@kwdef mutable struct ElectrolyteData <: AbstractElectrolyteData
+@kwdef mutable struct ElectrolyteData{Tlog, Texp} <: AbstractElectrolyteData
     "Number of ionic species."
     nc::Int = 2
 
@@ -101,11 +101,6 @@ $(TYPEDFIELDS)
     scheme::Symbol = :μex
 
     """
-    Regularization parameter used in [`rlog`](@ref)
-    """
-    epsreg::Float64 = 1.0e-40
-
-    """
     Species weights for norms in solver control.
     """
     weights::Vector{Float64} = [v..., zeros(na)..., 1.0, 0.0]
@@ -120,6 +115,9 @@ $(TYPEDFIELDS)
     """
     pressure::Vector{Float64} = zeros(0)
 
+    log::Tlog = Base.log
+
+    exp::Texp = Base.exp
 end
 
 
@@ -276,12 +274,6 @@ function c0_barc(c, electrolyte)
     return c0, barc
 end
 
-"""
-    rlog(u, electrolyte)
-
-Calls rlog(u;eps=electrolyte.epsreg)
-"""
-rlog(x, electrolyte::AbstractElectrolyteData) = rlog(x; eps = electrolyte.epsreg)
 
 
 """
@@ -307,7 +299,7 @@ Calculate chemical potential of species with concentration c
         μ = \bar v(p-p_{ref}) + RT\log \frac{c}{\bar c}
 ```
 """
-chemical_potential(c, barc, p, barv, data) = rlog(c / barc, data) * data.RT + barv * data.pscale * (p - data.p_bulk)
+chemical_potential(c, barc, p, barv, electrolyte) = electrolyte.log(c / barc) * electrolyte.RT + barv * electrolyte.pscale * (p - electrolyte.p_bulk)
 
 """
     chemical_potentials!(μ,u,electrolyte)
@@ -383,13 +375,15 @@ end
 
 
 """
-    rrate(R0,β,A)
+    rrate(R0,β,A, exp=Base.exp)
 
 Reaction rate expression
 
-    rrate(R0,β,A)=R0*(exp(-β*A) - exp((1-β)*A))
+    rrate(R0,β,A; exp=Base.exp)=R0*(exp(-β*A) - exp((1-β)*A))
 """
-rrate(R0, β, A) = R0 * (exp(-β * A) - exp((1 - β) * A))
+function rrate(R0, β, A, exp::Texp=Base.exp) where  {Texp}
+    return R0 * (exp(-β * A) - exp((1 - β) * A))
+end
 
 """
     wnorm(u,w,p)
