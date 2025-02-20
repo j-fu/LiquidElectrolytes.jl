@@ -35,7 +35,7 @@ function pnpreaction(f, u, node, electrolyte)
     if solvepressure(electrolyte)
         f[electrolyte.ip] = 0
     else
-        f[electrolyte.ip] = u[electrolyte.ip] - electrolyte.pressure[node.index]
+        f[electrolyte.ip] = u[electrolyte.ip]
     end
 
     for ic in 1:(electrolyte.nc)
@@ -167,8 +167,8 @@ function pnpflux(f, u, edge, electrolyte)
         Mrel = M[ic] / M0
         barv = v[ic] + κ[ic] * v0
         tildev = barv - Mrel * v0
-        γk = electrolyte.exp(tildev * pk / (RT)) * (bar_ck / c0k)^Mrel * (1 / bar_ck)
-        γl = electrolyte.exp(tildev * pl / (RT)) * (bar_cl / c0l)^Mrel * (1 / bar_cl)
+        γk = electrolyte.exp(tildev * pk / (RT)) * (bar_ck / c0k)^Mrel * (1 / (v0 * bar_ck))
+        γl = electrolyte.exp(tildev * pl / (RT)) * (bar_cl / c0l)^Mrel * (1 / (v0 * bar_cl))
 
         if scheme == :μex
             f[ic] = sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)

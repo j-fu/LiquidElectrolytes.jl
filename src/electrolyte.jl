@@ -101,6 +101,15 @@ $(TYPEDFIELDS)
     scheme::Symbol = :μex
 
     """
+    Solve for pressure. 
+
+    This is `true` by default. Setting this to `false` can serve two purposes:
+    - Take the pressure from the solution of a flow equation
+    - Ignore the pressure contribution to the excess chemical potential
+    """
+    solvepressure::Bool = true
+
+    """
     Species weights for norms in solver control.
     """
     weights::Vector{Float64} = [v..., zeros(na)..., 1.0, 0.0]
@@ -111,16 +120,54 @@ $(TYPEDFIELDS)
     edgevelocity::Union{Float64, Vector{Float64}} = 0.0
 
     """
-    Pressure (if calculated with flow solver)
+    Electrolyte model
     """
-    pressure::Vector{Float64} = zeros(0)
+    model::Symbol = :DGL
 
+    """
+    Logarithm function. Default: `Base.log`, but can be replaced by 
+    [`RLog`](@ref)
+    """
     log::Tlog = Base.log
 
+    """
+    Exponential function. Default: `Base.exp`, but can be replaced by 
+    [`RExp`](@ref)
+    """
     exp::Texp = Base.exp
 end
 
+"""
+    set_model!(electrolyte, model)
 
+Force the electrolyte data to be consistent to given model. The following
+models are supported:
+    - `:default`, `:DGL`: Dreyer/Guhlke/Landstorfer model (varying solvation, molar volumes, molar mass, solve for pressure)
+    - `:BAO`:  Borukhov/Andelman/Orland (``κ_i=0``, ``M_i=M_0``, `solvepressure=false`)
+    - `:DGM`:  Dreyer/Guhlke/Müller (``κ_i=0``, ``v_i=v_0``)
+    - `:ρconst`: Constant density (``M_i=M_0v_i/v_0``) (for consistent coupling with stokes)
+"""
+function set_model!(electrolyte, model)
+    if model==:BAO
+        electrolyte.κ.=0
+        electrolyte.M.=electrolyte.M0
+        electrolyte.solvepressure=false
+        electrolyte.model=:BAO
+    elseif model==:default || model==:DGL
+        electrolyte.model=:DGL
+    elseif model==:DGM
+        electrolyte.κ.=0
+        electrolyte.v.=electrolyte.v0
+        electrolyte.model=:DGM
+    elseif model==:ρconst
+        electrolyte.M.=electrolyte.v.*electrolyte.M/electrolyte.v0
+        electrolyte.model=:DGM
+    else
+        error("Unknown electrolyte model: $(model)")
+    end
+    return nothing
+end
+    
 """
     solvepressure(electrolyte)
 
@@ -128,7 +175,7 @@ Check if pressure is to be solved for using the pressure Laplace equation derive
 from the Navier-Stokes equation in mechanical equilibrium or if the pressure is
 obtained from the (Navier)-Stokes solver.
 """
-solvepressure(electrolyte) = length(electrolyte.pressure) == 0
+solvepressure(electrolyte) = electrolyte.solvepressure
 
 
 _evelo(v::Number, i) = v

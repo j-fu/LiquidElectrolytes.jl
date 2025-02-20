@@ -51,7 +51,7 @@ function SciMLBase.solve(
     pnpstate = VoronoiFVM.SystemState(pnpsolver)
     pnpdata = pnpsolver.physics.data
     pnpgrid = pnpsolver.grid
-    (; iϕ) = pnpdata
+    (; iϕ, ip) = pnpdata
 
     flowsol = extended_unknowns(flowsolver)
     pnpsol = unknowns(pnpsolver, inival = 0)
@@ -78,7 +78,7 @@ function SciMLBase.solve(
         t_stokes += @elapsed solve!(flowsol, flowsolver; verbosity = -1)
         t_project += @elapsed evelo, bfvelo = fvm_velocities(flowsol, flowsolver; reconst = false)
         pnpdata.edgevelocity .= evelo
-        pnpdata.pressure .= node_pressure(flowsol, flowsolver)
+        pnpsol[ip,:].= node_pressure(flowsol, flowsolver)
         #        pnpdata.bfvelo.=bfvelo
     end
     @info "t_pnp=$(myround(t_pnp)), t_stokes=$(myround(t_stokes)) t_project=$(myround(t_project))"
