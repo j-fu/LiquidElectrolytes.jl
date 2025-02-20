@@ -111,16 +111,27 @@ The diffusive mass fluxes are defined relative to the barycentric velocity \cite
   \sum_{i=0}^N M_i\mathbf N_i&=0
 \end{align}
 
+\begin{comment}
+  
+m= RTlog(v c)
+v*c =exp(mu/(RT))
+c= exp(mu/(RT))/v
 
+nabla c = 1/RT exp(mu/(RT))/v \nabla mu = 1/RT c \nabla mu
+\nabla mu = RT nabla log(c) + RT nabla log(v) = RT nabla log(c)
+\end{comment}
 
 For the derivation of the numerical scheme we define the \textit{excess chemical potential}
 \begin{align}\label{eq:muexdef}
-  \mu^{ex}_i = \mu_i - m_i\mu_0 -  RT \log c_i
+  \mu^{ex}_i = \mu_i - m_i\mu_0 -  RT \log \frac{c_i}{c_{ref}}
 \end{align}
- which allwos to rewrite the Nernst-Planck flux as 
+where $c_{ref}$ is some constant reference concentration. Here, we choose $c_{ref}=\frac{1}{v_0}$, the
+concentration of the solvent without ion content.
+
+This   allows to rewrite the Nernst-Planck flux as 
 \begin{align}
-  N_i &= \frac{D}{RT} c_i \nabla\left( RT \log c_i  +  \mu^i_{ex} +z_iF\nabla\phi\right) \nonumber\\
-      &= D\nabla c_i  +  c_i\frac{D_i}{RT}(\mu^i_{ex} +z_iF\nabla\phi) \label{eq:flux}
+  N_i &=-\frac{D}{RT} c_i \nabla\left( RT \log (v_0c_i)  +  \mu^i_{ex} +z_iF\nabla\phi\right) \nonumber\\
+      &= .D\nabla c_i  -  c_i\frac{D_i}{RT}(\nabla\mu^i_{ex} +z_iF\nabla\phi) \label{eq:flux}
 \end{align}
 The generalized drift-diffusion representation \eqref{eq:flux} will allow to apply the excess chemical potential
 scheme (SEDAN scheme) \cite{GaudeulFuhrmann, EisenbergLiu} which has been shown to be thermodynamically correct and convergent in the case without pressure
@@ -129,33 +140,53 @@ omitted from the calculation.
 
 For $i=1\dots N$ we have
 \begin{align}
-  \mu_i^{ex} &= \mu_i -m_i \mu_0  - RT \log c_i\nonumber\\
-             &= \bar v_ip +  RT \log \frac{c_i}{\bar c}  -m_i\left(  v_0p + RT \log \frac{c_0}{\bar c}\right)  - RT \log c_i  \nonumber\\
-            &= \bar v_ip - RT\log \bar c -m_i\left(v_0p + RT \log \frac{c_0}{\bar c}\right)\nonumber\\
-            &= \left(\bar v_i-m_iv_0\right)p -m_iRT\log \frac{c_0}{\bar c} - RT\log \bar c \label{eq:muex}
+  \mu_i^{ex} &= \mu_i -m_i \mu_0  - RT \log (v_0c_i)\nonumber\\
+             &= \bar v_ip +  RT \log \frac{c_i}{\bar c}  -m_i\left(  v_0p + RT \log \frac{c_0}{\bar c}\right)  - RT \log (v_0c_i)  \nonumber\\
+            &= \bar v_ip - RT\log v_0\bar c -m_i\left(v_0p + RT \log \frac{c_0}{\bar c}\right)\nonumber\\
+            &= \left(\bar v_i-m_iv_0\right)p -m_iRT\log \frac{c_0}{\bar c} - RT\log v_0 \bar c \label{eq:muex}
 \end{align}
 and express $c_0$ via \eqref{eq:c0} and $\bar c$ in terms of $c_1\dots c_N$:
 \begin{align*}
   \bar c &% = \frac{1}{v_0} -  \sum_{i=1}^N \frac{\bar v_i}{v_0}c_i + \sum_{i=1}^N  c_i
-          = \frac{1}{v_0} + \sum_{i=1}^N \left(1- \frac{\bar v_i}{v_0}\right) c_i .x
+          = \frac{1}{v_0} + \sum_{i=1}^N \left(1- \frac{\bar v_i}{v_0}\right) c_i .
 \end{align*}
+
+\newpage
 The dependency $\mu_i^{ex}=\mu_i^{ex}(c_1\dots c_N, p)$  encodes the non-ideality properties of the mixture.
 The excess chemical potential is linked to the \textit{activity coefficient} $\gamma_i=\exp(-\frac{\mu_i^{ex}}{RT})$
 \cite{IUPAC,Fuhrmann2015}
-\begin{align*}
+\begin{align}
   \gamma_i&=\exp(-\frac{\mu_i^{ex}}{RT})\\
-         &= \frac{1}{\bar c}\exp\left(\frac{\bar v_i-m_iv_0}{RT}p\right)\left(\frac{\bar c}{c_0}\right)^{m_i}
-\end{align*}
+         &= \frac{1}{v_0\bar c}\exp\left(\frac{\bar v_i-m_iv_0}{RT}p\right)\left(\frac{\bar c}{c_0}\right)^{m_i} \label{eq:gamma}
+\end{align}
 
 There are some noteworthy special cases.
 
-\subsubsection{Bikerman-Freise model}
-\cite{Bikerman, Freise, Fuhrmann2015}
+\subsubsection{BAO Model}
+\cite{Borukhov, Andelman, Orland, RingeEtAl}
+\begin{align}
+  \gamma = \frac{1}{1-\sum_{i=1}^N v_i c_i} \label{eq:BAO}
+\end{align}
+with $v_\alpha = N_A (a_\alpha^{cell})^3$. Under the assumption that $\kappa_i=0$, this gives
+$\gamma_i = \frac{1}{v_0 c_0}$. Assuming $m_i=1, \kappa_i=0$  (equal species molar masses),  
+\eqref{eq:gamma} turns into
+\begin{align}
+  \gamma_i
+         &= \frac{1}{v_0c_0}\exp\left(\frac{v_i-v_0}{RT}p\right),
+\end{align}
+and one sees that the model \eqref{eq:BAO} misses the influence of the pressure on the
+activity coefficient and thus the chemical excess potential.
+
+
+\subsubsection{BF Model}
+\cite{Fuhrmann2015}
 Set $v_i=v_0$, $M_i=M_0$, $\kappa_i=0$. Thus $m_i=1$, $\bar v_i=v_i$, $\bar v_i -m_i v_0=0$.
 As a consequence, $\mu_i^{ex} = -RT\log c_0$, and notably it is independent of $p$.
 Also, $\bar c=\frac{1}{v_0}$ and $c_0=\frac{1}{v_0} - \sum c_i$.
 
 
+
+\clearpage
 \subsubsection{Constant density (Springer paper)}!!!
 
 
