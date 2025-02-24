@@ -27,6 +27,8 @@ include("pnpsystem.jl")
 export PNPSystem
 export pnpunknowns, electrolytedata, bulkbcondition
 
+VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public aflux, sflux, cflux"))
+
 include("pbsystem.jl")
 export PBSystem
 

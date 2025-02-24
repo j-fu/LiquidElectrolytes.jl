@@ -69,7 +69,7 @@ Calculate differences of excess chemical potentials from activity coefficients
 end
 
 """
-    sflux(ic,dϕ,ck,cl,γk,γl,bar_ck,bar_cl,electrolyte)
+    sflux(ic,dϕ,ck,cl,γk,γl,bar_ck,bar_cl,electrolyte; evelo=0.0)
 
  Sedan flux,  see Gaudeul/Fuhrmann 2022
 
@@ -80,7 +80,7 @@ Appearantly first described by Yu, Zhiping  and Dutton, Robert, SEDAN III, www-t
 
 Verification calculation is in the paper.
 """
-function sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
+function sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte; evelo = 0.0)
     (; D, z, F, RT) = electrolyte
     bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(γk, γl, electrolyte) / RT - evelo / D[ic])
     return D[ic] * (bm * ck - bp * cl)
@@ -98,13 +98,13 @@ ck/cl = bp/bm = exp(z ϕk*F/RT + μex_k/RT)/exp(z ϕl*F/RT + μex_l/RT)
 =#
 
 """
-    aflux(ic,dϕ,ck,cl,γk,γl,bar_ck,bar_cl,electrolyte)
+    aflux(ic,dϕ,ck,cl,γk,γl,bar_ck,bar_cl,electrolyte; evelo=0)
 
 Flux expression based on  activities, see Fuhrmann, CPC 2015
 ??? Do we need to divide the velocity by the inverse activity coefficient ?
 
 """
-function aflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
+function aflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte; evelo = 0.0)
     (; D, z, F, RT) = electrolyte
     Dx = D[ic] * (1 / γk + 1 / γl) / 2
     bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT - evelo / D[ic])
@@ -117,11 +117,11 @@ ck/cl= bp/betaK  / bm/betal
 =#
 
 """
-    cflux(ic,dϕ,ck,cl,γk,γl,bar_ck,bar_cl,electrolyte)
+    cflux(ic,dϕ,ck,cl,γk,γl,bar_ck,bar_cl,electrolyte; evelo = 0)
 
 Flux expression based on central differences, see Gaudeul/Fuhrmann 2022
 """
-function cflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
+function cflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte;  evelo = 0.0)
     (; D, z, F, RT) = electrolyte
     μk = electrolyte.log(ck) * RT
     μl = electrolyte.log(cl) * RT
@@ -171,11 +171,11 @@ function pnpflux(f, u, edge, electrolyte)
         γl = electrolyte.exp(tildev * pl / (RT)) * (bar_cl / c0l)^Mrel * (1 / (v0 * bar_cl))
 
         if scheme == :μex
-            f[ic] = sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
+            f[ic] = sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte; evelo)
         elseif electrolyte.scheme == :act
-            f[ic] = aflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
+            f[ic] = aflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte; evelo)
         elseif electrolyte.scheme == :cent
-            f[ic] = cflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte, evelo)
+            f[ic] = cflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte; evelo)
         else
             error("no such scheme: $(scheme)")
         end
