@@ -432,6 +432,8 @@ function rrate(R0, β, A, exp::Texp=Base.exp) where  {Texp}
     return R0 * (exp(-β * A) - exp((1 - β) * A))
 end
 
+
+
 """
     wnorm(u,w,p)
 

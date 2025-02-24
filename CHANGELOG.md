@@ -13,14 +13,17 @@ All notable changes to this project will be documented in this file.
 - Scale pressure equation by 1/pscale
 - Added pre-factor `1/v0` to activity coefficients (this does not influence excess chemcial potential gradients
   but makes things more compatible to literature)
+- Checked computation with Dual64
 
 ### Breaking
 - charge() renamed to chargedensity()
 - remove export of iA, iC
-- Introduce exp and log as part of electrolyte data, remove epsreg
+- Introduce `exp` and `log` (`Base.exp`, `Base.log` by default= as part of electrolyte data, remove epsreg
+  - ElectrolyteData is now parametrized with the types of these functions
   - This allows for a more transparent handling of log and exp regularization
   - Provide `RExp` and `RLog` functor structs providing regularized alternative to exp and log
   - Minimize use of regularization in examples
+  - Remove rlog and rexp. Projects can define instead `rlog=RLog()` and `rexp=RExp()`
 
 ### Bugfixes
 - Re-checked and fixed all formulas again
