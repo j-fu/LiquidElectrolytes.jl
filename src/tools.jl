@@ -22,7 +22,7 @@ returns 1/rexp(-x) for `x<-trunc`. Objects of this type are meant to replace
 the exponential function.
 """
 Base.@kwdef struct RExp{T<:AbstractFloat} <: RFunction
-    trunc::T=500.0
+    trunc::T=log(sqrt(floatmax(T)))
 end
 
 function (rexp::RExp)(x)
@@ -36,6 +36,8 @@ function (rexp::RExp)(x)
     end
 end
 
+RExp(::Type{T}) where T=RExp{T}()
+
 
 
 """
@@ -46,8 +48,10 @@ This means we can calculate a "logarithm"  of a small negative number.
 Objects of this type are meant to replace the logarithm function.
 """
 Base.@kwdef struct RLog{T<:AbstractFloat} <: RFunction
-    eps::T=1.0e-40
+    eps::T=sqrt(eps(T))
 end
+
+RLog(::Type{T}) where T=RLog{T}()
 
 function (rlog::RLog)(x)
     (;eps)=rlog
