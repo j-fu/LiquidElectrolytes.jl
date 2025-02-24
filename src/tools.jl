@@ -21,8 +21,8 @@ Functor struct for regularized exponential. Linear continuation for `x>trunc`,
 returns 1/rexp(-x) for `x<-trunc`. Objects of this type are meant to replace
 the exponential function.
 """
-Base.@kwdef struct RExp{T<:AbstractFloat} <: RFunction
-    trunc::T=log(sqrt(floatmax(T)))
+struct RExp{T<:AbstractFloat} <: RFunction
+    trunc::T
 end
 
 function (rexp::RExp)(x)
@@ -36,8 +36,18 @@ function (rexp::RExp)(x)
     end
 end
 
-RExp(::Type{T}) where T=RExp{T}()
+"""
+    RExp(T::type)
 
+Return `RExp(log(sqrt(floatmax(T))))`
+"""
+RExp(::Type{T}) where T=RExp{T}(log(sqrt(floatmax(T))))
+
+"""
+    RExp()
+Return RExp(Float64)
+"""
+RExp() = RExp(Float64)
 
 
 """
@@ -47,11 +57,9 @@ Functor struct for regularized  logarithm. Smooth linear continuation for `x<eps
 This means we can calculate a "logarithm"  of a small negative number.
 Objects of this type are meant to replace the logarithm function.
 """
-Base.@kwdef struct RLog{T<:AbstractFloat} <: RFunction
-    eps::T=sqrt(eps(T))
+struct RLog{T<:AbstractFloat} <: RFunction
+    eps::T
 end
-
-RLog(::Type{T}) where T=RLog{T}()
 
 function (rlog::RLog)(x)
     (;eps)=rlog
@@ -61,3 +69,20 @@ function (rlog::RLog)(x)
         return log(x)
     end
 end
+
+
+
+"""
+    RLog(T::type)
+
+Return `RLog(sqrt(eps(T)))`
+"""
+RLog(::Type{T}) where T=RLog{T}(sqrt(eps(T)))
+
+"""
+    RLog()
+Return RLog(Float64)
+"""
+RLog() = RLog(Float64)
+
+

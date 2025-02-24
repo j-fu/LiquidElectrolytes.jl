@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.4
+# v0.20.3
 
 using Markdown
 using InteractiveUtils
@@ -117,7 +117,7 @@ default_pnpdata=ElectrolyteData();
 function PNPData(;molar_volume=default_pnpdata.v0, scheme=:μex, κ=20)	
 	pnpdata = ElectrolyteData()
     pnpdata.edgevelocity = zeros(num_edges(pnpgrid))
-    pnpdata.pressure = zeros(num_nodes(pnpgrid))
+    pnpdata.solvepressure=false
     pnpdata.scheme = scheme
     pnpdata.κ .= κ
     pnpdata.D .= 1.0e-9 * m^2 / s
