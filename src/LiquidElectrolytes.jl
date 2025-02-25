@@ -19,7 +19,7 @@ export RExp, RLog
 
 include("electrolyte.jl")
 export ElectrolyteData, AbstractElectrolyteData
-export dlcap0, chargedensity, chemical_potentials!, rrate, debyelength, chemical_potential
+export dlcap0, chargedensity, chemical_potentials!, rrate, debyelength, chemical_potential, c0_barc
 export showstruct, electrolyte, solventconcentration
 export isincompressible, iselectroneutral
 export chemical_potentials, electrochemical_potentials

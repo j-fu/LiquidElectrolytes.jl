@@ -6,7 +6,6 @@ LiquidElectrolytes.solvepressure
 LiquidElectrolytes.edgevelocity
 LiquidElectrolytes.chargedensity!
 LiquidElectrolytes.vrel
-LiquidElectrolytes.c0_barc
 LiquidElectrolytes.wnorm
 ```
 

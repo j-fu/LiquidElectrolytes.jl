@@ -26,6 +26,7 @@ chemical_potentials!
 rrate
 iselectroneutral
 isincompressible
+c0_barc
 ``` 
 
 ## Poisson-Nernst-Planck system
