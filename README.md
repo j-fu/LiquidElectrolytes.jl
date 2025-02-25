@@ -5,6 +5,8 @@
 
 LiquidElectrolytes.jl
 =====================
-This package is in pre-release state.
 
+Simulate electrochemical cells by  solving the generalized Nernst-Planck-Poisson system
+or the corresponding generalized Poisson-Boltzmann system.
+Calculate electrostatic potential, ion distribution, pressure and electrochemical reactions.
 

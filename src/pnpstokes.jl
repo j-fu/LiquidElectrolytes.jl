@@ -1,3 +1,9 @@
+"""
+    $(TYPEDEF)
+
+Stokes solver struct.
+$(TYPEDFIELDS)
+"""
 struct PNPStokesSolver{Tflow, Tpnp}
     flowsolver::Tflow
     pnpsolver::Tpnp
@@ -7,6 +13,7 @@ end
    flowsolver(grid; μ = 1, velospace = H1P2B)         
 """
 function flowsolver end
+
 function extended_unknowns end
 function voltage! end
 function node_pressure end
@@ -15,6 +22,11 @@ function fvm_velocities end
 function flowplot end
 function velocity_unknown end
 
+"""
+    PNPStokesSolver(;flowgrid, pnpgrid, μ, velospace, pnpdata, pnpbcond, pnpreaction, flowbcond, kwargs...)
+
+Create Poisson-Nernst-Planck-Stokes-Solver.
+"""
 function PNPStokesSolver(;
         flowgrid = simplexgrid(0:0.5:1),
         pnpgrid = flowgrid,

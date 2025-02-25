@@ -20,18 +20,13 @@ ElectrolyteData()
 ```@docs
 dlcap0(::ElectrolyteData)
 debyelength(::ElectrolyteData)
-charge
+chargedensity
 chemical_potential
 chemical_potentials!
-c0_barc
 rrate
 iselectroneutral
 isincompressible
 ``` 
-## Poisson-Boltzmann system
-```@docs
-PBSystem
-```
 
 ## Poisson-Nernst-Planck system
 
@@ -40,5 +35,23 @@ PNPSystem
 pnpunknowns
 electrolytedata
 solventconcentration
+chemical_potentials
+electrochemical_potentials
 ```
 
+
+## Poisson-Boltzmann system
+```@docs
+PBSystem
+```
+
+## Poisson-Nernst-Planck-Stokes system
+```@docs
+PNPStokesSolver
+```
+
+## Utilities
+```@docs
+RLog
+RExp
+```

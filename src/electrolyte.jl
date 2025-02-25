@@ -142,10 +142,10 @@ end
 
 Force the electrolyte data to be consistent to given model. The following
 models are supported:
-    - `:default`, `:DGL`: Dreyer/Guhlke/Landstorfer model (varying solvation, molar volumes, molar mass, solve for pressure)
-    - `:BAO`:  Borukhov/Andelman/Orland (``κ_i=0``, ``M_i=M_0``, `solvepressure=false`)
-    - `:DGM`:  Dreyer/Guhlke/Müller (``κ_i=0``, ``v_i=v_0``)
-    - `:ρconst`: Constant density (``M_i=M_0v_i/v_0``) (for consistent coupling with stokes)
+  - `:default`, `:DGL`: Dreyer/Guhlke/Landstorfer model (varying solvation, molar volumes, molar mass, solve for pressure)
+  - `:BAO`:  Borukhov/Andelman/Orland (``κ_i=0``, ``M_i=M_0``, `solvepressure=false`)
+  - `:DGM`:  Dreyer/Guhlke/Müller (``κ_i=0``, ``v_i=v_0``)
+  - `:ρconst`: Constant density (``M_i=M_0v_i/v_0``) (for consistent coupling with stokes)
 """
 function set_model!(electrolyte, model)
     if model==:BAO
@@ -286,28 +286,28 @@ Calculate relative (wrt. solvent) molar volume of i-th species ``v_{i,rel}=κ_i+
 """
 vrel(ic, electrolyte) = electrolyte.v[ic] / electrolyte.v0 + electrolyte.κ[ic]
 
-@doc raw"""
+"""
 	c0_barc(u,electrolyte)
 
-Calculate solvent concentration ``c_0`` and summary concentration ``\bar c`` from vector of concentrations `c`
+Calculate solvent concentration ``c_0`` and summary concentration ``\\bar c`` from vector of concentrations `c`
 using the incompressibility constraint (assuming ``κ_0=0``):
 ```math
- \sum_{i=0}^N c_i (v_i + κ_iv_0) =1
+ \\sum_{i=0}^N c_i (v_i + κ_iv_0) =1
 ```
 
 This gives
 
 ```math
- c_0v_0=1-\sum_{i=1}^N c_i (v_i+ κ_iv_0)
+ c_0v_0=1-\\sum_{i=1}^N c_i (v_i+ κ_iv_0)
 ```
 
 ```math
-c_0= 1/v_0 - \sum_{i=1}^N c_i(\frac{v_i}{v_0}+κ_i)
+c_0= 1/v_0 - \\sum_{i=1}^N c_i(\\frac{v_i}{v_0}+κ_i)
 ```
 
 Then we can calculate 
 ```math
- \bar c= \sum_{i=0}^N c_i
+ \\bar c= \\sum_{i=0}^N c_i
 ```
 """
 function c0_barc(c, electrolyte)
@@ -337,13 +337,13 @@ function solventconcentration(U::Array, electrolyte)
     return c0
 end
 
-@doc raw"""
-        chemical_potential(c, barc, p, barv, electrolyte)
+"""
+     chemical_potential(c, barc, p, barv, electrolyte)
 
 Calculate chemical potential of species with concentration c
 
 ```math
-        μ = \bar v(p-p_{ref}) + RT\log \frac{c}{\bar c}
+        μ = \\bar v(p-p_{ref}) + RT\\log \\frac{c}{\\bar c}
 ```
 """
 chemical_potential(c, barc, p, barv, electrolyte) = electrolyte.log(c / barc) * electrolyte.RT + barv * electrolyte.pscale * (p - electrolyte.p_bulk)

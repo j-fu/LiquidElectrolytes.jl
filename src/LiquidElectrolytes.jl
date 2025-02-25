@@ -19,9 +19,10 @@ export RExp, RLog
 
 include("electrolyte.jl")
 export ElectrolyteData, AbstractElectrolyteData
-export dlcap0, chargedensity, chemical_potentials!, rrate, debyelength, chemical_potential, c0_barc
+export dlcap0, chargedensity, chemical_potentials!, rrate, debyelength, chemical_potential
 export showstruct, electrolyte, solventconcentration
 export isincompressible, iselectroneutral
+export chemical_potentials, electrochemical_potentials
 
 include("pnpsystem.jl")
 export PNPSystem
@@ -46,6 +47,7 @@ export dlcapsweep_equi
 include("equilibrium-supplement.jl")
 
 include("pnpstokes.jl")
+export PNPStokesSolver
 
 include("RotatingElectrodes/RotatingElectrodes.jl")
 

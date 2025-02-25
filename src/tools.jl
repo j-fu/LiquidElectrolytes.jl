@@ -25,6 +25,11 @@ struct RExp{T<:AbstractFloat} <: RFunction
     trunc::T
 end
 
+"""
+    (::RExp)(x)
+
+Evaluation of functor at `x`
+"""
 function (rexp::RExp)(x)
     (;trunc) = rexp
     if x < -trunc
