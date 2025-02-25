@@ -54,6 +54,17 @@ Return RExp(Float64)
 """
 RExp() = RExp(Float64)
 
+"""
+    rexp(x::Any)
+
+Exponential function used in LiquidElectrolytes.jl.
+Calls `Base.exp` by default.
+
+This can be overwritten  by defining e.g, `LiquidElectrolytes.rexp(x::Number)=myexp(x)`
+where `myexp=RExp()`.
+"""
+rexp(x::Any)=Base.exp(x)
+
 
 """
     RLog(eps)
@@ -80,9 +91,9 @@ end
 """
     RLog(T::type)
 
-Return `RLog(sqrt(eps(T)))`
+Return `RLog(eps(T)^4)`
 """
-RLog(::Type{T}) where T=RLog{T}(sqrt(eps(T)))
+RLog(::Type{T}) where T=RLog{T}(eps(T)^4)
 
 """
     RLog()
@@ -90,4 +101,13 @@ Return RLog(Float64)
 """
 RLog() = RLog(Float64)
 
+"""
+    rlog(x::Any)
 
+Logarithm function used in LiquidElectrolytes.jl.
+Calls `Base.log` by default.
+
+This can be overwritten  by defining e.g, `LiquidElectrolytes.rlog(x::Number)=mylog(x)`
+where `mylog=RLog()`.
+"""
+rlog(x::Any)=Base.log(x)

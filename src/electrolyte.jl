@@ -18,7 +18,7 @@ Fields (for default values, see below):
 
 $(TYPEDFIELDS)
 """
-@kwdef mutable struct ElectrolyteData{Tlog, Texp} <: AbstractElectrolyteData
+@kwdef mutable struct ElectrolyteData <: AbstractElectrolyteData
     "Number of ionic species."
     nc::Int = 2
 
@@ -124,17 +124,6 @@ $(TYPEDFIELDS)
     """
     model::Symbol = :DGL
 
-    """
-    Logarithm function. Default: `Base.log`, but can be replaced by 
-    [`RLog`](@ref)
-    """
-    log::Tlog = Base.log
-
-    """
-    Exponential function. Default: `Base.exp`, but can be replaced by 
-    [`RExp`](@ref)
-    """
-    exp::Texp = Base.exp
 end
 
 """
@@ -346,7 +335,7 @@ Calculate chemical potential of species with concentration c
         μ = \\bar v(p-p_{ref}) + RT\\log \\frac{c}{\\bar c}
 ```
 """
-chemical_potential(c, barc, p, barv, electrolyte) = electrolyte.log(c / barc) * electrolyte.RT + barv * electrolyte.pscale * (p - electrolyte.p_bulk)
+chemical_potential(c, barc, p, barv, electrolyte) = rlog(c / barc) * electrolyte.RT + barv * electrolyte.pscale * (p - electrolyte.p_bulk)
 
 """
     chemical_potentials!(μ,u,electrolyte)
@@ -422,14 +411,14 @@ end
 
 
 """
-    rrate(R0,β,A, exp=Base.exp)
+    rrate(R0,β,A)
 
 Reaction rate expression
 
-    rrate(R0,β,A; exp=Base.exp)=R0*(exp(-β*A) - exp((1-β)*A))
+    rrate(R0,β,A)=R0*(exp(-β*A) - exp((1-β)*A))
 """
-function rrate(R0, β, A, exp::Texp=Base.exp) where  {Texp}
-    return R0 * (exp(-β * A) - exp((1 - β) * A))
+function rrate(R0, β, A)
+    return R0 * (rexp(-β * A) - rexp((1 - β) * A))
 end
 
 

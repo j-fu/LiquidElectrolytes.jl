@@ -6,14 +6,14 @@ Space charge expression for Poisson-Boltzmann
 function pbspacecharge(φ, p, electrolyte)
     c0_bulk, barc_bulk = c0_barc(electrolyte.c_bulk, electrolyte)
     pscaled = (p * electrolyte.pscale - electrolyte.p_bulk)
-    c0 = c0_bulk * electrolyte.exp(-electrolyte.v0 * pscaled / (electrolyte.RT))
+    c0 = c0_bulk * rexp(-electrolyte.v0 * pscaled / (electrolyte.RT))
     sumyz = zero(p)
     sumyv = electrolyte.v0 * c0
     for α in 1:electrolyte.nc
         barv = electrolyte.v[α] + electrolyte.κ[α] * electrolyte.v0
         η_p = barv * pscaled
         η_φ = electrolyte.z[α] * electrolyte.F * (φ - electrolyte.ϕ_bulk)
-        y = electrolyte.c_bulk[α] * electrolyte.exp(-(η_φ + η_p) / (electrolyte.RT))
+        y = electrolyte.c_bulk[α] * rexp(-(η_φ + η_p) / (electrolyte.RT))
         sumyz += electrolyte.z[α] * y
         sumyv += barv * y
     end

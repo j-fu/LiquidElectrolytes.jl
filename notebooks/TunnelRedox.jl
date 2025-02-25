@@ -286,9 +286,6 @@ begin
         nc = 4,
         z,
         c_bulk,
-        #	log=RLog(),
-        #    exp=RExp(),
-
         κ = fill(κ, 4),
         Γ_we = 1,
         Γ_bulk = 2,
