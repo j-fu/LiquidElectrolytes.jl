@@ -40,11 +40,9 @@ export ivsweep, dlcapsweep, currents, voltages_solutions, voltages_dlcaps, volta
 export AbstractSimulationResult, DLCapSweepResult, IVSweepResult
 
 include("equilibrium-pluto.jl")
-export EquilibriumData, apply_voltage!, set_molarity!, update_derived!
-#export iφ, ip, iA, iC
-export create_equilibrium_system, solve_equilibrium_system, create_equilibrium_pp_system
-export calc_φ, calc_p, calc_cmol, calc_c0mol, calc_cnum, calc_QBL, ysum, Cdl0
-export dlcapsweep_equi
+export EquilibriumData, create_equilibrium_system, create_equilibrium_pp_system,  dlcapsweep_equi
+VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public set_molarity!, apply_voltage!, update_derived!"))
+VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public calc_cmol, calc_QBL, calc_φ, calc_p, ysum"))
 include("equilibrium-supplement.jl")
 
 include("pnpstokes.jl")

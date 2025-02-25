@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 - Add rotating disk code from RotatingElectrodesProject
-- ExtendableFEM extension & coupling with stokes
+- ExtendableFEM extension & coupling with Stokes
 - add `chemical_potentials` and `electrochemical_potentials` methods for  calculation from stationary solutions
 - Remove bikerman special case in pnpflux
 - forward/backward progress for dlcap
@@ -18,12 +18,12 @@ All notable changes to this project will be documented in this file.
 ### Breaking
 - charge() renamed to chargedensity()
 - remove export of iA, iC
-- Introduce `exp` and `log` (`Base.exp`, `Base.log` by default= as part of electrolyte data, remove epsreg
-  - ElectrolyteData is now parametrized with the types of these functions
-  - This allows for a more transparent handling of log and exp regularization
-  - Provide `RExp` and `RLog` functor structs providing regularized alternative to exp and log
-  - Minimize use of regularization in examples
-  - Remove rlog and rexp. Projects can define instead `rlog=RLog()` and `rexp=RExp()`
+- Define `rexp(::Any)` and `rlog(::Any)` as `Base.log` and `Base.exp()`, remove epsreg from ElectrolyteData.
+  Use these functions for all `exp` and `log` calculations in the package.
+  By defining `rexp(::Number)` and `rlog(::Number)`, users can overwrite these with e.g. regularized
+  versions.
+- Provide `RExp` and `RLog` functor structs providing regularized alternative to exp and log
+  - Minimize use of these regularization in examples
 
 ### Bugfixes
 - Re-checked and fixed all formulas again

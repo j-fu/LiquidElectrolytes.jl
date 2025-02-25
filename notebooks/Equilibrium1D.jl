@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.4
+# v0.20.3
 
 using Markdown
 using InteractiveUtils
@@ -27,6 +27,7 @@ begin
     using GridVisualize
     using NLsolve
     using LiquidElectrolytes
+	using LiquidElectrolytes: set_molarity!, apply_voltage!, update_derived!, calc_cmol, calc_QBL, calc_φ, calc_p, ysum
     using VoronoiFVM: VoronoiFVM, unknowns, history, solve, boundary_dirichlet!
     using LessUnitful
     using Colors
