@@ -44,20 +44,6 @@ function pnpreaction(f, u, node, electrolyte)
     return
 end
 
-"""
-    default_bcondition(f,u,bnode,electrolyte)
-
-Default boundary condition amounts to `nothing`
-"""
-default_bcondition = nothing
-
-"""
-    default_reaction(f, u, bnode, electrolyte)
-
-Default reaction amounts to `nothing`
-"""
-default_reaction(f, u, node, electrolyte) = nothing
-
 
 """
      dμex(γk, γl, electrolyte)
