@@ -1,33 +1,36 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Fe redox half cell · LiquidElectrolytes.jl</title><meta name="title" content="Fe redox half cell · LiquidElectrolytes.jl"/><meta property="og:title" content="Fe redox half cell · LiquidElectrolytes.jl"/><meta property="twitter:title" content="Fe redox half cell · LiquidElectrolytes.jl"/><meta name="description" content="Documentation for LiquidElectrolytes.jl."/><meta property="og:description" content="Documentation for LiquidElectrolytes.jl."/><meta property="twitter:description" content="Documentation for LiquidElectrolytes.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">LiquidElectrolytes.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../api/">Electrolyte models</a></li><li><a class="tocitem" href="../../std/">Standard calculations</a></li><li><a class="tocitem" href="../../changes/">Changes</a></li><li><a class="tocitem" href="../../internal/">Internal API</a></li><li><span class="tocitem">Notebooks</span><ul><li><a class="tocitem" href="../../plutostatichtml_examples/DLCap/">DLCap</a></li><li><a class="tocitem" href="../../plutostatichtml_examples/ORR/">ORR</a></li><li><a class="tocitem" href="../../plutostatichtml_examples/ElectroOsmosis/">ElectroOsmosis</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../Example101_DLCap/">Double Layer Capacitance</a></li><li class="is-active"><a class="tocitem" href>Fe redox half cell</a></li><li><a class="tocitem" href="../Example120_ORRCell/">ORR Half cell</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Fe redox half cell</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Fe redox half cell</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/j-fu/LiquidElectrolytes.jl/" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Fe-redox-half-cell"><a class="docs-heading-anchor" href="#Fe-redox-half-cell">Fe redox half cell</a><a id="Fe-redox-half-cell-1"></a><a class="docs-heading-anchor-permalink" href="#Fe-redox-half-cell" title="Permalink"></a></h1><p>(<a href="../Example110_Fe23Cell.jl">source code</a>)</p><p>I-V sweep for <span>$Fe^{2+} \to Fe^{2+} + e^-$</span></p><p><img src="../Example110_Fe23Cell_1.svg" alt/> <img src="../Example110_Fe23Cell_2.svg" alt/> <img src="../Example110_Fe23Cell_3.svg" alt/></p><p>Methods called:</p><ul><li><a href="../../api/#LiquidElectrolytes.ElectrolyteData"><code>ElectrolyteData</code></a></li><li><a href="../../std/#LiquidElectrolytes.ivsweep"><code>ivsweep</code></a></li><li><a href="../../std/#LiquidElectrolytes.dlcapsweep"><code>dlcapsweep</code></a></li><li><a href="../../api/#LiquidElectrolytes.PNPSystem"><code>PNPSystem</code></a></li></ul><pre><code class="language-julia hljs">module Example110_Fe23Cell
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Fe redox half cell · LiquidElectrolytes.jl</title><meta name="title" content="Fe redox half cell · LiquidElectrolytes.jl"/><meta property="og:title" content="Fe redox half cell · LiquidElectrolytes.jl"/><meta property="twitter:title" content="Fe redox half cell · LiquidElectrolytes.jl"/><meta name="description" content="Documentation for LiquidElectrolytes.jl."/><meta property="og:description" content="Documentation for LiquidElectrolytes.jl."/><meta property="twitter:description" content="Documentation for LiquidElectrolytes.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">LiquidElectrolytes.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../api/">Electrolyte models</a></li><li><a class="tocitem" href="../../std/">Standard calculations</a></li><li><a class="tocitem" href="../../internal/">Internal API</a></li><li><span class="tocitem">Notebooks</span><ul><li><a class="tocitem" href="../../plutostatichtml_examples/DLCap/">DLCap</a></li><li><a class="tocitem" href="../../plutostatichtml_examples/ORR/">ORR</a></li><li><a class="tocitem" href="../../plutostatichtml_examples/ElectroOsmosis/">ElectroOsmosis</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../Example101_DLCap/">Double Layer Capacitance</a></li><li class="is-active"><a class="tocitem" href>Fe redox half cell</a></li><li><a class="tocitem" href="../Example120_ORRCell/">ORR Half cell</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Fe redox half cell</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Fe redox half cell</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/j-fu/LiquidElectrolytes.jl/" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Fe-redox-half-cell"><a class="docs-heading-anchor" href="#Fe-redox-half-cell">Fe redox half cell</a><a id="Fe-redox-half-cell-1"></a><a class="docs-heading-anchor-permalink" href="#Fe-redox-half-cell" title="Permalink"></a></h1><p>(<a href="../Example110_Fe23Cell.jl">source code</a>)</p><p>I-V sweep for <span>$Fe^{2+} \to Fe^{2+} + e^-$</span></p><p><img src="../Example110_Fe23Cell_1.svg" alt/> <img src="../Example110_Fe23Cell_2.svg" alt/> <img src="../Example110_Fe23Cell_3.svg" alt/></p><p>Methods called:</p><ul><li><a href="../../api/#LiquidElectrolytes.ElectrolyteData"><code>ElectrolyteData</code></a></li><li><a href="../../std/#LiquidElectrolytes.ivsweep"><code>ivsweep</code></a></li><li><a href="../../std/#LiquidElectrolytes.dlcapsweep"><code>dlcapsweep</code></a></li><li><a href="../../api/#LiquidElectrolytes.PNPSystem"><code>PNPSystem</code></a></li></ul><pre><code class="language-julia hljs">module Example110_Fe23Cell
 using LessUnitful
 using ExtendableGrids, GridVisualize
 using VoronoiFVM
 using LiquidElectrolytes
 using Colors
 using StaticArrays
+using DoubleFloats
 
+const mylog = RLog(eps(Double64))
+LiquidElectrolytes.rlog(x::Number) = mylog(x)
 
 function main(;
-    nref = 0,
-    compare = false,
-    eneutral::Bool = false,
-    voltages = (-1:0.025:1) * ufac&quot;V&quot;,
-    dlcap = false,
-    R0 = 1.0e-10,
-    molarities = [0.001, 0.01, 0.1, 1],
-    scheme = :μex,
-    xmax = 1,
-    κ = 10.0,
-    Plotter = nothing,
-    new = false,
-    kwargs...,
-)
+        nref = 0,
+        compare = false,
+        eneutral::Bool = false,
+        voltages = (-1:0.025:1) * ufac&quot;V&quot;,
+        dlcap = false,
+        R0 = 1.0e-10,
+        molarities = [0.001, 0.01, 0.1, 1],
+        scheme = :μex,
+        xmax = 1,
+        κ = 10.0,
+        Plotter = nothing,
+        new = false,
+        valuetype = Double64,
+        kwargs...,
+    )
 
     @local_phconstants N_A e R ε_0
     F = N_A * e
     @local_unitfactors cm μF mol dm s mA A nm
-
 
 
     defaults = (;
@@ -70,7 +73,7 @@ function main(;
             f[ife2] -= r
             f[ife3] += r
         end
-        nothing
+        return nothing
     end
 
 
@@ -93,21 +96,21 @@ function main(;
 
     @assert isapprox(celldata.c_bulk&#39; * celldata.z, 0, atol = 1.0e-12)
 
-    cell = PNPSystem(grid; bcondition = halfcellbc, celldata)
+    cell = PNPSystem(grid; bcondition = halfcellbc, celldata, valuetype)
 
     # Compare electroneutral and double layer cases
     if compare
 
         celldata.eneutral = false
-        result = ivsweep(cell; voltages,store_solutions=true, kwargs...)
-        currs = LiquidElectrolytes.currents(result,ife2)
+        result = ivsweep(cell; voltages, store_solutions = true, kwargs...)
+        currs = LiquidElectrolytes.currents(result, ife2)
 
         celldata.eneutral = true
-        nresult = ivsweep(cell; voltages,store_solutions=true, kwargs...)
-        ncurrs = LiquidElectrolytes.currents(nresult,ife2)
+        nresult = ivsweep(cell; voltages, store_solutions = true, kwargs...)
+        ncurrs = LiquidElectrolytes.currents(nresult, ife2)
 
-        @show length(result.voltages), size(currs,1)
-        @show length(nresult.voltages), size(ncurrs,1)
+        @show length(result.voltages), size(currs, 1)
+        @show length(nresult.voltages), size(ncurrs, 1)
         vis = GridVisualizer(;
             Plotter,
             resolution = (600, 400),
@@ -151,9 +154,9 @@ function main(;
             ylabel = &quot;C_dl/(μF/cm^2)&quot;,
         )
         hmol = 1 / length(molarities)
-        for imol = 1:length(molarities)
+        for imol in 1:length(molarities)
             color = RGB(1 - imol / length(molarities), 0, imol / length(molarities))
-            result= dlcapsweep(cell; voltages, molarity = molarities[imol], kwargs...)
+            result = dlcapsweep(cell; voltages, molarity = molarities[imol], kwargs...)
             scalarplot!(
                 vis,
                 result.voltages,
@@ -168,11 +171,11 @@ function main(;
 
     # Full calculation
 
-    result=ivsweep(cell; store_solutions=true, voltages, kwargs...)
+    result = ivsweep(cell; store_solutions = true, voltages, kwargs...)
 
-    currs = LiquidElectrolytes.currents(result,ife2)
+    currs = LiquidElectrolytes.currents(result, ife2)
 
-    sol=LiquidElectrolytes.voltages_solutions(result)
+    sol = LiquidElectrolytes.voltages_solutions(result)
 
     xmax = xmax * nm
     xlimits = [0, xmax]
@@ -236,9 +239,9 @@ function main(;
         ylabel = &quot;ϕ&quot;,
     )
 
-    reveal(vis)
+    return reveal(vis)
 end
 
-        p=main(;compare=true,Plotter,voltages=-0.2:0.025:0.2) # hide
+        p = main(; compare = true, Plotter, voltages = -0.2:0.025:0.2) # hide
 
-end</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Example101_DLCap/">« Double Layer Capacitance</a><a class="docs-footer-nextpage" href="../Example120_ORRCell/">ORR Half cell »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Sunday 12 January 2025 21:21">Sunday 12 January 2025</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Example101_DLCap/">« Double Layer Capacitance</a><a class="docs-footer-nextpage" href="../Example120_ORRCell/">ORR Half cell »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.1 on <span class="colophon-date" title="Wednesday 26 February 2025 12:52">Wednesday 26 February 2025</span>. Using Julia version 1.11.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
