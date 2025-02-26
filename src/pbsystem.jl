@@ -30,7 +30,7 @@ function pbreaction(f, u, node, electrolyte)
     ## Charge density
     f[iϕ] = -pbspacecharge(u[iϕ], u[ip], electrolyte)
     f[ip] = 0
-    return 
+    return
 end
 
 """
@@ -48,15 +48,15 @@ function pbflux(f, u, edge, electrolyte)
         q2 = pbspacecharge(u[iφ, 2], u[ip, 2], electrolyte)
         qavg = (q1 + q2) / 2
     end
-    f[ip] = (u[ip, 1] - u[ip, 2]) + (u[iφ, 1] - u[iφ, 2]) * qavg / electrolyte.pscale 
-    return 
+    f[ip] = (u[ip, 1] - u[ip, 2]) + (u[iφ, 1] - u[iφ, 2]) * qavg / electrolyte.pscale
+    return
 end
 
 
 """
     PBSystem(grid;
              celldata=ElectrolyteData(),
-             bcondition=default_bcondition,
+             bcondition=(f, u, n, e)-> nothing,
              kwargs...)
 
 Create VoronoiFVM system generalized Poisson-Boltzmann. Input:
@@ -68,7 +68,7 @@ Create VoronoiFVM system generalized Poisson-Boltzmann. Input:
 function PBSystem(
         grid;
         celldata = ElectrolyteData(),
-        bcondition = default_bcondition,
+        bcondition = (f, u, n, e) -> nothing,
         kwargs...
     )
 

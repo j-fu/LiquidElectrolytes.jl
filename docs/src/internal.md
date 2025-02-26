@@ -23,8 +23,6 @@ LiquidElectrolytes.pnpreaction
 LiquidElectrolytes.pnpflux
 LiquidElectrolytes.pnpstorage
 LiquidElectrolytes.pnpbstorage
-LiquidElectrolytes.default_bcondition
-LiquidElectrolytes.default_reaction
 LiquidElectrolytes.sflux
 LiquidElectrolytes.aflux
 LiquidElectrolytes.cflux
