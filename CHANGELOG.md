@@ -20,10 +20,8 @@ All notable changes to this project will be documented in this file.
 - remove export of iA, iC
 - Define `rexp(::Any)` and `rlog(::Any)` as `Base.log` and `Base.exp()`, remove epsreg from ElectrolyteData.
   Use these functions for all `exp` and `log` calculations in the package.
-  By defining `rexp(::Number)` and `rlog(::Number)`, users can overwrite these with e.g. regularized
-  versions.
-- Provide `RExp` and `RLog` functor structs providing regularized alternative to exp and log
-  - Minimize use of these regularization in examples
+  By defining `rexp(::Number)` and `rlog(::Number)`, users can overwrite these with e.g. regularized  versions.
+- Provide `RExp` and `RLog` functor structs providing regularized alternative to exp and log, minimize use of these regularization in examples
 
 ### Bugfixes
 - Re-checked and fixed all formulas again
