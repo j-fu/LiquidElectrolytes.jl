@@ -2,10 +2,10 @@
 
 
 ```@docs
-LiquidElectrolytes.charge
+LiquidElectrolytes.solvepressure
+LiquidElectrolytes.edgevelocity
+LiquidElectrolytes.chargedensity!
 LiquidElectrolytes.vrel
-LiquidElectrolytes.rlog
-LiquidElectrolytes.rexp
 LiquidElectrolytes.wnorm
 ```
 
@@ -18,15 +18,24 @@ LiquidElectrolytes.pbflux
 
 ## Poisson-Nernst-Planck
 ```@docs
-LiquidElectrolytes.pnpstorage
+LiquidElectrolytes.set_model!(electrolyte, model)
 LiquidElectrolytes.pnpreaction
 LiquidElectrolytes.pnpflux
+LiquidElectrolytes.pnpstorage
+LiquidElectrolytes.pnpbstorage
 LiquidElectrolytes.default_bcondition
+LiquidElectrolytes.default_reaction
 LiquidElectrolytes.sflux
 LiquidElectrolytes.aflux
 LiquidElectrolytes.cflux
 LiquidElectrolytes.dμex
 ```
+
+## Poisson-Nernst-Planck-Stokes
+```
+LiquidElectrolytes.flowsolver
+```
+
 
 ## Electrochemical calculations
 ```@docs

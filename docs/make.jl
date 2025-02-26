@@ -2,16 +2,15 @@ push!(LOAD_PATH,joinpath(@__DIR__,".."))
 push!(LOAD_PATH,joinpath(@__DIR__,"..","examples"))
 
 using Documenter, ExampleJuggler, CairoMakie, LiquidElectrolytes, PlutoStaticHTML
+ 
 ExampleJuggler.verbose!(true)
 thisdir=pwd()
 
 function make(;with_notebooks=true, with_examples=true)
-    
-    pages=Any[
+        pages=Any[
         "Home"=>"index.md",
         "Electrolyte models"=>"api.md",
         "Standard calculations"=>"std.md",
-        "Changes" => "changes.md",
         "Internal API"=>"internal.md",
     ]
     

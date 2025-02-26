@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.3
+# v0.20.4
 
 using Markdown
 using InteractiveUtils
@@ -34,7 +34,7 @@ begin
     if isdefined(Main,:PlutoRunner)
         import CairoMakie	
    	default_plotter!(CairoMakie)
- 	CairoMakie.activate!(type="png")
+ 	CairoMakie.activate!(type="svg")
     end
 end
 
@@ -90,11 +90,10 @@ begin
     const vdelta = 0.025 * V
     const molarity = 0.1
     const nref = 0
-    const κ = 10
+    const κ = 10.0
     const vfac = 1
     const scheme = :μex
     const R0 = 5.0e-16mol / (cm^2 * s)
-    const epsreg = 1.0e-20
 
     const Δg = 0.0
     const β = 0.5
@@ -172,8 +171,7 @@ begin
                                Γ_we = 1,
                                Γ_bulk = 2,
                                eneutral = false,
-                               scheme,
-                               epsreg)
+                               scheme)
 
     celldata.v .*= vfac
     celldata.weights[celldata.ip] = 0
@@ -295,42 +293,45 @@ end
 # ╔═╡ 7891a252-8fdf-40df-a205-64ca4078a542
 plotcurr(result)
 
-# ╔═╡ 9226027b-725d-446e-bc14-dd335a60ec09
-function plot1d(result,celldata, vshow)
+# ╔═╡ e5ea40e3-ef3f-4c89-bc69-91e95dfb3cd0
+function plot1d!(vis,result, celldata, vshow)
     vinter = linear_interpolation(result.voltages, [j[io2] for j in result.j_we])
     tsol=LiquidElectrolytes.voltages_solutions(result)
-    vis = GridVisualizer(;
-                         size = (600, 250),
-                         yscale = :log,
-                         limits = (1.0e-6, 100),
-                         legend = :rt)
-    
-   
-            sol = tsol(vshow)
+
+               sol = tsol(vshow)
             c0 = solventconcentration(sol, celldata)
             scale = 1.0 / (mol / dm^3)
 	    ishow=vinter(vshow)
             title = "Φ_we=$(round(vshow,digits=4)), I=$(round(vinter(vshow),sigdigits=4))"
 	#    title = @sprintf("Φ_we=%+1.2f I=%+1.4f",vshow,ishow)
             
-            scalarplot!(vis, grid, sol[io2, :] * scale .+ 1.0e-16; color = :green, label = "O_2",title)
+            scalarplot!(vis, grid, sol[io2, :] * scale.|>abs; color = :green, label = "O_2",title)
             scalarplot!(vis,
                         grid,
-                        sol[iso4, :] * scale;
+                        sol[iso4, :] * scale .|>abs;
                         color = :gray,
                         clear = false,
                         label = "SO4--")
             scalarplot!(vis,
                         grid,
-                        sol[ihplus, :] * scale;
+                        sol[ihplus, :] * scale .|>abs;
                         color = :red,
                         clear = false,
                         label = "H+")
-            scalarplot!(vis, grid, c0 * scale; color = :blue, clear = false,
-                        label = "H2O")
-	    reveal(vis)
-        isdefined(Main,:PlutoRunner) && save("orr.png",vis)
+            scalarplot!(vis, grid, c0 * scale.|>abs; color = :blue, clear = false,
+                        label = "H2O")	
+end
+
+# ╔═╡ 9226027b-725d-446e-bc14-dd335a60ec09
+function plot1d(result,celldata, vshow)
+    vis = GridVisualizer(;
+                         size = (600, 250),
+                         yscale = :log,
+                         limits = (1.0e-6, 100),
+                         legend = :rt)
     
+	   
+     plot1d!(vis,result,celldata,vshow)
      reveal(vis)
 end
 
@@ -347,34 +348,13 @@ function plot1d(result,celldata)
     video="orr.gif"
     vrange=range(extrema(result.voltages)...; length = 101)
     
-    movie(vis,file="orr.gif") do vis
+    movie(vis,file="orr.mp4") do vis
    	for vshow in vrange
-            sol = tsol(vshow)
-            c0 = solventconcentration(sol, celldata)
-            scale = 1.0 / (mol / dm^3)
-	    ishow=vinter(vshow)
-            title = "Φ_we=$(round(vshow,digits=4)), I=$(round(vinter(vshow),digits=4))"
-	    title = @sprintf("Φ_we=%+1.2f I=%+1.4f",vshow,ishow)
-            
-            scalarplot!(vis, grid, sol[io2, :] * scale.+1.0e-16; color = :green, label = "O_2",title)
-            scalarplot!(vis,
-                        grid,
-                        sol[iso4, :] * scale;
-                        color = :gray,
-                        clear = false,
-                        label = "SO4--")
-            scalarplot!(vis,
-                        grid,
-                        sol[ihplus, :] * scale;
-                        color = :red,
-                        clear = false,
-                        label = "H+")
-            scalarplot!(vis, grid, c0 * scale; color = :blue, clear = false,
-                        label = "H2O")
-	    reveal(vis)
+    plot1d!(vis,result,celldata,vshow)
+		reveal(vis)
 	end
     end
-	isdefined(Main,:PlutoRunner) && LocalResource("orr.gif")
+	isdefined(Main,:PlutoRunner) && LocalResource("orr.mp4")
 end
 
 # ╔═╡ 56eb52b1-9017-4485-83d6-b7ef15ad522f
@@ -496,7 +476,8 @@ let vis = GridVisualizer(;
                 currents(nresult,io2);
                 label = "O2,electroneutral",
                 color = :green,
-                clear = false)
+                clear = false,
+				limits= [-5.0e4, 5.0e4])
 
     scalarplot!(vis, result.voltages, currents(result, io2); label = "O2,PNP", color = :red,
                 clear = false)
@@ -581,6 +562,7 @@ hrule()
 # ╟─f1857d7d-cec5-42a5-88d6-1d1f620f894c
 # ╟─5bc4f11f-24c6-4af8-a554-1b5771f1f2b0
 # ╟─b81676e8-dcec-49fd-b350-f26ac61243ec
+# ╠═e5ea40e3-ef3f-4c89-bc69-91e95dfb3cd0
 # ╠═9226027b-725d-446e-bc14-dd335a60ec09
 # ╠═cc80544f-ca62-49fb-b907-4bd194b11ee5
 # ╟─1ac7646a-76ae-4e8f-9d9d-ecaccc262857

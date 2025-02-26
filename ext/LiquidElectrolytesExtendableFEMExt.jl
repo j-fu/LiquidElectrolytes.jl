@@ -131,7 +131,7 @@ LiquidElectrolytes.velocity_unknown(fs::FlowSolver) = fs.u
 function  LiquidElectrolytes.voltage!(sol::FEVector, fs::FlowSolver, voltage)
     return view(sol[fs.iφ]) .= voltage
 end
-function  LiquidElectrolytes.charge!(sol::FEVector, fs::FlowSolver, charge)
+function  LiquidElectrolytes.chargedensity!(sol::FEVector, fs::FlowSolver, charge)
     return view(sol[fs.iq]) .= charge
 end
 
@@ -143,12 +143,12 @@ end
 function SciMLBase.solve(
         fs::FlowSolver;
         voltage = zeros(num_nodes(fs.grid)),
-        charge = zeros(num_nodes(fs.grid)),
+        chargedensity = zeros(num_nodes(fs.grid)),
         kwargs...
     )
     sol = extended_unknowns(fs)
     voltage!(sol, fs, voltage)
-    charge!(sol, fs, charge)
+    chargedensity!(sol, fs, chargedensity)
     return solve!(sol, fs; kwargs...)
 end
 

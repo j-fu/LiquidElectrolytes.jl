@@ -27,13 +27,14 @@ begin
     using GridVisualize
     using NLsolve
     using LiquidElectrolytes
+	using LiquidElectrolytes: set_molarity!, apply_voltage!, update_derived!, calc_cmol, calc_QBL, calc_φ, calc_p, ysum
     using VoronoiFVM: VoronoiFVM, unknowns, history, solve, boundary_dirichlet!
     using LessUnitful
     using Colors
     if isdefined(Main,:PlutoRunner)
 	using CairoMakie	
 	default_plotter!(CairoMakie)
-	CairoMakie.activate!(type="svg")
+	CairoMakie.activate!(type="png")
     end
 end
 
@@ -60,7 +61,9 @@ begin
 	const eV=ufac"eV"
 	const nm=ufac"nm"
 	const cm=ufac"cm"
-	const μF=ufac"μF"
+    const μF=ufac"μF"
+    const iA=1
+    const iC=2
 end
 
 

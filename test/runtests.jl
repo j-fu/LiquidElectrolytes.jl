@@ -12,6 +12,8 @@ ExampleJuggler.verbose!(true)
 @phconstants N_A
 @unitfactors dm nm mol
 
+thisproject=dirname(Base.active_project())
+
 @testset "cdl0" begin
     ely=ElectrolyteData(c_bulk=fill(0.01*mol/dm^3,2).|>unitfactor)
     @test dlcap0(ely)≈ 0.22846691848825248
@@ -73,7 +75,7 @@ end
         
         pcelldata=ElectrolyteData(;Γ_we=1, Γ_bulk=2, scheme=:cent,κ)
         pcell=PBSystem(grid;bcondition=pbbcondition,celldata=pcelldata)
-        presult=dlcapsweep(pcell;inival=unknowns(pcell),voltages,molarity,δ, iϕ=1)
+        presult=dlcapsweep(pcell;inival=unknowns(pcell, inival=0),voltages,molarity,δ, iϕ=1)
         pvolts=presult.voltages
         pcaps=presult.dlcaps
         
@@ -123,6 +125,7 @@ notebooks=[
 
 using Pkg
 Pkg.activate(joinpath(@__DIR__, "..", "docs"))
+Pkg.develop(path=joinpath(@__DIR__, ".."))
 Pkg.instantiate()
 using LiquidElectrolytes
 using ExtendableFEM

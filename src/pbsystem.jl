@@ -1,31 +1,23 @@
 """
-    pbspacecharge(φ, p, electorlyte)
+    pbspacecharge(φ, p, electrolyte)
 
 Space charge expression for Poisson-Boltzmann
 """
-function pbspacecharge(φ, p, data)
-    c0_bulk, barc_bulk = c0_barc(data.c_bulk, data)
-    pscaled = (p * data.pscale - data.p_bulk)
-    c0 = c0_bulk * exp(-data.v0 * pscaled / (data.RT))
+function pbspacecharge(φ, p, electrolyte)
+    c0_bulk, barc_bulk = c0_barc(electrolyte.c_bulk, electrolyte)
+    pscaled = (p * electrolyte.pscale - electrolyte.p_bulk)
+    c0 = c0_bulk * rexp(-electrolyte.v0 * pscaled / (electrolyte.RT))
     sumyz = zero(p)
-    sumyv = data.v0 * c0
-    for α = 1:data.nc
-        barv = data.v[α] + data.κ[α] * data.v0
-        if false
-            # from flux equilibrium condition, seems to
-            # be equivalent...
-            Mrel = data.M[α] / data.M0
-            tildev = barv - Mrel * data.v0
-            η_p = tildev * pscaled - Mrel * data.RT * log(c0 / barc_bulk)
-        else
-            η_p = barv * pscaled
-        end
-        η_φ = data.z[α] * data.F * (φ - data.ϕ_bulk)
-        y = data.c_bulk[α] * exp(-(η_φ + η_p) / (data.RT))
-        sumyz += data.z[α] * y
+    sumyv = electrolyte.v0 * c0
+    for α in 1:electrolyte.nc
+        barv = electrolyte.v[α] + electrolyte.κ[α] * electrolyte.v0
+        η_p = barv * pscaled
+        η_φ = electrolyte.z[α] * electrolyte.F * (φ - electrolyte.ϕ_bulk)
+        y = electrolyte.c_bulk[α] * rexp(-(η_φ + η_p) / (electrolyte.RT))
+        sumyz += electrolyte.z[α] * y
         sumyv += barv * y
     end
-    data.F * sumyz / sumyv
+    return electrolyte.F * sumyz / sumyv
 end
 
 """
@@ -38,6 +30,7 @@ function pbreaction(f, u, node, electrolyte)
     ## Charge density
     f[iϕ] = -pbspacecharge(u[iϕ], u[ip], electrolyte)
     f[ip] = 0
+    return 
 end
 
 """
@@ -45,19 +38,19 @@ end
 
 Flux expression for Poisson-Boltzmann
 """
-function pbflux(f, u, edge, data)
+function pbflux(f, u, edge, electrolyte)
     iϕ, ip = 1, 2
-    f[iφ] = data.ε * data.ε_0 * (u[iφ, 1] - u[iφ, 2])
-    if iszero(data.v)
+    f[iφ] = electrolyte.ε * electrolyte.ε_0 * (u[iφ, 1] - u[iφ, 2])
+    if iszero(electrolyte.v)
         qavg = 0
     else
-        q1 = pbspacecharge(u[iφ, 1], u[ip, 1], data)
-        q2 = pbspacecharge(u[iφ, 2], u[ip, 2], data)
+        q1 = pbspacecharge(u[iφ, 1], u[ip, 1], electrolyte)
+        q2 = pbspacecharge(u[iφ, 2], u[ip, 2], electrolyte)
         qavg = (q1 + q2) / 2
     end
-    f[ip] = (u[ip, 1] - u[ip, 2]) * data.pscale + (u[iφ, 1] - u[iφ, 2]) * qavg
+    f[ip] = (u[ip, 1] - u[ip, 2]) + (u[iφ, 1] - u[iφ, 2]) * qavg / electrolyte.pscale 
+    return 
 end
-
 
 
 """
@@ -73,13 +66,13 @@ Create VoronoiFVM system generalized Poisson-Boltzmann. Input:
 - `kwargs`: Keyword arguments of VoronoiFVM.System
 """
 function PBSystem(
-    grid;
-    celldata = ElectrolyteData(),
-    bcondition = default_bcondition,
-    kwargs...
-)
+        grid;
+        celldata = ElectrolyteData(),
+        bcondition = default_bcondition,
+        kwargs...
+    )
 
-    sys = VoronoiFVM.System(
+    return sys = VoronoiFVM.System(
         grid;
         data = celldata,
         flux = pbflux,

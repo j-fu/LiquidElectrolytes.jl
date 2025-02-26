@@ -24,28 +24,31 @@ using VoronoiFVM
 using LiquidElectrolytes
 using Colors
 using StaticArrays
+using DoubleFloats
 
+const mylog = RLog(eps(Double64))
+LiquidElectrolytes.rlog(x::Number) = mylog(x)
 
 function main(;
-    nref = 0,
-    compare = false,
-    eneutral::Bool = false,
-    voltages = (-1:0.025:1) * ufac"V",
-    dlcap = false,
-    R0 = 1.0e-10,
-    molarities = [0.001, 0.01, 0.1, 1],
-    scheme = :μex,
-    xmax = 1,
-    κ = 10.0,
-    Plotter = nothing,
-    new = false,
-    kwargs...,
-)
+        nref = 0,
+        compare = false,
+        eneutral::Bool = false,
+        voltages = (-1:0.025:1) * ufac"V",
+        dlcap = false,
+        R0 = 1.0e-10,
+        molarities = [0.001, 0.01, 0.1, 1],
+        scheme = :μex,
+        xmax = 1,
+        κ = 10.0,
+        Plotter = nothing,
+        new = false,
+        valuetype = Double64,
+        kwargs...,
+    )
 
     @local_phconstants N_A e R ε_0
     F = N_A * e
     @local_unitfactors cm μF mol dm s mA A nm
-
 
 
     defaults = (;
@@ -88,7 +91,7 @@ function main(;
             f[ife2] -= r
             f[ife3] += r
         end
-        nothing
+        return nothing
     end
 
 
@@ -111,21 +114,21 @@ function main(;
 
     @assert isapprox(celldata.c_bulk' * celldata.z, 0, atol = 1.0e-12)
 
-    cell = PNPSystem(grid; bcondition = halfcellbc, celldata)
+    cell = PNPSystem(grid; bcondition = halfcellbc, celldata, valuetype)
 
     ## Compare electroneutral and double layer cases
     if compare
 
         celldata.eneutral = false
-        result = ivsweep(cell; voltages,store_solutions=true, kwargs...)
-        currs = LiquidElectrolytes.currents(result,ife2)
-        
-        celldata.eneutral = true
-        nresult = ivsweep(cell; voltages,store_solutions=true, kwargs...)
-        ncurrs = LiquidElectrolytes.currents(nresult,ife2)
+        result = ivsweep(cell; voltages, store_solutions = true, kwargs...)
+        currs = LiquidElectrolytes.currents(result, ife2)
 
-        @show length(result.voltages), size(currs,1)
-        @show length(nresult.voltages), size(ncurrs,1)
+        celldata.eneutral = true
+        nresult = ivsweep(cell; voltages, store_solutions = true, kwargs...)
+        ncurrs = LiquidElectrolytes.currents(nresult, ife2)
+
+        @show length(result.voltages), size(currs, 1)
+        @show length(nresult.voltages), size(ncurrs, 1)
         vis = GridVisualizer(;
             Plotter,
             resolution = (600, 400),
@@ -169,9 +172,9 @@ function main(;
             ylabel = "C_dl/(μF/cm^2)",
         )
         hmol = 1 / length(molarities)
-        for imol = 1:length(molarities)
+        for imol in 1:length(molarities)
             color = RGB(1 - imol / length(molarities), 0, imol / length(molarities))
-            result= dlcapsweep(cell; voltages, molarity = molarities[imol], kwargs...)
+            result = dlcapsweep(cell; voltages, molarity = molarities[imol], kwargs...)
             scalarplot!(
                 vis,
                 result.voltages,
@@ -186,12 +189,12 @@ function main(;
 
     ## Full calculation
 
-    result=ivsweep(cell; store_solutions=true, voltages, kwargs...)
-    
-    currs = LiquidElectrolytes.currents(result,ife2)
-    
-    sol=LiquidElectrolytes.voltages_solutions(result)
-    
+    result = ivsweep(cell; store_solutions = true, voltages, kwargs...)
+
+    currs = LiquidElectrolytes.currents(result, ife2)
+
+    sol = LiquidElectrolytes.voltages_solutions(result)
+
     xmax = xmax * nm
     xlimits = [0, xmax]
     vis = GridVisualizer(; Plotter, resolution = (1200, 400), layout = (1, 5), clear = true)
@@ -254,20 +257,20 @@ function main(;
         ylabel = "ϕ",
     )
 
-    reveal(vis)
+    return reveal(vis)
 end
 
 function generateplots(dir; Plotter = nothing, kwargs...)    #hide
     if ismakie(Plotter)                                      #hide
         Plotter.activate!(; type = "svg", visible = false)   #hide
-        p=main(;Plotter)                                     #hide
+        p = main(; Plotter)                                     #hide
         Plotter.save(joinpath(dir, "Example110_Fe23Cell_1.svg"), p)  #hide
-        p=main(;compare=true,Plotter,voltages=-1:0.025:1)     #hide
+        p = main(; compare = true, Plotter, voltages = -1:0.025:1)     #hide
         Plotter.save(joinpath(dir, "Example110_Fe23Cell_2.svg"), p)  #hide
-        p=main(;compare=true,Plotter,voltages=-0.2:0.025:0.2) # hide
+        p = main(; compare = true, Plotter, voltages = -0.2:0.025:0.2) # hide
         Plotter.save(joinpath(dir, "Example110_Fe23Cell_3.svg"), p)  #hide
     end                                                      #hide
-    nothing                                                  #hide
+    return nothing                                                  #hide
 end                                                          #hide
 
 end

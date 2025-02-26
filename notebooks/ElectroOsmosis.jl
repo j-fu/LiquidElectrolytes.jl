@@ -15,15 +15,14 @@ begin
     using GridVisualize
     using LinearAlgebra
     using PlutoUI
-    import CairoMakie
-	using CairoMakie: lines!
     using ExtendableFEM
     using VoronoiFVM
     using LessUnitful
     using Test
 
     if isdefined(Main,:PlutoRunner)
-        import CairoMakie	
+     	import CairoMakie	
+	    using CairoMakie: lines!
   	 	default_plotter!(CairoMakie)
  		CairoMakie.activate!(type="png")
     end
@@ -115,12 +114,12 @@ end
 default_pnpdata=ElectrolyteData();
 
 # ╔═╡ eb84642a-a26d-4b26-8530-35a499a179a8
-function PNPData(;molar_volume=default_pnpdata.v0, scheme=:μex)	
+function PNPData(;molar_volume=default_pnpdata.v0, scheme=:μex, κ=20)	
 	pnpdata = ElectrolyteData()
     pnpdata.edgevelocity = zeros(num_edges(pnpgrid))
-    pnpdata.pressure = zeros(num_nodes(pnpgrid))
+    pnpdata.solvepressure=false
     pnpdata.scheme = scheme
-    pnpdata.κ .= 20
+    pnpdata.κ .= κ
     pnpdata.D .= 1.0e-9 * m^2 / s
 	pnpdata.pscale = 1
     pnpdata.v.=molar_volume
@@ -128,7 +127,7 @@ function PNPData(;molar_volume=default_pnpdata.v0, scheme=:μex)
 end
 
 # ╔═╡ 9aaa7a1f-23ea-466b-9d54-6193879ae9fa
-gcdata=PNPData(molar_volume=0)
+gcdata=PNPData(molar_volume=0, κ=0)
 
 # ╔═╡ f78d5edc-9e67-4d93-87f2-a08a9fc3b845
 dgldata=PNPData()
