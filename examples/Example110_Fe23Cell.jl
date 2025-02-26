@@ -24,7 +24,10 @@ using VoronoiFVM
 using LiquidElectrolytes
 using Colors
 using StaticArrays
+using DoubleFloats
 
+const mylog = RLog(eps(Double64))
+LiquidElectrolytes.rlog(x::Number) = mylog(x)
 
 function main(;
         nref = 0,
@@ -39,6 +42,7 @@ function main(;
         κ = 10.0,
         Plotter = nothing,
         new = false,
+        valuetype = Double64,
         kwargs...,
     )
 
@@ -98,7 +102,6 @@ function main(;
         κ = fill(κ, 4),
         Γ_we = 1,
         Γ_bulk = 2,
-        log = RLog(),
         scheme,
     )
 
@@ -111,7 +114,7 @@ function main(;
 
     @assert isapprox(celldata.c_bulk' * celldata.z, 0, atol = 1.0e-12)
 
-    cell = PNPSystem(grid; bcondition = halfcellbc, celldata)
+    cell = PNPSystem(grid; bcondition = halfcellbc, celldata, valuetype)
 
     ## Compare electroneutral and double layer cases
     if compare

@@ -25,6 +25,10 @@ using LiquidElectrolytes
 using Colors
 using StaticArrays
 using LessUnitful
+using DoubleFloats
+
+const mylog = RLog(eps(Double64))
+LiquidElectrolytes.rlog(x::Number) = mylog(x)
 
 function main(;
         voltages = -1:0.1:1,
@@ -37,6 +41,7 @@ function main(;
         scheme = :μex,
         Plotter = nothing,
         R0::Float64 = 4.0e-15,
+        valuetype = Double64,
         kwargs...,
     )
 
@@ -88,7 +93,7 @@ function main(;
                     value = data.ϕ_we,
                 )
             end
-            @time μh2o, μ = chemical_potentials!(MVector{3, Tu}(undef), u, data)
+            μh2o, μ = chemical_potentials!(MVector{3, Tu}(undef), u, data)
             A =
                 (4 * μ[ihplus] + μ[io2] - 2μh2o + Δg + 4 * eneutral * F * (u[iϕ] - data.ϕ_we)) /
                 (RT)
@@ -103,7 +108,7 @@ function main(;
     celldata = ElectrolyteData(;
         nc = 3,
         z, κ, Γ_we = 1, Γ_bulk = 2,
-        eneutral, scheme, log = RLog()
+        eneutral, scheme
     )
 
     celldata.v *= vfac
@@ -118,7 +123,7 @@ function main(;
 
     @assert isapprox(celldata.c_bulk' * celldata.z, 0, atol = 1.0e-12)
 
-    cell = PNPSystem(grid; bcondition = halfcellbc, celldata)
+    cell = PNPSystem(grid; bcondition = halfcellbc, celldata, valuetype)
 
 
     ## Compare electroneutral and double layer cases
