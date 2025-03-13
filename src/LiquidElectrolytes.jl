@@ -38,6 +38,7 @@ export PBSystem
 include("cells.jl")
 export ivsweep, dlcapsweep, currents, voltages_solutions, voltages_dlcaps, voltages_currents
 export AbstractSimulationResult, DLCapSweepResult, IVSweepResult
+export SawTooth, cvsweep, CVSweepResult, period
 
 include("equilibrium-pluto.jl")
 export EquilibriumData, create_equilibrium_system, create_equilibrium_pp_system,  dlcapsweep_equi

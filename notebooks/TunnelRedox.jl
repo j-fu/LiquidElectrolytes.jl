@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.3
+# v0.20.4
 
 using Markdown
 using InteractiveUtils
@@ -227,7 +227,7 @@ end;
 # ╔═╡ efd397bd-9b4d-402f-ad42-cc0f19dc48b6
 
 floataside(
-    @bind userdata confirm(
+    @bind guidata confirm(
         #! format: off
         PlutoUI.combine() do Child
 md"""
@@ -255,16 +255,16 @@ begin
     nref = 0
     voltages = (-1:0.025:1) * ufac"V"
     dlcap = false
-    const molR = userdata.fgmol
-    const molO = userdata.fgmol
-    const molS = userdata.bgmol
+    const molR = guidata.fgmol
+    const molO = guidata.fgmol
+    const molS = guidata.bgmol
     const iO = 1
     const iR = 2
     const iS = 3
     const iX = 4
     const iϕ = 5
-    const zR = userdata.zR
-    const zO = zR + userdata.n
+    const zR = guidata.zR
+    const zO = zR + guidata.n
     const zS = -1
     const zX = 1
 
@@ -275,11 +275,11 @@ begin
     @assert abs(c_bulk' * z < 1.0e-12)
     scheme = :μex
     #scheme = :act
-    const κ = Float64(userdata.κ)
+    const κ = Float64(guidata.κ)
     const R0 = 1.0e-10 * mol / (cm^2 * s)
     const Δg = 0.0
     const β = 0.5
-    const βt = parse(Float64, userdata.β) / cm
+    const βt = parse(Float64, guidata.β) / cm
     etunnel(x) = βt * exp(-βt * x)
 
     pnpdata = ElectrolyteData(;
@@ -299,8 +299,8 @@ end
 # ╔═╡ c30965b0-63da-48c4-8d63-63469a4c8fe2
 begin
     hmin = 1.0e-2 * nm * 2.0^(-nref)
-    hmax = 1.0 * nm * 2.0^(-nref)
     L = 20.0 * nm
+    hmax = L/20* 2.0^(-nref)
     X = geomspace(0, L, hmin, hmax)
     grid = simplexgrid(X)
 end
@@ -310,15 +310,15 @@ gridplot(grid, size = (600, 150))
 
 # ╔═╡ 0791e740-a47c-4c3e-9d2c-b0c5daf7a403
 function halfcellbc(f, u, bnode, data)
-    (; nc, Γ_we, Γ_bulk, ϕ_we, ip, iϕ, v, v0, RT) = data
+    (; nc, Γ_we, Γ_bulk, ϕ_we, ip, iϕ, v, v0, RT, κ) = data
     bulkbcondition(f, u, bnode, data; region = Γ_bulk)
     if bnode.region == Γ_we
         if !data.eneutral
             boundary_dirichlet!(f, u, bnode; species = iϕ, region = Γ_we, value = ϕ_we)
         end
         c0, barc = c0_barc(u, data)
-        μR = chemical_potential(u[iR], barc, u[ip], v[iR] + κ * v0, data)
-        μO = chemical_potential(u[iO], barc, u[ip], v[iO] + κ * v0, data)
+        μR = chemical_potential(u[iR], barc, u[ip], v[iR] + κ[iR] * v0, data)
+        μO = chemical_potential(u[iO], barc, u[ip], v[iO] + κ[iO] * v0, data)
         A = (μR - μO + Δg + data.eneutral * (zR - zO) * F * (u[iϕ] - ϕ_we)) / RT
         r = rrate(R0, β, A)
         f[iR] -= r
@@ -352,7 +352,7 @@ ZR = zstr(zR)
 ZO = zstr(zO)
 
 # ╔═╡ ea14cd1b-5a64-4911-80b2-fde0306120fe
-valuetype = userdata.double64 ? Double64 : Float64
+valuetype = guidata.double64 ? Double64 : Float64
 
 # ╔═╡ 793265dd-bfeb-4083-a2fa-80e74f06fdb2
 function sweep(; eneutral = true, tunnel = false, bikerman = true)
@@ -387,7 +387,7 @@ pnpresult, pnpcurrs, pnpsol, pnpcharge, pnpd = sweep(eneutral = false, tunnel = 
 nnpresult, nnpcurrs, nnpsol, nnpcharge = sweep(eneutral = true, tunnel = false);
 
 # ╔═╡ d6965320-b46a-4c07-8e73-dd9369690506
-if userdata.tunnel
+if guidata.tunnel
     tresult, tcurrs, tsol = sweep(eneutral = false, tunnel = true)
 else
     tresult, tcurrs, tsol = (nothing, nothing, nothing)
@@ -464,13 +464,13 @@ if isdefined(Main, :PlutoRunner)
             )
             lines!(ax, [v, v], [-imax, imax], color = :gray)
 
-            if userdata.tunnel
+            if guidata.tunnel
                 lines!(ax, tresult.voltages, -tcurrs / (mA / cm^2), color = :blue, label = "PNP-tunnel")
             end
             return ax
         end
         fig = Figure(size = (650, 400), fontsize = 12)
-        title = userdata.tunnel ? L"z_R=%$(zR), n=%$(userdata.n), β=%$(userdata.β)/cm" : L"z_R=%$(zR), n=%$(userdata.n)"
+        title = guidata.tunnel ? L"z_R=%$(zR), n=%$(guidata.n), β=%$(guidata.β)/cm" : L"z_R=%$(zR), n=%$(guidata.n)"
         ax1 = yplot(fig[1, :], parse(Float64, plotscale.S))
         ax2 = yplot(fig[2, :], parse(Float64, plotscale.M))
         ax3 = yplot(fig[3, :], parse(Float64, plotscale.L); xlabel = L"U/V")
@@ -481,16 +481,16 @@ if isdefined(Main, :PlutoRunner)
         )
 
         if false
-            if userdata.tunnel
+            if guidata.tunnel
                 CairoMakie.save(
                     savename(
                         pdir("redox_tunnel"),
-                        (zR = zR, n = userdata.n, beta = userdata.β),
+                        (zR = zR, n = guidata.n, beta = guidata.β),
                         "png"
                     ), fig
                 )
             else
-                airoMakie.save(savename(pdir("redox"), (zR = zR, n = n), "png"), fig)
+                CairoMakie.save(savename(pdir("redox"), (zR = zR, n = n), "png"), fig)
             end
         end
         fig
@@ -500,7 +500,7 @@ end
 # ╔═╡ ae0af916-986f-42cf-8a7a-215171ee5a55
 begin
     tu = nothing
-    if userdata.tunnel
+    if guidata.tunnel
         tu = tsol(v)
     end
     if !isnothing(tu)
@@ -527,8 +527,8 @@ if isdefined(Main, :PlutoRunner)
             dir = "R\\to O,"
         end
 
-        title = userdata.tunnel ?
-            L"U=%$(round(v,digits=4))V,\, %$(dir)\, z_R=%$(zR),\, z_O=%$(zO),\, β=%$(userdata.β)/cm" :
+        title = guidata.tunnel ?
+            L"U=%$(round(v,digits=4))V,\, %$(dir)\, z_R=%$(zR),\, z_O=%$(zO),\, β=%$(guidata.β)/cm" :
             L"U=%$(round(v,digits=4))V,\, %$(dir)\, z_R=%$(zR),\, z_O=%$(zO)"
 
 

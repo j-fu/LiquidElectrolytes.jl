@@ -54,5 +54,7 @@ PNPStokesSolver
 ## Utilities
 ```@docs
 RLog
+LiquidElectrolytes.rlog
 RExp
+LiquidElectrolytes.rexp
 ```

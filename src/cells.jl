@@ -36,7 +36,7 @@ function splitz(range::Vector)
 end
 
 """
-    bulkbcondition(f,u,bnode,electrolyte)
+    bulkbcondition(f,u,bnode,electrolyte; region = data.Γ_bulk)
 
 Bulk boundary condition for electrolyte: set potential, pressure and concentrations to bulk values.
 """
@@ -268,7 +268,9 @@ end
           solver_kwargs...,
           )
 
+Steady state voltammetry.
 Calculate molar reaction rates and bulk flux rates for each voltage in `voltages`.
+
 """
 function ivsweep(
         sys;
@@ -338,7 +340,7 @@ function ivsweep(
             end
 
             function delta(sys, u, v, t, Δt)
-                n = wnorm(u, data.weights, Inf) * data.v0
+                n = wnorm(u - v, data.weights, Inf) * data.v0
             end
 
             psol = solve(
@@ -373,4 +375,183 @@ function ivsweep(
         vcat(reverse(fminus), fplus),
         store_solutions ? vcat(reverse(sminus), splus) : nothing
     )
+end
+
+"""
+    $(TYPEDEF)
+
+Callable (functor) struct defining sawtooth function for cyclic voltammetry.
+
+`(::SawTooth)(t)` returns the voltage to be applied at moment t.
+
+$(TYPEDFIELDS)
+"""
+Base.@kwdef struct SawTooth
+    "Minimum voltage. Default: -1V."
+    vmin::Float64 = -1 * ufac"V"
+
+    "Maximum voltage. Default: 1V."
+    vmax::Float64 = 1 * ufac"V"
+
+    "Scan rate. Default: 0.1V/s."
+    scanrate::Float64 = 0.1 * ufac"V/s"
+
+    "Start voltage. Default: 0V"
+    vstart::Float64 = 0 * ufac"V"
+
+    "Start time. Default: 0s"
+    tstart::Float64 = 0 * ufac"s"
+
+    "Initial scan direction. Default: true"
+    scanup::Bool = true
+end
+
+function (this::SawTooth)(t::Number)
+    (; vmin, vmax, scanrate, vstart, tstart, scanup) = this
+    fullperiod = period(this)
+    halfperiod = fullperiod / 2
+    if scanup
+        t = t - tstart + (vstart - vmin) / scanrate
+    else
+        t = t - tstart + (vmax - vstart) / scanrate + halfperiod
+    end
+    iperiod = Int(floor(t / fullperiod))
+    t = t - iperiod * fullperiod
+    if t < halfperiod
+        v = vmin + t * scanrate
+    else
+        t = t - halfperiod
+        v = vmax - t * scanrate
+    end
+    return v
+end
+
+"""
+    period(st::SawTooth)
+
+Return length of CV period 
+"""
+function period(st::SawTooth)
+    (; vmin, vmax, scanrate, vstart, tstart, scanup) = st
+    return 2 * (vmax - vmin) / scanrate
+end
+
+
+"""
+    $(TYPEDEF)
+
+Result type for [`cvsweep`](@ref).
+
+$(TYPEDFIELDS)
+"""
+mutable struct CVSweepResult{Tv, Tt, Twe, Trea} <: AbstractSimulationResult
+    """
+    Vector of voltages
+    """
+    voltages::Tv
+
+    """
+    Vector of times
+    """
+    times::Tt
+
+    """
+    Working electrode molar reaction rates
+    """
+    j_we::Twe
+
+    """
+    Bulk molar fluxes
+    """
+    j_rea::Trea
+
+    """
+    Transient solution
+    """
+    tsol::Any
+end
+
+"""
+     cvsweep(
+          sys;
+          voltages=SawTooth(),
+          periods=1,
+          solver_kwargs...,
+          )
+
+Cyclic voltammetry sweep.
+
+Calculate molar reaction rates and working electrode flux rates.
+"""
+function cvsweep(
+        sys;
+        voltages = SawTooth(),
+        nperiods = 1,
+        store_solutions = false,
+        solver_kwargs...
+    )
+    F = ph"N_A" * ph"e"
+    data = sys.physics.data
+    factory = VoronoiFVM.TestFunctionFactory(sys)
+    tf_we = testfunction(factory, [data.Γ_bulk], [data.Γ_we])
+
+
+    data = electrolytedata(sys)
+    data.ϕ_we = voltages(0)
+    control = SolverControl(;
+        verbose = "",
+        handle_exceptions = true,
+        damp_initial = 1,
+        Δu_opt = 0.05,
+        Δt_min = 1.0e-4 * period(voltages),
+        Δt_max = 1.0e-2 * period(voltages),
+        Δt = 1.0e-3 * period(voltages),
+        Δt_grow = 1.2,
+        unorm = u -> wnorm(u, data.weights, Inf),
+        rnorm = u -> wnorm(u, data.weights, 1),
+        solver_kwargs...
+    )
+    times = [i * period(voltages) for i in 0:nperiods]
+    iϕ = data.iϕ
+    @info "Solving for $(voltages(0))V..."
+    inival = solve(sys; inival = pnpunknowns(sys), control=deepcopy(control), damp_initial = 0.1)
+    result = CVSweepResult([], [], [], [], nothing)
+    allprogress = times[end] - times[begin]
+    tprogress = 0
+    @withprogress begin
+        function pre(sol, t)
+            data.ϕ_we = voltages(t)
+        end
+
+        function post(sol, oldsol, t, Δt)
+            I = - VoronoiFVM.integrate(sys, sys.physics.breaction, sol; boundary = true)
+            I_react = I[:, data.Γ_we]
+            I_we = - VoronoiFVM.integrate(sys, tf_we, sol, oldsol, Δt)
+            push!(result.times, t)
+            push!(result.voltages, voltages(t))
+            push!(result.j_rea, I_react)
+            push!(result.j_we, I_we)
+            tprogress += abs(Δt)
+            @logprogress tprogress / allprogress
+        end
+
+        function delta(sys, u, v, t, Δt)
+            n = wnorm(u - v, data.weights, Inf)
+        end
+
+        tsol = solve(
+            sys;
+            inival,
+            times,
+            control,
+            pre,
+            post,
+            delta,
+            store_all = store_solutions
+        )
+        if store_solutions
+            result.tsol = tsol
+        end
+    end
+    return result
 end

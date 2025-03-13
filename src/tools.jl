@@ -17,21 +17,16 @@ end
 """
     RExp(trunc)
 
-Functor struct for regularized exponential. Linear continuation for `x>trunc`,  
-returns 1/rexp(-x) for `x<-trunc`. Objects of this type are meant to replace
-the exponential function.
+Callable struct for regularized exponential. Linear continuation for `x>trunc`,  
+returns 1/rexp(-x) for `x<-trunc`. Objects `myexp::RExp`  of this type are meant to replace
+the exponential function and allow to invoke `myexp(x)`.
 """
 struct RExp{T<:AbstractFloat} <: RFunction
     trunc::T
 end
 
-"""
-    (::RExp)(x)
-
-Evaluation of functor at `x`
-"""
-function (rexp::RExp)(x)
-    (;trunc) = rexp
+function (myexp::RExp)(x)
+    (;trunc) = myexp
     if x < -trunc
         return 1.0 / rexp(-x)
     elseif x <= trunc
@@ -69,16 +64,17 @@ rexp(x::Any)=Base.exp(x)
 """
     RLog(eps)
 
-Functor struct for regularized  logarithm. Smooth linear continuation for `x<eps`.
+Callable struct for regularized  logarithm. Smooth linear continuation for `x<eps`.
 This means we can calculate a "logarithm"  of a small negative number.
-Objects of this type are meant to replace the logarithm function.
+Objects `mylog::RLog`  of this type are meant to replace
+the logarithm function and allow to invoke `mylog(x)`.
 """
 struct RLog{T<:AbstractFloat} <: RFunction
     eps::T
 end
 
-function (rlog::RLog)(x)
-    (;eps)=rlog
+function (mylog::RLog)(x)
+    (;eps)=mylog
     if x < eps
         return log(eps) + (x - eps) / eps
     else
