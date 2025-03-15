@@ -9,12 +9,13 @@ abstract type AbstractElectrolyteData end
 $(TYPEDEF)
 
 Data for electrolyte. It is defined using `Base.@kwdef`
-Leading  to keyword constructors like
+allowing for keyword constructors like
 ```julia
     ElectrolyteData(nc=3,z=[-1,2,1])
 ```
 
-Fields (for default values, see below):
+To see default values, just create an instance as `ElectrolyteData()`.
+Fields (reserved fields are modified by some algorithms):
 
 $(TYPEDFIELDS)
 """
@@ -64,7 +65,11 @@ $(TYPEDFIELDS)
     "Bulk boundary number"
     Γ_bulk::Int = 2
 
-    "Working electrode voltage"
+    """
+    Working electrode voltage. 
+    Reserved.
+    Used by sweep algorithms to pass boundary data.
+    """
     ϕ_we::Float64 = 0.0 * ufac"V"
 
     "Working electrode boundary number"
@@ -123,7 +128,6 @@ $(TYPEDFIELDS)
     Electrolyte model
     """
     model::Symbol = :DGL
-
 end
 
 """
@@ -433,10 +437,12 @@ function wnorm(u, w, p)
     return LinearAlgebra.norm(norms, p)
 end
 
+
 """
     isincompressible(cx::Vector,celldata)
 
-Check for incompressibility of concentration vector
+Check if the concentration vector fulfills incompressibility constraint, including
+the fact that the solvent concentration is nonnegative
 """
 function isincompressible(cx::Vector, celldata)
     c0, barc = c0_barc(cx, celldata)
@@ -447,7 +453,7 @@ function isincompressible(cx::Vector, celldata)
     for i in 1:(celldata.nc)
         cv += cx[i] * (v[i] + κx[i] * v0)
     end
-    return cv ≈ 1.0
+    return c0 ≥ 0 && cv ≈ 1.0
 end
 
 """
@@ -475,4 +481,22 @@ Check for electroneutrality of transient solution
 """
 function iselectroneutral(tsol::TransientSolution, celldata)
     return all(cx -> iselectroneutral(cx, celldata), [u[:, i] for u in tsol.u, i in size(tsol, 2)])
+end
+
+
+"""
+    bulkbcondition(f,u,bnode,electrolyte; region = data.Γ_bulk)
+
+Bulk boundary condition for electrolyte: set potential, pressure and concentrations to bulk values.
+"""
+function bulkbcondition(f, u, bnode, electrolyte; region = electrolyte.Γ_bulk)
+    (; iϕ, ip, nc, ϕ_bulk, p_bulk, c_bulk) = electrolyte
+    if bnode.region == region
+        boundary_dirichlet!(f, u, bnode; species = iϕ, region, value = ϕ_bulk)
+        boundary_dirichlet!(f, u, bnode; species = ip, region, value = p_bulk)
+        for ic in 1:nc
+            boundary_dirichlet!(f, u, bnode; species = ic, region, value = c_bulk[ic])
+        end
+    end
+    return nothing
 end

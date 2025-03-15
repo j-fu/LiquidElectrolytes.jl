@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.45
+# v0.20.4
 
 using Markdown
 using InteractiveUtils
@@ -331,7 +331,7 @@ debyelength(EquilibriumData(molarity=0.01ph"N_A"/ufac"dm^3"))|>u"nm"
 function set_molarity!(data::EquilibriumData, M_E)
     n_E = M_E * ph"N_A" / ufac"dm^3"
     data.molarity = n_E
-    return data.n_E = [n_E, n_E]
+    return data.n_E = fill(n_E,data.N)
 end
 
 # ╔═╡ 1d22b09e-99c1-4026-9505-07bdffc98582
@@ -648,7 +648,7 @@ end;
 # ╔═╡ 6e3dbf34-c1c9-460b-9546-b2ee8ee99d68
 function create_equilibrium_system(
         grid,
-        data::EquilibriumData = default_data();
+        data::EquilibriumData = EquilibriumData();
         Γ_bulk = 0
     )
     update_derived!(data)
@@ -670,11 +670,17 @@ calc_QBL(sol, sys) = VoronoiFVM.integrate(sys, spacecharge_and_ysum!, sol)[iφ, 
 
 # ╔═╡ 77f49da5-ffd2-4148-93a6-f45382ba6d91
 function dlcapsweep_equi(
-        sys; vmax = 2 * ufac"V", molarity = 1, nsteps = 21, δV = 1.0e-3 * ufac"V",
-        verbose = false
-    )
+    sys; vmax = 2 * ufac"V", nsteps = 21, δV = 1.0e-3 * ufac"V",
+    molarity = nothing,
+    verbose = false
+)
+
+    if !isnothing(molarity)
+        error("The molarity kwarg of dlcapsweep_equie has been removed. Pass the molarity information with set_molarity!.")
+    end
+
+
     data = sys.physics.data
-    set_molarity!(data, molarity)
     update_derived!(data)
     apply_voltage!(sys, 0)
 
@@ -720,7 +726,7 @@ end
 # ╔═╡ 7bf3a130-3b47-428e-916f-4a0ec1237844
 function create_equilibrium_pp_system(
         grid,
-        data::EquilibriumData = default_data();
+        data::EquilibriumData = EquilibriumData();
         Γ_bulk = 0
     )
     update_derived!(data)

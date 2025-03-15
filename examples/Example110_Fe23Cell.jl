@@ -174,7 +174,8 @@ function main(;
         hmol = 1 / length(molarities)
         for imol in 1:length(molarities)
             color = RGB(1 - imol / length(molarities), 0, imol / length(molarities))
-            result = dlcapsweep(cell; voltages, molarity = molarities[imol], kwargs...)
+            celldata.c_bulk.= molarities[imol]
+            result = dlcapsweep(cell; voltages, kwargs...)
             scalarplot!(
                 vis,
                 result.voltages,

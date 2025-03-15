@@ -96,24 +96,25 @@ pbsys = PBSystem(grid; celldata = deepcopy(celldata), bcondition)
 
 # ╔═╡ 2ad3f1ad-3bc9-4ced-a9d8-11c770f9710f
 begin
-	@info "PBSystem"
-result = dlcapsweep(
-    pbsys;
-    inival = unknowns(pbsys, inival=0),
-    iϕ = 1, voltages,
-    molarity = molarity * ufac"mol/dm^3",
-    verbose="ne"
-)
+    @info "PBSystem"
+    pbsys.physics.data.c_bulk .= molarity * ufac"mol/dm^3"
+    result = dlcapsweep(
+        pbsys;
+        inival = unknowns(pbsys, inival = 0),
+        iϕ = 1, voltages,
+        verbose = ""
+    )
 end
 
 # ╔═╡ 6b0adcfd-a279-4b58-b029-db07fca60b0f
 begin
-	@info "EquilibriumSystem"
-    ecell = create_equilibrium_system(grid, EquilibriumData(celldata))
+    @info "EquilibriumSystem"
+    ecelldata = EquilibriumData(celldata)
+    LiquidElectrolytes.set_molarity!(ecelldata, molarity)
+    ecell = create_equilibrium_system(grid, ecelldata)
     evolts, ecaps = dlcapsweep_equi(
         ecell;
         vmax = voltages[end],
-        molarity,
         δV = 1.0e-4,
         nsteps = 101
     )
@@ -121,7 +122,7 @@ end;
 
 # ╔═╡ f57cb1f9-3505-45e1-9524-ba37af47637b
 function pnpsweep(scheme)
-	@info scheme
+    @info scheme
     function pnp_bcondition(f, u, bnode, data::ElectrolyteData)
         (; iϕ, Γ_we, ϕ_we) = data
         boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_we, value = ϕ_we)
@@ -129,13 +130,14 @@ function pnpsweep(scheme)
     end
     xcelldata = deepcopy(celldata)
     xcelldata.scheme = scheme
+    xcelldata.c_bulk .= molarity * ufac"mol/dm^3"
     μcell = PNPSystem(grid; bcondition = pnp_bcondition, celldata = xcelldata)
     return μresult = dlcapsweep(
         μcell;
         voltages,
-        molarity = molarity * ufac"mol/dm^3",
-        δ = 1.0e-4, damp_initial = 0.5,
-		verbose="ne"
+        δ = 1.0e-4,
+		damp_initial = 0.5,
+        verbose = ""
     )
 end;
 
@@ -258,7 +260,7 @@ end
 floataside(
     let
         vis = GridVisualizer(size = (350, 200), legend = :rt)
-        scalarplot!(vis, result.voltages, result.dlcaps, color = :red, label = "pb")
+      scalarplot!(vis, result.voltages, result.dlcaps, color = :red, label = "pb")
 
         scalarplot!(vis, evolts, ecaps, color = :green, label = "equi", clear = false)
         scalarplot!(vis, μresult.voltages, μresult.dlcaps, color = :blue, label = "μpnp", clear = false)

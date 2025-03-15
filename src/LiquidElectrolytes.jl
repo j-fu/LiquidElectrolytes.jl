@@ -14,7 +14,7 @@ function __init__()
     return LessUnitful.ensureSIBase()
 end
 
-include("tools.jl")
+include("utils.jl")
 export RExp, RLog
 VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public rexp, rlog"))
 
@@ -34,11 +34,16 @@ VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public aflux, sflux, cflux"))
 include("pbsystem.jl")
 export PBSystem
 
+include("dlcapsweep.jl")
+export dlcapsweep,  DLCapSweepResult
+include("ivsweep.jl")
+export ivsweep, IVSweepReault
+export currents, voltages, voltages_currents
+include("cvsweep.jl")
+export SawTooth, cvsweep, CVSweepResult, perio
 
-include("cells.jl")
-export ivsweep, dlcapsweep, currents, voltages_solutions, voltages_dlcaps, voltages_currents
-export AbstractSimulationResult, DLCapSweepResult, IVSweepResult
-export SawTooth, cvsweep, CVSweepResult, period
+export AbstractSimulationResult, voltages, voltages_solutions, voltages_dlcaps, voltages_currents
+
 
 include("equilibrium-pluto.jl")
 export EquilibriumData, create_equilibrium_system, create_equilibrium_pp_system,  dlcapsweep_equi

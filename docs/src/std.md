@@ -5,16 +5,12 @@
 ```@docs
 dlcapsweep
 DLCapSweepResult 
-voltages_dlcaps
 ```
 
 ## Steady state voltammetry
 ```@docs
 ivsweep
 IVSweepResult
-voltages_currents
-voltages_solutions
-currents
 ```
 
 ## Cyclic voltammetry
@@ -25,8 +21,14 @@ SawTooth
 period
 ```
 
+
+
 ## Supporting methods
 ```@docs
+voltages_currents
+voltages_solutions
+currents
+voltages_dlcaps
 bulkbcondition
 AbstractSimulationResult
 ```

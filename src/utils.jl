@@ -1,0 +1,207 @@
+abstract type RFunction<:Function end
+
+myround(x; kwargs...) = round(x; kwargs...)
+myround(s::Symbol; kwargs...) = s
+myround(i::Int; kwargs...) = i
+myround(b::Bool; kwargs...) = b
+myround(f::Function; kwargs...) = string(f)
+
+
+function showstruct(io::IO, this)
+    for name in fieldnames(typeof(this))
+        println(io, "$(lpad(name, 20)) = $(myround.(getfield(this, name), sigdigits = 5))")
+    end
+    return
+end
+
+"""
+    RExp(trunc)
+
+Callable struct for regularized exponential. Linear continuation for `x>trunc`,  
+returns 1/rexp(-x) for `x<-trunc`. Objects `myexp::RExp`  of this type are meant to replace
+the exponential function and allow to invoke `myexp(x)`.
+"""
+struct RExp{T<:AbstractFloat} <: RFunction
+    trunc::T
+end
+
+function (myexp::RExp)(x)
+    (;trunc) = myexp
+    if x < -trunc
+        return 1.0 / rexp(-x)
+    elseif x <= trunc
+        return exp(x)
+    else
+        return exp(trunc) * (x - trunc + 1)
+    end
+end
+
+"""
+    RExp(T::type)
+
+Return `RExp(log(sqrt(floatmax(T))))`
+"""
+RExp(::Type{T}) where T=RExp{T}(log(sqrt(floatmax(T))))
+
+"""
+    RExp()
+Return RExp(Float64)
+"""
+RExp() = RExp(Float64)
+
+"""
+    rexp(x::Any)
+
+Exponential function used in LiquidElectrolytes.jl.
+Calls `Base.exp` by default.
+
+This can be overwritten  by defining e.g, `LiquidElectrolytes.rexp(x::Number)=myexp(x)`
+where `myexp=RExp()`.
+"""
+rexp(x::Any)=Base.exp(x)
+
+
+"""
+    RLog(eps)
+
+Callable struct for regularized  logarithm. Smooth linear continuation for `x<eps`.
+This means we can calculate a "logarithm"  of a small negative number.
+Objects `mylog::RLog`  of this type are meant to replace
+the logarithm function and allow to invoke `mylog(x)`.
+"""
+struct RLog{T<:AbstractFloat} <: RFunction
+    eps::T
+end
+
+function (mylog::RLog)(x)
+    (;eps)=mylog
+    if x < eps
+        return log(eps) + (x - eps) / eps
+    else
+        return log(x)
+    end
+end
+
+
+
+"""
+    RLog(T::type)
+
+Return `RLog(eps(T)^4)`
+"""
+RLog(::Type{T}) where T=RLog{T}(eps(T)^4)
+
+"""
+    RLog()
+Return RLog(Float64)
+"""
+RLog() = RLog(Float64)
+
+"""
+    rlog(x::Any)
+
+Logarithm function used in LiquidElectrolytes.jl.
+Calls `Base.log` by default.
+
+This can be overwritten  by defining e.g, `LiquidElectrolytes.rlog(x::Number)=mylog(x)`
+where `mylog=RLog()`.
+"""
+rlog(x::Any)=Base.log(x)
+
+
+
+
+"""
+    splitz(range::AbstractRange)
+
+If range contains zero, split it into two parts, one with values <=0 and one with values >=0.
+Otherwise, return the range or its reverse, such that first value always is the one with the smallest absolute value.
+"""
+function _splitz(range::AbstractRange)
+    if range[1] >= 0
+        return [range]
+    elseif range[end] <= 0
+        return [reverse(range)]
+    else
+        [0:(-step(range)):range[1], 0:step(range):range[end]]
+    end
+end
+
+"""
+    splitz(range::Vector)
+
+Version of [`splitz(range::AbstractRange)`](@ref) for vectors.
+"""
+function _splitz(range::Vector)
+    if range[1] >= 0
+        return [vcat([0.0], range)]
+    elseif range[end] <= 0
+        return [vcat([0.0], reverse(range))]
+    else
+        for i in 1:length(range)
+            if range[i] ≈ 0.0
+                return [reverse(range[1:i]), range[i:end]]
+            elseif i > 1 && range[i - 1] < 0.0 && range[i] > 0.0
+                return [vcat([0.0], reverse(range[1:(i - 1)])), vcat([0.0], range[i:end])]
+            end
+        end
+    end
+end
+
+
+abstract type AbstractSimulationResult end
+
+"""
+    voltages_solutions(result)
+
+Return a [`TransientSolution`](https://j-fu.github.io/VoronoiFVM.jl/stable/solutions/#Transient-solution) `tsol`
+containing voltages (in `tsol.t`) and the corresponding stationary solutions (in `tsol.u`).
+"""
+voltages_solutions(r::AbstractSimulationResult) = TransientSolution(r.solutions, r.voltages)
+
+"""
+    voltages(result)
+
+Return vector of voltages of simulation result.
+"""
+voltages(r::AbstractSimulationResult) = r.voltages
+
+
+"""
+    voltages_currents(result,ispec; electrode)
+
+Voltage- working electrode current curve for species as [`DiffEqArray`](https://docs.sciml.ai/RecursiveArrayTools/stable/array_types/#RecursiveArrayTools.DiffEqArray)
+"""
+function voltages_currents(r::AbstractSimulationResult, ispec; electrode = :we)
+    RecursiveArrayTools.DiffEqArray(currents(r, ispec; electrode), r.voltages)
+end
+
+
+"""
+    currents(result,ispec; electrode)
+
+Vector of electrode currents for species `ispec`.
+Electrode can be: 
+- `:bulk`: calculate current at bulk boundary conditions
+- `:we`: calculate current electrode interface
+- `:reaction`: calculate current from reaction term
+"""
+function currents(r::AbstractSimulationResult, ispec; electrode = :we)
+    F = ph"N_A" * ph"e"
+    return if electrode == :we
+        [F * j[ispec] for j in r.j_we]
+    elseif electrode == :bulk
+        [F * j[ispec] for j in r.j_bulk]
+    elseif electrode == :reaction
+        return [F * j[ispec] for j in r.j_reaction]
+    else
+        error("no such electrode")
+    end
+end
+
+"""
+    voltages_dlcaps(result)
+
+Double layer capacitance curve as [`DiffEqArray`](https://docs.sciml.ai/RecursiveArrayTools/stable/array_types/#RecursiveArrayTools.DiffEqArray)
+"""
+voltages_dlcaps(r::AbstractSimulationResult) = RecursiveArrayTools.DiffEqArray(r.dlcaps, r.voltages)

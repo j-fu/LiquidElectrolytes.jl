@@ -158,7 +158,7 @@ md"""
 begin
     verbose = ""
     nref = 0
-    voltages = SawTooth(scanrate=parse(Float64,guidata.scanrate),
+    sawtooth = SawTooth(scanrate=parse(Float64,guidata.scanrate),
 	vmin=-0.5, vmax=0.5)
     const nperiods=guidata.nperiods
     dlcap = false
@@ -178,8 +178,6 @@ begin
     const molX = molS - zR * molR - zO * molO
     const z = [zO, zR, zS, zX]
     const c_bulk = [molO, molR, molS, molX] * mol / dm^3
-    @info c_bulk' * z
-    @assert abs(c_bulk' * z < 1.0e-12)
     scheme = :μex
     #scheme = :act
     const κ = Float64(guidata.κ)
@@ -199,20 +197,16 @@ begin
         scheme
     )
 
-	c0,barc=c0_barc(c_bulk, pnpdata)
-	@info "c0_bulk=$(c0)"
-	@assert c0>0
+   @assert iselectroneutral(c_bulk, pnpdata)
+   @assert isincompressible(c_bulk, pnpdata)
     pnpdata
 end
-
-# ╔═╡ 059545e9-6d5c-4a96-bb18-d6fbd02a7a85
-voltages.scanrate
 
 # ╔═╡ f0745600-be37-49d3-92fe-231bcc2e7013
 	function halfcellbc(f, u, bnode, data)
     (; nc, Γ_we, Γ_bulk,  ip, iϕ, v, v0, RT, κ) = data
     bulkbcondition(f, u, bnode, data; region = Γ_bulk)
-		ϕ_we=voltages(bnode.time)
+		ϕ_we=sawtooth(bnode.time)
     if bnode.region == Γ_we
         if !data.eneutral
             boundary_dirichlet!(f, u, bnode; species = iϕ, region = Γ_we, value = ϕ_we)
@@ -253,13 +247,13 @@ begin
 end
 
 # ╔═╡ 76dab1ef-520c-41ea-b939-80e7212b27a9
-function sweep(; eneutral = true, tunnel = false, bikerman = true)
+function sweep(pnpdata; eneutral = true, tunnel = false, bikerman = true)
     celldata = deepcopy(pnpdata)
     celldata.eneutral = eneutral
 	pnpcell = PNPSystem(grid; bcondition = halfcellbc, celldata, valuetype)
 	result = cvsweep(
         pnpcell;
-		voltages,
+		voltages=sawtooth,
         nperiods,
 		store_solutions = true, 
 		verbose = "en"
@@ -268,7 +262,7 @@ function sweep(; eneutral = true, tunnel = false, bikerman = true)
 end
 
 # ╔═╡ 02b9f166-e56d-42ad-aa9e-6c7b084860bc
-pnpresult=sweep(eneutral = false, tunnel = false)
+pnpresult=sweep(pnpdata;eneutral = false, tunnel = false)
 
 # ╔═╡ 9d9d5b00-3453-4a62-8b0d-f671140b7a11
 let
@@ -283,19 +277,20 @@ end
 # ╔═╡ cc6d0b70-51ec-4a43-8502-3e737bf8a559
 length(pnpresult.times)
 
+# ╔═╡ c7d0a14b-b24f-4dfa-90d9-65f06d86ed50
+nnpresult=sweep(pnpdata; eneutral = true, tunnel = false)
+
 # ╔═╡ 5a692843-9dc7-4104-a0aa-cff229b1fabb
 let
 	fig=Figure(size=(650,400))
 	ax=Axis(fig[1,1])
-	lines!(ax, pnpresult.voltages, [j[iR] for j in pnpresult.j_we],
-	color=RGBf.(range(0.1,1,length(pnpresult.voltages)),0.0,0.0 ))
-	#lines!(ax, nnpresult.voltages, [j[iR] for j in nnpresult.j_we], color=RGBf.(0.0,range(0.1,1,length(nnpresult.voltages)),0.0 ))
+	lines!(ax, voltages(pnpresult), currents(pnpresult, iO ),
+	color=RGBf.(range(0.1,1,length(voltages(pnpresult))),0.0,0.0 ))
+	lines!(ax,  voltages(pnpresult), currents(nnpresult, iO ), 
+		color=RGBf.(0.0,range(0.1,1,length(voltages(nnpresult))),0.0 ))
 	#ylims!(-0.0001, 0.0001)
 	fig
 end
-
-# ╔═╡ c7d0a14b-b24f-4dfa-90d9-65f06d86ed50
-nnpresult=sweep(eneutral = true, tunnel = false)
 
 # ╔═╡ fe0ee3a5-3825-4ab7-b0f8-b1ca8c698683
 floataside(
@@ -347,7 +342,6 @@ end
 # ╠═43cc60e3-8a4d-4fac-9454-7e599243e058
 # ╠═430f4195-7693-4682-8e81-4ef2d218a2f9
 # ╠═b218dbfc-c627-489c-8f27-8ebb7a721a44
-# ╠═059545e9-6d5c-4a96-bb18-d6fbd02a7a85
 # ╠═9d9d5b00-3453-4a62-8b0d-f671140b7a11
 # ╠═f0745600-be37-49d3-92fe-231bcc2e7013
 # ╠═483eefd0-a96d-4c32-a939-2517f08a6b3d
