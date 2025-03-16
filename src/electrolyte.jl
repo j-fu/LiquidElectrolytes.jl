@@ -130,6 +130,11 @@ $(TYPEDFIELDS)
     model::Symbol = :DGL
 end
 
+function Base.show(io::IOContext{Base.TTY}, this::ElectrolyteData)
+    return showstruct(io, this)
+end
+
+
 """
     set_model!(electrolyte, model)
 
@@ -183,10 +188,6 @@ function edgevelocity(electrolyte, i)
     return _evelo(electrolyte.edgevelocity, i)
 end
 
-
-function Base.show(io::IO, this::ElectrolyteData)
-    return showstruct(io, this)
-end
 
 """
     dlcap0(electrolyte)

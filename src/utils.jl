@@ -1,18 +1,24 @@
 abstract type RFunction<:Function end
 
 myround(x; kwargs...) = round(x; kwargs...)
-myround(s::Symbol; kwargs...) = s
+myround(x::Vector; kwargs...) = round.(x; kwargs...)
+myround(s::Symbol; kwargs...) = ":$(s)"
 myround(i::Int; kwargs...) = i
 myround(b::Bool; kwargs...) = b
+myround(::Nothing; kwargs...) = "nothing"
 myround(f::Function; kwargs...) = string(f)
 
 
 function showstruct(io::IO, this)
+    print(io,"$(typeof(this))(")
     for name in fieldnames(typeof(this))
-        println(io, "$(lpad(name, 20)) = $(myround.(getfield(this, name), sigdigits = 5))")
+        print(io, "$name = $(myround.(getfield(this, name), sigdigits = 5)), ")
     end
-    return
+    println(io,")")
+    return nothing
 end
+
+
 
 """
     RExp(trunc)
