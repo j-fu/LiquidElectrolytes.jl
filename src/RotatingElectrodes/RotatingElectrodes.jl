@@ -1,12 +1,13 @@
 module RotatingElectrodes
-using Printf
-
-
-using ExtendableGrids
-using VoronoiFVM
-using ProgressMeter
-using DocStringExtensions
-using LessUnitful
+using DocStringExtensions: DocStringExtensions, SIGNATURES
+using ExtendableGrids: ExtendableGrids, YCoordinates, bfacemask!, geomspace,
+glue, linspace
+using LessUnitful: LessUnitful, @local_phconstants, @local_unitfactors, @ph_str
+using Printf:  @printf, @sprintf
+using ProgressMeter: ProgressMeter, ProgressUnknown
+using VoronoiFVM: VoronoiFVM, bfacevelocities, circular_symmetric!, coordinates,
+edgevelocities, enable_boundary_species!, enable_species!,
+    solve, testfunction, unknowns, update_grid!
 
 
 include("asymptotics.jl")

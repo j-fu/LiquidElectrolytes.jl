@@ -1,10 +1,13 @@
 module LiquidElectrolytesExtendableFEMExt
-
-using SciMLBase
-using ExtendableFEM
-using ExtendableGrids
-using LiquidElectrolytes
-using VoronoiFVM
+import LiquidElectrolytes
+using ExtendableFEM: ExtendableFEM, BilinearOperator, FESpace, FEVector, H1BR,
+H1P1, H1P2B, HDIVBDM2, HDIVRT0, L2P0, L2P1,
+LinearOperator, ProblemDescription, Unknown,
+assign_operator!, assign_unknown!, grad, id,
+lazy_interpolate!, nodevalues, reveal
+using ExtendableGrids: ExtendableGrids, ExtendableGrid, num_nodes
+using SciMLBase: SciMLBase
+using VoronoiFVM: VoronoiFVM, solve!
 
     
 function kernel_stokes_cartesian!(result, u_ops, qpinfo)

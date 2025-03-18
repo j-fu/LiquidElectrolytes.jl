@@ -117,6 +117,7 @@ function dlcapsweep(
                 break
             end
             Qδ = VoronoiFVM.integrate(sys, sys.physics.reaction, sol)
+            
             cdl = (Qδ[iϕ] - Q[iϕ]) / δ
 
             store_solutions ? push!(result.solutions, sol) : nothing
