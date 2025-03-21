@@ -1,6 +1,17 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## 1.1.0 - 2025-03-16
+
+### Features
+- Add cvsweep 
+- Reorgnization of source files
+- Document which entries of ElectrolyteData are modified by algorithms
+- Use ReTest, tighten CI with Aqua etc.
+
+### Breaking
+- `molarity` kwarg is removed from `dlcapsweep`.
+- Removed undocumented EquilibriumData stuff, moved to tests
 
 ## 1.0.0 - 2025-02-26
 

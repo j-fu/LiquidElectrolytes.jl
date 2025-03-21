@@ -22,7 +22,7 @@ function make(;with_notebooks=true, with_examples=true)
     size_threshold_ignore=[]
     if with_notebooks
         notebooks=[
-            "DLCap.jl",
+            "EquilibriumCheck.jl",
             "ORR.jl",
             "ElectroOsmosis.jl"
         ] #, "BufferReactions.jl", "SurfaceKinetics_draft.jl"]

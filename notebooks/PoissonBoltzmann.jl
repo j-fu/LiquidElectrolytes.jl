@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.3
+# v0.20.5
 
 using Markdown
 using InteractiveUtils
@@ -7,7 +7,7 @@ using InteractiveUtils
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
     #! format: off
-    quote
+    return quote
         local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
@@ -82,7 +82,18 @@ begin
 	const nref=0 # grid refinement level
 	const T=298.15K # temperature
 	const L = 20.0nm # computational domain size
+	const hmin = 1.0e-1 * nm * 2.0^(-nref) # grid size at working electrode
+    const hmax = 1.0 * nm * 2.0^(-nref) # grid size at bulk
+
 end;
+
+# ╔═╡ 41715397-020c-4505-a61a-4f2910318423
+begin
+	pbo_electrolyte=ElectrolyteData()
+	pbo_electrolyte.c_bulk=c_bulk
+	pbo_electrolyte.κ.=0
+	pbo_electrolyte.v.=0
+end
 
 # ╔═╡ 834c81c8-9035-449f-b331-73bbee87756c
 md"""
@@ -90,32 +101,22 @@ Check for bulk electroneutrality:
 """
 
 # ╔═╡ 7f209979-0776-40ab-9b2b-3b2d0145fa2c
-@assert dot(c_bulk,z)==0
+iselectroneutral(c_bulk, pbo_electrolyte)
 
 # ╔═╡ 80a42b07-d6b1-41d6-bf1d-66a01eeb5019
 md"""
 Derived data:
 """
 
-# ╔═╡ fb653542-7084-4e6f-87b9-9ab29e89ba04
-begin
-	const RT=ph"R"*T
-	const c0_bulk=c̄-sum(c_bulk)
-	const hmin = 1.0e-1 * nm * 2.0^(-nref) # grid size at working electrode
-    const hmax = 1.0 * nm * 2.0^(-nref) # grid size at bulk
-	const l_debye = sqrt(ε * ε_0 * RT / (F^2 * c_bulk[1])) # Debye length
-	const dlcap0 = sqrt(2 * ε * ε_0 *F^2 * c_bulk[1]/RT) # Double layer capacitance at point of zero charge (0V)
-end;
-
 # ╔═╡ c57e82bb-79d8-4553-b31d-d1448c38c649
 md"""
-Debye length= $(l_debye |> x->round(x,sigdigits=5) |>u"nm")
+Debye length= $(debyelength(pbo_electrolyte) |> x->round(x,sigdigits=5) |>u"nm")
 """
 
 # ╔═╡ e2179a6c-cc1c-4850-89d4-d3f87fd5e6ee
 md"""
 Double layer capacitance at zero voltage for symmetric binary electrolyte = 
-$(dlcap0 |> x->round(x,sigdigits=5) |>u"μF/cm^2")
+$(dlcap0(pbo_electrolyte) |> x->round(x,sigdigits=5) |>u"μF/cm^2")
 """
 
 # ╔═╡ 7da889ce-9c6b-4abc-b19d-6311aacc32b1
@@ -136,68 +137,33 @@ md"""
 ```
 """
 
-# ╔═╡ 5befbcff-2e7c-48db-a327-27dbb6779d63
-function pb_flux(y,u,edge, data)
-	y[1]= ε*ε_0*(u[1,1]-u[1,2])
+# ╔═╡ 66a988e0-9388-4bbe-8d92-9177dfca8ac4
+function pb_bcondition(f, u, bnode, data)
+    (; Γ_we, Γ_bulk, ϕ_we ) = data
+iϕ,ip=1,2
+    ## Dirichlet ϕ=ϕ_we at Γ_we
+    boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_we, value = ϕ_we)
+    boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_bulk, value = data.ϕ_bulk)
+    boundary_dirichlet!(f, u, bnode, species = ip, region = Γ_bulk, value = data.p_bulk)
+    
 end
 
-# ╔═╡ 286174fc-9a64-426a-9d3c-a96b39f7ea0c
-pbo_molfrac(ϕ,i)=(c_bulk[i]/c̄)*exp(z[i]*ϕ*F/RT)
-
-# ╔═╡ 39996246-cb69-4c59-802a-d00804d84b0b
-function pbo_spacecharge(ϕ)
-	sumyz=zero(ϕ)
-	for i=1:length(z)
-		sumyz+=z[i]*pbo_molfrac(ϕ,i)
-	end
-	F*c̄*sumyz
-end
-
-# ╔═╡ 95e49176-6c34-4c89-b156-5972080f82bb
-function pbo_reaction(y,u,node, data)
-	y[1]=pbo_spacecharge(u[1])
-end
-
-# ╔═╡ 2a7c5a4f-48b0-4995-a37b-70fd3d5bf853
-const bcvals=[0.0,0.0]
-
-# ╔═╡ ddbb2a10-f22e-4474-b02d-e7b514852e58
-function pbbc(y,u,bnode, data)
-	boundary_dirichlet!(y,u,bnode,species=1,region=2,value=bcvals[2])
-	boundary_dirichlet!(y,u,bnode,species=1,region=1,value=bcvals[1])
-end
 
 # ╔═╡ 91a661ee-9c0c-496e-b6fb-4bb692cb7255
-pbo_system=VoronoiFVM.System(grid; 
-							reaction=pbo_reaction, 
-							flux=pb_flux, 
-							bcondition=pbbc,
-							species=[1])
+pbo_system=PBSystem(grid; celldata=pbo_electrolyte, bcondition=pb_bcondition)
 
-# ╔═╡ 0c77e9c2-1242-4694-bacf-3b6c9856997a
-function sweep(system;vmax=1.0*V, nsweep=100, δ=1.0e-4)
-	voltages=range(0,vmax,length=nsweep+1)
-	solutions=[]
-	dlcaps=zeros(0)
-	for v in voltages
-		bcvals[1]=v
-		if length(solutions)==0
-			inival=0.0
-		else
-			inival=solutions[end]
-		end
-		push!(solutions,solve(system;inival))
-		q=integrate(system, system.physics.reaction, solutions[end])
-		bcvals[1]=v+δ
-		solδ=solve(system;inival=solutions[end])
-		qδ=integrate(system, system.physics.reaction, solδ)
-		push!(dlcaps,(qδ[1] - q[1]) / δ)
-	end
-	voltages,dlcaps, TransientSolution(solutions,voltages)
-end
+# ╔═╡ 240b9017-bb20-4e0f-b372-3248a1cf0a9f
+pbo_result=dlcapsweep(pbo_system; inival = unknowns(pbo_system, inival = 0), voltages=range(0,1,length=101),iϕ=1, store_solutions=true)
 
-# ╔═╡ 163c5395-726f-4874-9304-ab9a46cc8bf9
-pbo_volts,pbo_caps,pbo_sols=sweep(pbo_system)
+
+# ╔═╡ 7ce95a6a-dd5f-4c2a-810b-6483f02ce661
+pbo_volts=voltages(pbo_result)
+
+# ╔═╡ 7a014d29-535b-4389-987c-cbfcde5fd8a4
+pbo_caps=pbo_result.dlcaps
+
+# ╔═╡ c4af7d22-52ad-495e-b1db-0cd129173c60
+pbo_sols=voltages_solutions(pbo_result);
 
 # ╔═╡ ad804cc3-93cd-421b-8314-a7d11e051e3d
 @bind pbo_v PlutoUI.Slider(range(pbo_volts[begin],pbo_volts[end],length=201),default=0.05,show_value=true)
@@ -207,35 +173,37 @@ md"""
 ## "Poisson-Bikerman"
 """
 
-# ╔═╡ c2500d41-53e8-4ac7-8e52-5107cf0335b2
-function pbi_molfrac(ϕ,j)
-	N=length(z)
-	denom=one(ϕ)
-	for i=1:length(z)
-		denom+=exp(z[i]*ϕ*F/RT)*c_bulk[i]/c0_bulk
-	end
-	exp(z[j]*ϕ*F/RT)*c_bulk[j]/(c0_bulk*denom)
+# ╔═╡ 46b3f0fb-d527-4fca-a7f9-f4b0851b3f9f
+
+function pnp_bcondition(f, u, bnode, data::ElectrolyteData)
+    (; iϕ, Γ_we, ϕ_we) = data
+    boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_we, value = ϕ_we)
+    return bulkbcondition(f, u, bnode, data)
 end
 
-# ╔═╡ cb8b5a32-c414-4768-b250-2398cc432881
-function pbi_spacecharge(ϕ)
-	sumyz=zero(ϕ)
-	for i=1:length(z)
-		sumyz+=z[i]*pbi_molfrac(ϕ,i)
-	end
-	F*c̄*sumyz
+
+# ╔═╡ dbc500d6-99e8-40d8-9b60-dcccf1889ce8
+begin
+	pbi_electrolyte = deepcopy(pbo_electrolyte)
+	pbi_electrolyte.v .= pbi_electrolyte.v0
+	pbi_electrolyte
 end
 
-# ╔═╡ 77e92a09-66e8-4502-8115-c892eef1f597
-function pbi_reaction(y,u,node, data)
-	y[1]=pbi_spacecharge(u[1])
-end
+# ╔═╡ 5ccc639b-0fe9-4bd0-a672-4a9d8910d0aa
+pbi_system=PNPSystem(grid; celldata=pbi_electrolyte, bcondition=pnp_bcondition)
 
-# ╔═╡ 0b628db9-1719-4e1a-b87b-92d3e2808e5c
-pbi_system=VoronoiFVM.System(grid; reaction=pbi_reaction, flux=pb_flux, bcondition=pbbc,species=[1])
+# ╔═╡ 7bcad22f-4ad8-4f54-b920-4e5fbe3f2104
+pbi_result=dlcapsweep(pbi_system; inival = unknowns(pbi_system, inival = 0), voltages=range(0,1,length=101),store_solutions=true)
 
-# ╔═╡ db911ce1-c0f1-4261-aee7-54156ed03248
-pbi_volts,pbi_caps,pbi_sols=sweep(pbi_system)
+
+# ╔═╡ 00ea2ca4-5051-4f38-aeb3-122a9664ba39
+pbi_volts=voltages(pbi_result)
+
+# ╔═╡ 930aa7cc-47da-434a-b185-98283b3baa0d
+pbi_caps=pbi_result.dlcaps
+
+# ╔═╡ f45d7707-1626-42e7-8211-8cdcc4cccbea
+pbi_sols=voltages_solutions(pbi_result);
 
 # ╔═╡ 26266ce9-1fd5-4dec-9ea7-2a79c724685d
 @bind pbi_v PlutoUI.Slider(range(pbi_volts[begin],pbi_volts[end],length=201),default=0.05,show_value=true)
@@ -258,11 +226,26 @@ plotcdl(pbo_volts,pbo_caps,pbo_v)
 plotcdl(pbi_volts,pbi_caps,pbi_v)
 
 # ╔═╡ a290a533-9639-465f-b6ef-66c28d6136e8
-function plotsols(pbsols,pbv,pb_molfrac)
+function plotsols(pbsols,pbv, electrolyte)
     vis=GridVisualizer(size=(700,200),layout=(1,2),xlabel="x/nm")
-	ϕ=pbsols(pbv)[1,:]
-	cp=c̄*pb_molfrac.(ϕ,1)/ufac"mol/dm^3"
-	cm=c̄*pb_molfrac.(ϕ,2)/ufac"mol/dm^3"
+	sol=pbsols(pbv)
+	ϕ=sol[1,:]
+	c=LiquidElectrolytes.pbconcentrations(sol, electrolyte)
+	cp=c[1,:]/ufac"mol/dm^3"
+	cm=c[2,:]/ufac"mol/dm^3"
+	scalarplot!(vis[1,1],X/nm,ϕ,color=:green,ylabel="ϕ/V")
+	scalarplot!(vis[1,2],X/nm,cp,color=:red,ylabel="c/ (mol/L)")
+	scalarplot!(vis[1,2],X/nm,cm,color=:blue,clear=false)
+	reveal(vis)
+end
+
+# ╔═╡ e480b378-7afa-4906-9e8a-70eac7712b5e
+function plotsols(pbsols,pbv)
+    vis=GridVisualizer(size=(700,200),layout=(1,2),xlabel="x/nm")
+	sol=pbsols(pbv)
+	ϕ=sol[3,:]
+	cp=sol[1,:]/ufac"mol/dm^3"
+	cm=sol[2,:]/ufac"mol/dm^3"
 	scalarplot!(vis[1,1],X/nm,ϕ,color=:green,ylabel="ϕ/V")
 	scalarplot!(vis[1,2],X/nm,cp,color=:red,ylabel="c/ (mol/L)")
 	scalarplot!(vis[1,2],X/nm,cm,color=:blue,clear=false)
@@ -270,13 +253,10 @@ function plotsols(pbsols,pbv,pb_molfrac)
 end
 
 # ╔═╡ 65a25bd3-c420-4da3-b808-0e1888c6b4ba
-plotsols(pbo_sols,pbo_v,pbo_molfrac)
+plotsols(pbo_sols,pbo_v,pbo_electrolyte)
 
 # ╔═╡ 5d15d24d-6317-4ad1-a53e-5af5c5bcf28a
-plotsols(pbi_sols,pbi_v,pbi_molfrac)
-
-# ╔═╡ 4fc7fda6-423b-48ea-8f86-6718a9050ee0
-
+plotsols(pbi_sols,pbi_v)
 
 # ╔═╡ f9b4d4dc-7def-409f-b40a-f4eba1163741
 TableOfContents()
@@ -454,42 +434,41 @@ end;
 # ╠═b6338637-1f3c-4410-8e82-3afdaf603656
 # ╟─371df98d-9f55-4244-8243-e6b597cc8d84
 # ╠═10be79ba-9ab9-4e6f-8568-2de93ea77964
+# ╠═41715397-020c-4505-a61a-4f2910318423
 # ╟─834c81c8-9035-449f-b331-73bbee87756c
 # ╠═7f209979-0776-40ab-9b2b-3b2d0145fa2c
 # ╟─80a42b07-d6b1-41d6-bf1d-66a01eeb5019
-# ╠═fb653542-7084-4e6f-87b9-9ab29e89ba04
 # ╟─c57e82bb-79d8-4553-b31d-d1448c38c649
 # ╟─e2179a6c-cc1c-4850-89d4-d3f87fd5e6ee
 # ╠═7da889ce-9c6b-4abc-b19d-6311aacc32b1
 # ╠═a2a8132a-d54d-48a7-aa02-ff83593f0e16
 # ╠═db023dac-5ce0-4126-bfd0-9036ccec11f4
 # ╟─a4a4c6a4-ea90-4d23-b13a-2020790b2889
-# ╠═5befbcff-2e7c-48db-a327-27dbb6779d63
-# ╠═286174fc-9a64-426a-9d3c-a96b39f7ea0c
-# ╠═39996246-cb69-4c59-802a-d00804d84b0b
-# ╠═95e49176-6c34-4c89-b156-5972080f82bb
-# ╠═2a7c5a4f-48b0-4995-a37b-70fd3d5bf853
-# ╠═ddbb2a10-f22e-4474-b02d-e7b514852e58
+# ╠═66a988e0-9388-4bbe-8d92-9177dfca8ac4
 # ╠═91a661ee-9c0c-496e-b6fb-4bb692cb7255
-# ╠═0c77e9c2-1242-4694-bacf-3b6c9856997a
-# ╠═163c5395-726f-4874-9304-ab9a46cc8bf9
+# ╠═240b9017-bb20-4e0f-b372-3248a1cf0a9f
+# ╠═7ce95a6a-dd5f-4c2a-810b-6483f02ce661
+# ╠═7a014d29-535b-4389-987c-cbfcde5fd8a4
+# ╠═c4af7d22-52ad-495e-b1db-0cd129173c60
 # ╟─ad804cc3-93cd-421b-8314-a7d11e051e3d
 # ╠═811fca9b-bac0-4003-a0f9-bfefcbfbfa30
 # ╠═65a25bd3-c420-4da3-b808-0e1888c6b4ba
 # ╟─db5b6820-5a53-465c-b380-66756fd722a6
-# ╠═c2500d41-53e8-4ac7-8e52-5107cf0335b2
-# ╠═cb8b5a32-c414-4768-b250-2398cc432881
-# ╠═77e92a09-66e8-4502-8115-c892eef1f597
-# ╠═0b628db9-1719-4e1a-b87b-92d3e2808e5c
-# ╠═db911ce1-c0f1-4261-aee7-54156ed03248
+# ╠═46b3f0fb-d527-4fca-a7f9-f4b0851b3f9f
+# ╠═dbc500d6-99e8-40d8-9b60-dcccf1889ce8
+# ╠═5ccc639b-0fe9-4bd0-a672-4a9d8910d0aa
+# ╠═7bcad22f-4ad8-4f54-b920-4e5fbe3f2104
+# ╠═00ea2ca4-5051-4f38-aeb3-122a9664ba39
+# ╠═930aa7cc-47da-434a-b185-98283b3baa0d
+# ╠═f45d7707-1626-42e7-8211-8cdcc4cccbea
 # ╟─26266ce9-1fd5-4dec-9ea7-2a79c724685d
 # ╟─eb7d0765-d5e7-4ef9-916d-764c5aca9822
 # ╠═5d15d24d-6317-4ad1-a53e-5af5c5bcf28a
 # ╟─9b5f389f-b105-4610-bab7-f79305fedc31
 # ╠═e373824d-6e0d-44c8-8c8a-192cccf10298
 # ╠═a290a533-9639-465f-b6ef-66c28d6136e8
+# ╠═e480b378-7afa-4906-9e8a-70eac7712b5e
 # ╟─5beb3a0d-e57a-4aea-b7a0-59b8ce9ff5ce
-# ╠═4fc7fda6-423b-48ea-8f86-6718a9050ee0
 # ╟─f9b4d4dc-7def-409f-b40a-f4eba1163741
 # ╟─7a93e9a8-8a2d-4b11-84ef-691706c0eb0f
 # ╟─86e1fffe-cf70-4d93-8131-153f0e98c94b

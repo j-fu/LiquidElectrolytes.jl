@@ -1,23 +1,34 @@
 # Standard calculations
 
-```@docs
-bulkbcondition
-AbstractSimulationResult
-voltages_solutions
-```
 
 ## Double layer capacitance
 ```@docs
 dlcapsweep
 DLCapSweepResult 
-voltages_dlcaps
 ```
 
-## Voltage-current sweeps
+## Steady state voltammetry
 ```@docs
 ivsweep
 IVSweepResult
-voltages_currents
-currents
 ```
 
+## Cyclic voltammetry
+```@docs
+cvsweep
+CVSweepResult
+SawTooth
+period
+```
+
+
+
+## Supporting methods
+```@docs
+voltages_currents
+voltages_solutions
+currents
+voltages_dlcaps
+bulkbcondition
+AbstractSimulationResult
+```

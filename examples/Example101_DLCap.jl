@@ -74,11 +74,11 @@ function main(;voltages=-2:0.01:2,           ## Voltages/V
         
 	color=RGB(1-imol/length(molarities),0,imol/length(molarities))
 
-        
+        celldata.c_bulk.=molarities[imol]*M
+
 	result=dlcapsweep(cell;
                           δ=1.0e-6,
                           voltages=collect(voltages)*V,
-                          molarity=molarities[imol]*M,
                           kwargs...)
 
 	cdl0=dlcap0(celldata)

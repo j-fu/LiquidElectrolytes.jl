@@ -39,3 +39,9 @@ LiquidElectrolytes.flowsolver
 ```@docs
 LiquidElectrolytes.splitz
 ```
+
+## General tools
+```@docs
+LiquidElectrolytes.showstruct
+LiquidElectrolytes.myround
+```
