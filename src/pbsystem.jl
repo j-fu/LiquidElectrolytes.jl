@@ -20,6 +20,34 @@ function pbspacecharge(φ, p, electrolyte)
     return electrolyte.F * sumyz / sumyv
 end
 
+function pbconcentrations!(c, ϕ, p, electrolyte)
+    c0_bulk, barc_bulk = c0_barc(electrolyte.c_bulk, electrolyte)
+    pscaled = (p * electrolyte.pscale - electrolyte.p_bulk)
+    c0 = c0_bulk * rexp(-electrolyte.v0 * pscaled / (electrolyte.RT))
+    c.= zero(c)
+    sumyv = electrolyte.v0 * c0
+    for α in 1:electrolyte.nc
+        barv = electrolyte.v[α] + electrolyte.κ[α] * electrolyte.v0
+        η_p = barv * pscaled
+        η_φ = electrolyte.z[α] * electrolyte.F * (ϕ - electrolyte.ϕ_bulk)
+        y = electrolyte.c_bulk[α] * rexp(-(η_φ + η_p) / (electrolyte.RT))
+        c[α]=y
+        sumyv += barv * y
+    end
+    @info p, c0_barc(c, electrolyte)
+    c/=sumyv
+    return c
+end
+
+function pbconcentrations(sol, electrolyte)
+    iϕ,ip=1,2
+    n=size(sol,2)
+    c=zeros(electrolyte.nc,n)
+    for i=1:n
+        @views pbconcentrations!(c[:,i], sol[iϕ,i], sol[ip,i], electrolyte)
+    end
+    return c
+end
 """
     pbreaction(f, u, node, electrolyte)
 
