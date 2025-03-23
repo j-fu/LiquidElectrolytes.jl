@@ -144,17 +144,12 @@ function pnpflux(f, u, edge, electrolyte)
     end
 
     for ic in 1:nc
-        f[ic] = 0.0
         ck, cl = u[ic, 1], u[ic, 2]
-        barv = 0.0
-
-        ## Calculate the  activity coefficients first,
-        ## as these expressions are less degenerating.
-        Mrel = M[ic] / M0
+        Mrel = M[ic] / M0  + κ[ic]
         barv = v[ic] + κ[ic] * v0
         tildev = barv - Mrel * v0
-        γk = rexp(tildev * pk / (RT)) * (bar_ck / c0k)^Mrel * (1 / (v0 * bar_ck))
-        γl = rexp(tildev * pl / (RT)) * (bar_cl / c0l)^Mrel * (1 / (v0 * bar_cl))
+        γk = rexp(tildev * pk / RT) * (bar_ck / c0k)^Mrel * (1 / (v0 * bar_ck))
+        γl = rexp(tildev * pl / RT) * (bar_cl / c0l)^Mrel * (1 / (v0 * bar_cl))
 
         if scheme == :μex
             f[ic] = sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte; evelo)

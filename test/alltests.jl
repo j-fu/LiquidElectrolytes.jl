@@ -64,8 +64,7 @@ end
 
 
         function pbbcondition(f, u, bnode, data)
-            (; Γ_we, Γ_bulk, ϕ_we) = data
-            iϕ, ip = 1, 2
+            (; Γ_we, Γ_bulk, ϕ_we, ip, iϕ) = data
             ## Dirichlet ϕ=ϕ_we at Γ_we
             boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_we, value = ϕ_we)
             boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_bulk, value = data.ϕ_bulk)
@@ -74,7 +73,7 @@ end
 
         pcelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, scheme = :cent, κ, c_bulk = fill(molarity , 2))
         pcell = PBSystem(grid; bcondition = pbbcondition, celldata = pcelldata)
-        presult = dlcapsweep(pcell; inival = unknowns(pcell, inival = 0), voltages, δ, iϕ = 1)
+        presult = dlcapsweep(pcell; voltages, δ)
         pvolts = presult.voltages
         pcaps = presult.dlcaps
 

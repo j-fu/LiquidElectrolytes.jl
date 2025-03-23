@@ -43,7 +43,7 @@ md"""
 
 # ╔═╡ 1afa972d-74cf-47ce-86cf-8751a9e85218
 md"""
-Under development, may be removed, though. Same as VoronoiFVMPoisson, but with the intention do the same things with LiquidElectorlytes.jl
+Under development, may be removed, though. Same as VoronoiFVMPoisson, but with the intention do the same things with LiquidElectrolytes.jl
 """
 
 # ╔═╡ b181a82b-46e7-4dae-b0b1-6886dd40886a
@@ -93,6 +93,7 @@ begin
 	pbo_electrolyte.c_bulk=c_bulk
 	pbo_electrolyte.κ.=0
 	pbo_electrolyte.v.=0
+
 end
 
 # ╔═╡ 834c81c8-9035-449f-b331-73bbee87756c
@@ -139,8 +140,7 @@ md"""
 
 # ╔═╡ 66a988e0-9388-4bbe-8d92-9177dfca8ac4
 function pb_bcondition(f, u, bnode, data)
-    (; Γ_we, Γ_bulk, ϕ_we ) = data
-iϕ,ip=1,2
+    (; Γ_we, Γ_bulk, ϕ_we, iϕ,ip ) = data
     ## Dirichlet ϕ=ϕ_we at Γ_we
     boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_we, value = ϕ_we)
     boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_bulk, value = data.ϕ_bulk)
@@ -153,7 +153,8 @@ end
 pbo_system=PBSystem(grid; celldata=pbo_electrolyte, bcondition=pb_bcondition)
 
 # ╔═╡ 240b9017-bb20-4e0f-b372-3248a1cf0a9f
-pbo_result=dlcapsweep(pbo_system; inival = unknowns(pbo_system, inival = 0), voltages=range(0,1,length=101),iϕ=1, store_solutions=true)
+pbo_result=dlcapsweep(pbo_system; voltages=range(0,1,length=101),
+					  store_solutions=true)
 
 
 # ╔═╡ 7ce95a6a-dd5f-4c2a-810b-6483f02ce661
@@ -190,10 +191,12 @@ begin
 end
 
 # ╔═╡ 5ccc639b-0fe9-4bd0-a672-4a9d8910d0aa
-pbi_system=PNPSystem(grid; celldata=pbi_electrolyte, bcondition=pnp_bcondition)
+pbi_system=PBSystem(grid; celldata=pbi_electrolyte, bcondition=pb_bcondition)
 
 # ╔═╡ 7bcad22f-4ad8-4f54-b920-4e5fbe3f2104
-pbi_result=dlcapsweep(pbi_system; inival = unknowns(pbi_system, inival = 0), voltages=range(0,1,length=101),store_solutions=true)
+pbi_result=dlcapsweep(pbi_system; voltages=range(0,1,length=101),
+					  verbose="",
+					  store_solutions=true)
 
 
 # ╔═╡ 00ea2ca4-5051-4f38-aeb3-122a9664ba39
@@ -225,20 +228,6 @@ plotcdl(pbo_volts,pbo_caps,pbo_v)
 # ╔═╡ eb7d0765-d5e7-4ef9-916d-764c5aca9822
 plotcdl(pbi_volts,pbi_caps,pbi_v)
 
-# ╔═╡ a290a533-9639-465f-b6ef-66c28d6136e8
-function plotsols(pbsols,pbv, electrolyte)
-    vis=GridVisualizer(size=(700,200),layout=(1,2),xlabel="x/nm")
-	sol=pbsols(pbv)
-	ϕ=sol[1,:]
-	c=LiquidElectrolytes.pbconcentrations(sol, electrolyte)
-	cp=c[1,:]/ufac"mol/dm^3"
-	cm=c[2,:]/ufac"mol/dm^3"
-	scalarplot!(vis[1,1],X/nm,ϕ,color=:green,ylabel="ϕ/V")
-	scalarplot!(vis[1,2],X/nm,cp,color=:red,ylabel="c/ (mol/L)")
-	scalarplot!(vis[1,2],X/nm,cm,color=:blue,clear=false)
-	reveal(vis)
-end
-
 # ╔═╡ e480b378-7afa-4906-9e8a-70eac7712b5e
 function plotsols(pbsols,pbv)
     vis=GridVisualizer(size=(700,200),layout=(1,2),xlabel="x/nm")
@@ -253,7 +242,7 @@ function plotsols(pbsols,pbv)
 end
 
 # ╔═╡ 65a25bd3-c420-4da3-b808-0e1888c6b4ba
-plotsols(pbo_sols,pbo_v,pbo_electrolyte)
+plotsols(pbo_sols,pbo_v)
 
 # ╔═╡ 5d15d24d-6317-4ad1-a53e-5af5c5bcf28a
 plotsols(pbi_sols,pbi_v)
@@ -466,7 +455,6 @@ end;
 # ╠═5d15d24d-6317-4ad1-a53e-5af5c5bcf28a
 # ╟─9b5f389f-b105-4610-bab7-f79305fedc31
 # ╠═e373824d-6e0d-44c8-8c8a-192cccf10298
-# ╠═a290a533-9639-465f-b6ef-66c28d6136e8
 # ╠═e480b378-7afa-4906-9e8a-70eac7712b5e
 # ╟─5beb3a0d-e57a-4aea-b7a0-59b8ce9ff5ce
 # ╟─f9b4d4dc-7def-409f-b40a-f4eba1163741

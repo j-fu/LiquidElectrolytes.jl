@@ -30,7 +30,6 @@ end
             sys;
             electrolyte = electrolytedata(sys),
             inival = nothing,
-            iϕ = data.iϕ,
             voltages = (-1:0.1:1) * ufac"V",
             δ = 1.0e-4,
             store_solutions = false,
@@ -46,21 +45,20 @@ function dlcapsweep(
         sys;
         electrolyte = electrolytedata(sys),
         inival = nothing,
-        iϕ = electrolyte.iϕ,
         voltages = (-1:0.1:1) * ufac"V",
         molarity = nothing,
         δ = 1.0e-4,
         store_solutions = false,
         solver_kwargs...
     )
-
+    (; ip, iϕ)= electrolyte
     if !isnothing(molarity)
         error("The molarity kwarg of dlcapsweep has been removed. Pass the molarity information with electrolyte.c_bulk.")
     end
 
     ranges = _splitz(voltages)
 
-    electrolyte.ϕ_we = 0
+    electrolyte.ϕ_we = 0.0
 
     if isnothing(inival)
         inival = pnpunknowns(sys)
@@ -77,7 +75,10 @@ function dlcapsweep(
     result_plus = DLCapSweepResult()
     result_minus = DLCapSweepResult()
 
-    control = VoronoiFVM.SolverControl(; max_round = 3, tol_round = 1.0e-9, solver_kwargs...)
+    control = VoronoiFVM.SolverControl(; max_round = 3, tol_round = 1.0e-9,
+                                       unorm = u -> wnorm(u, electrolyte.weights, Inf),
+                                       rnorm = u -> wnorm(u, electrolyte.weights, 1),
+                                       solver_kwargs...)
     for range in ranges
         sol = inival
         success = true
@@ -98,11 +99,11 @@ function dlcapsweep(
                 success = false
             end
 
-            sol0 = sol
 
             if !success
                 break
             end
+            store_solutions ? push!(result.solutions, sol) : nothing
             Q = VoronoiFVM.integrate(sys, sys.physics.reaction, sol)
 
             try
@@ -120,7 +121,6 @@ function dlcapsweep(
             
             cdl = (Qδ[iϕ] - Q[iϕ]) / δ
 
-            store_solutions ? push!(result.solutions, sol) : nothing
             push!(result.voltages, ϕ)
             push!(result.dlcaps, cdl)
             ϕprogress += 1
