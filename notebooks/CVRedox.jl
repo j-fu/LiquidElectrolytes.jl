@@ -48,8 +48,8 @@ end
 
 # ╔═╡ baa3e08e-5d64-4c8f-9f6d-5fdb40e97bc5
 begin
-	using HypertextLiteral: @htl_str, @htl
-	using UUIDs: uuid1
+    using HypertextLiteral: @htl_str, @htl
+    using UUIDs: uuid1
 end
 
 # ╔═╡ 43b83ec3-3c85-4e2c-9a7d-e102ebc29619
@@ -70,7 +70,7 @@ function zstr(z::Int)
         return ""
     elseif z == 1
         return "+"
-    elseif z >1
+    elseif z > 1
         return "$(z)+"
     end
 end
@@ -86,43 +86,45 @@ html"""<style>.dont-panic{ display: none }</style>"""
 begin
     function floataside(text::Markdown.MD; top = 1)
         uuid = uuid1()
-        @htl("""
-       		<style>
+        return @htl(
+            """
+            		<style>
 
 
-       		@media (min-width: calc(700px + 30px + 300px)) {
-       			aside.plutoui-aside-wrapper-$(uuid) {
+            		@media (min-width: calc(700px + 30px + 300px)) {
+            			aside.plutoui-aside-wrapper-$(uuid) {
 
-       	color: var(--pluto-output-color);
-       	position:fixed;
-       	right: 1rem;
-       	top: $(top)px;
-       	width: 400px;
-       	padding: 10px;
-       	border: 3px solid rgba(0, 0, 0, 0.15);
-       	border-radius: 10px;
-       	box-shadow: 0 0 11px 0px #00000010;
-       	/* That is, viewport minus top minus Live Docs */
-       	max-height: calc(100vh - 5rem - 56px);
-       	overflow: auto;
-       	z-index: 40;
-       	background-color: var(--main-bg-color);
-       	transition: transform 300ms cubic-bezier(0.18, 0.89, 0.45, 1.12);
+            	color: var(--pluto-output-color);
+            	position:fixed;
+            	right: 1rem;
+            	top: $(top)px;
+            	width: 400px;
+            	padding: 10px;
+            	border: 3px solid rgba(0, 0, 0, 0.15);
+            	border-radius: 10px;
+            	box-shadow: 0 0 11px 0px #00000010;
+            	/* That is, viewport minus top minus Live Docs */
+            	max-height: calc(100vh - 5rem - 56px);
+            	overflow: auto;
+            	z-index: 40;
+            	background-color: var(--main-bg-color);
+            	transition: transform 300ms cubic-bezier(0.18, 0.89, 0.45, 1.12);
 
-       			}
-       			aside.plutoui-aside-wrapper > div {
-       #				width: 300px;
-       			}
-       		}
-       		</style>
+            			}
+            			aside.plutoui-aside-wrapper > div {
+            #				width: 300px;
+            			}
+            		}
+            		</style>
 
-       		<aside class="plutoui-aside-wrapper-$(uuid)">
-       		<div>
-       		$(text)
-       		</div>
-       		</aside>
+            		<aside class="plutoui-aside-wrapper-$(uuid)">
+            		<div>
+            		$(text)
+            		</div>
+            		</aside>
 
-       		""")
+            		"""
+        )
     end
     floataside(stuff; kwargs...) = floataside(md"""$(stuff)"""; kwargs...)
 end;
@@ -158,9 +160,11 @@ md"""
 begin
     verbose = ""
     nref = 0
-    sawtooth = SawTooth(scanrate=parse(Float64,guidata.scanrate),
-	vmin=-0.5, vmax=0.5)
-    const nperiods=guidata.nperiods
+    sawtooth = SawTooth(
+        scanrate = parse(Float64, guidata.scanrate),
+        vmin = -0.5, vmax = 0.5
+    )
+    const nperiods = guidata.nperiods
     dlcap = false
     const molR = guidata.fgmol
     const molO = guidata.fgmol
@@ -185,7 +189,7 @@ begin
     const Δg = 0.0
     const β = 0.5
     const βt = parse(Float64, guidata.β) / cm
-	etunnel(x) = βt * exp(-βt * x)
+    etunnel(x) = βt * exp(-βt * x)
 
     pnpdata = ElectrolyteData(;
         nc = 4,
@@ -197,16 +201,16 @@ begin
         scheme
     )
 
-   @assert iselectroneutral(c_bulk, pnpdata)
-   @assert isincompressible(c_bulk, pnpdata)
+    @assert iselectroneutral(c_bulk, pnpdata)
+    @assert isincompressible(c_bulk, pnpdata)
     pnpdata
 end
 
 # ╔═╡ f0745600-be37-49d3-92fe-231bcc2e7013
-	function halfcellbc(f, u, bnode, data)
-    (; nc, Γ_we, Γ_bulk,  ip, iϕ, v, v0, RT, κ) = data
+function halfcellbc(f, u, bnode, data)
+    (; nc, Γ_we, Γ_bulk, ip, iϕ, v, v0, RT, κ) = data
     bulkbcondition(f, u, bnode, data; region = Γ_bulk)
-		ϕ_we=sawtooth(bnode.time)
+    ϕ_we = sawtooth(bnode.time)
     if bnode.region == Γ_we
         if !data.eneutral
             boundary_dirichlet!(f, u, bnode; species = iϕ, region = Γ_we, value = ϕ_we)
@@ -226,7 +230,7 @@ end
 begin
     hmin = 1.0e-2 * nm * 2.0^(-nref)
     L = parse(Float64, guidata.L) * nm
-    hmax = L/20 * 2.0^(-nref)
+    hmax = L / 20 * 2.0^(-nref)
     X = geomspace(0, L, hmin, hmax)
     grid = simplexgrid(X)
 end
@@ -239,10 +243,10 @@ valuetype = guidata.double64 ? Double64 : Float64
 
 # ╔═╡ 43cc60e3-8a4d-4fac-9454-7e599243e058
 begin
-	mylog = RLog(valuetype)
+    mylog = RLog(valuetype)
     mylog10(x) = mylog(x) / log(10)
-	Makie.defined_interval(::typeof(mylog10)) = Makie.defined_interval(log10)
-    Makie.defaultlimits(::T) where {T <: typeof(mylog10)} =       Makie.defaultlimits(log10)
+    Makie.defined_interval(::typeof(mylog10)) = Makie.defined_interval(log10)
+    Makie.defaultlimits(::T) where {T <: typeof(mylog10)} = Makie.defaultlimits(log10)
 
 end
 
@@ -250,43 +254,47 @@ end
 function sweep(pnpdata; eneutral = true, tunnel = false, bikerman = true)
     celldata = deepcopy(pnpdata)
     celldata.eneutral = eneutral
-	pnpcell = PNPSystem(grid; bcondition = halfcellbc, celldata, valuetype)
-	result = cvsweep(
+    pnpcell = PNPSystem(grid; bcondition = halfcellbc, celldata, valuetype)
+    return result = cvsweep(
         pnpcell;
-		voltages=sawtooth,
+        voltages = sawtooth,
         nperiods,
-		store_solutions = true, 
-		verbose = "en"
+        store_solutions = true,
+        verbose = "en"
     )
 
 end
 
 # ╔═╡ 02b9f166-e56d-42ad-aa9e-6c7b084860bc
-pnpresult=sweep(pnpdata;eneutral = false, tunnel = false)
+pnpresult = sweep(pnpdata; eneutral = false, tunnel = false)
 
 # ╔═╡ 9d9d5b00-3453-4a62-8b0d-f671140b7a11
 let
-  fig=Figure()
-ax=Axis(fig[1,1], yscale=log10)
-  T=pnpresult.times
-#lines!(ax,T, voltages.(T))
-	lines!(ax, T[2:end], T[2:end]-T[1:end-1])
-	fig
+    fig = Figure()
+    ax = Axis(fig[1, 1], yscale = log10)
+    T = pnpresult.times
+    #lines!(ax,T, voltages.(T))
+    lines!(ax, T[2:end], T[2:end] - T[1:(end - 1)])
+    fig
 end
 
 # ╔═╡ c7d0a14b-b24f-4dfa-90d9-65f06d86ed50
-nnpresult=sweep(pnpdata; eneutral = true, tunnel = false)
+nnpresult = sweep(pnpdata; eneutral = true, tunnel = false)
 
 # ╔═╡ 5a692843-9dc7-4104-a0aa-cff229b1fabb
 let
-	fig=Figure(size=(650,400))
-	ax=Axis(fig[1,1])
-	lines!(ax, voltages(pnpresult), currents(pnpresult, iO ),
-	color=RGBf.(range(0.1,1,length(voltages(pnpresult))),0.0,0.0 ))
-	lines!(ax,  voltages(pnpresult), currents(nnpresult, iO ), 
-		color=RGBf.(0.0,range(0.1,1,length(voltages(nnpresult))),0.0 ))
-	#ylims!(-0.0001, 0.0001)
-	fig
+    fig = Figure(size = (650, 400))
+    ax = Axis(fig[1, 1])
+    lines!(
+        ax, voltages(pnpresult), currents(pnpresult, iO),
+        color = RGBf.(range(0.1, 1, length(voltages(pnpresult))), 0.0, 0.0)
+    )
+    lines!(
+        ax, voltages(pnpresult), currents(nnpresult, iO),
+        color = RGBf.(0.0, range(0.1, 1, length(voltages(nnpresult))), 0.0)
+    )
+    #ylims!(-0.0001, 0.0001)
+    fig
 end
 
 # ╔═╡ fe0ee3a5-3825-4ab7-b0f8-b1ca8c698683
@@ -299,37 +307,37 @@ floataside(
 
 # ╔═╡ 57a31265-0012-43c4-87b1-ff1f2f4d0c29
 let
-	ZR = zstr(zR)
-	ZO = zstr(zO)
+    ZR = zstr(zR)
+    ZO = zstr(zO)
 
-	        XX = (X[2:end] / nm)
-    uu = pnpresult.tsol[:, :, it+1]
+    XX = (X[2:end] / nm)
+    uu = pnpresult.tsol[:, :, it + 1]
     ru = uu / (mol / dm^3)
 
-	fig = Figure(size = (650, 400))
-        ax1 = Axis(
-            fig[1, 1];
-            #       xlabel=L"x/nm",
-            ylabel = L"c/(mol/dm^3)",
-            xscale = log10,
-            yscale = log10,
-			title="V=$(pnpresult.voltages[it])"
-        )
-        xlims!(ax1, XX[1], L / nm)
-        ylims!(ax1, 1.0e-10, 1.0e2)
- 
-	        lines!(ax1, XX, ru[iO, 2:end], color = :red, linestyle = :solid, label = L"O^{%$(ZO)}, pnp")
-        lines!(ax1, XX, ru[iR, 2:end], color = :blue, linestyle = :solid, label = L"R^{%$(ZR)}, pnp")
-        lines!(ax1, XX, ru[iS, 2:end], color = :lightgreen, linestyle = :solid, label = L"S^-, pnp")
-        lines!(ax1, XX, ru[iX, 2:end], color = :orange, linestyle = :solid, label = L"X^+, pnp")
+    fig = Figure(size = (650, 400))
+    ax1 = Axis(
+        fig[1, 1];
+        #       xlabel=L"x/nm",
+        ylabel = L"c/(mol/dm^3)",
+        xscale = log10,
+        yscale = log10,
+        title = "V=$(pnpresult.voltages[it])"
+    )
+    xlims!(ax1, XX[1], L / nm)
+    ylims!(ax1, 1.0e-10, 1.0e2)
 
-	       Legend(
-            fig[1, 2], ax1; labelsize = 10,
-            backgroundcolor = RGBA(1.0, 1.0, 1.0, 0.5)
-		
-        )
+    lines!(ax1, XX, ru[iO, 2:end], color = :red, linestyle = :solid, label = L"O^{%$(ZO)}, pnp")
+    lines!(ax1, XX, ru[iR, 2:end], color = :blue, linestyle = :solid, label = L"R^{%$(ZR)}, pnp")
+    lines!(ax1, XX, ru[iS, 2:end], color = :lightgreen, linestyle = :solid, label = L"S^-, pnp")
+    lines!(ax1, XX, ru[iX, 2:end], color = :orange, linestyle = :solid, label = L"X^+, pnp")
 
-fig
+    Legend(
+        fig[1, 2], ax1; labelsize = 10,
+        backgroundcolor = RGBA(1.0, 1.0, 1.0, 0.5)
+
+    )
+
+    fig
 end
 
 # ╔═╡ Cell order:

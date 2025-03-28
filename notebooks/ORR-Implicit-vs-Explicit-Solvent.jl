@@ -7,7 +7,7 @@ using InteractiveUtils
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
     #! format: off
-    quote
+    return quote
         local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
@@ -30,9 +30,9 @@ begin
     using GridVisualize
     using StaticArrays
     using Interpolations
-	if isdefined(Main,:PlutoRunner)
-	    using CairoMakie
-   		 CairoMakie.activate!(type = "svg")
+    if isdefined(Main, :PlutoRunner)
+        using CairoMakie
+        CairoMakie.activate!(type = "svg")
         default_plotter!(CairoMakie)
     end
 end
@@ -117,7 +117,7 @@ function halfcellbc(f, u, bnode, data)
     bulkbcondition(f, u, bnode, data)
     (; iϕ, eneutral, ϕ_we, Γ_we, RT) = data
 
-    if bnode.region == Γ_we
+    return if bnode.region == Γ_we
         f .= 0.0
         if !data.eneutral
             boundary_dirichlet!(
@@ -129,7 +129,7 @@ function halfcellbc(f, u, bnode, data)
                 value = data.ϕ_we,
             )
         end
-        μh2o, μ = chemical_potentials!(MVector{4,eltype(u)}(undef), u, data)
+        μh2o, μ = chemical_potentials!(MVector{4, eltype(u)}(undef), u, data)
         A =
             (4 * μ[ihplus] + μ[io2] - 2μh2o + Δg + eneutral * F * (u[iϕ] - data.ϕ_we)) /
             (RT)
@@ -183,7 +183,7 @@ let
     v = celldata.v
     κx = celldata.κ
     cv = c0 * v0
-    for i = 1:celldata.nc
+    for i in 1:celldata.nc
         cv += c_bulk[i] * (v[i] + κx[i] * v0)
     end
     cv
@@ -198,19 +198,19 @@ cell = PNPSystem(grid; bcondition = halfcellbc, celldata)
 # ╔═╡ 763c393c-e0c8-447e-92e4-f2a5f0de2a30
 begin
 
-	result= LiquidElectrolytes.ivsweep(
+    result = LiquidElectrolytes.ivsweep(
         cell;
-		store_solutions=true,
+        store_solutions = true,
         voltages = vmin:vdelta:vmax,
         solver_control...,
     )
-	tsol=voltages_solutions(result)
-    for it = 1:length(tsol.t)
+    tsol = voltages_solutions(result)
+    for it in 1:length(tsol.t)
         tsol.u[it][io2, :] /= mol / dm^3
         tsol.u[it][ihplus, :] /= mol / dm^3
         tsol.u[it][iso4, :] /= mol / dm^3
     end
-	volts=result.voltages
+    volts = result.voltages
 end
 
 # ╔═╡ 2717060b-9e75-439f-8aa8-614f0930a163
@@ -220,7 +220,7 @@ md"""
 
 # ╔═╡ 5bc4f11f-24c6-4af8-a554-1b5771f1f2b0
 function currents_h2o(result; kwargs...)
-    -4κ * currents(result, ihplus; kwargs...) - (κ + 2) * currents(result, io2; kwargs...)
+    return -4κ * currents(result, ihplus; kwargs...) - (κ + 2) * currents(result, io2; kwargs...)
 end
 
 # ╔═╡ 4b966743-9e82-46e7-843a-c8d33d3cb2e4
@@ -239,7 +239,7 @@ let
     scalarplot!(
         vis,
         volts,
-        currents(result, ihplus; electrode=:bulk),
+        currents(result, ihplus; electrode = :bulk),
         linestyle = "--",
         label = "H+, bulk",
         color = :red,
@@ -257,7 +257,7 @@ let
     scalarplot!(
         vis,
         volts,
-        currents(result, io2; electrode=:bulk),
+        currents(result, io2; electrode = :bulk),
         linestyle = "--",
         label = "O2, bulk",
         color = :green,
@@ -266,7 +266,7 @@ let
     scalarplot!(
         vis,
         volts,
-        currents(result,io2),
+        currents(result, io2),
         color = :green,
         clear = false,
         linestyle = :solid,
@@ -276,7 +276,7 @@ let
     scalarplot!(
         vis,
         volts,
-        currents(result, io2, electrode=:bulk),
+        currents(result, io2, electrode = :bulk),
         linestyle = "--",
         label = "O2, bulk",
         color = :green,
@@ -296,7 +296,7 @@ let
     scalarplot!(
         vis,
         volts,
-        currents_h2o(result; electrode=:bulk) / 100,
+        currents_h2o(result; electrode = :bulk) / 100,
         linestyle = "--",
         label = "H2O/100, bulk",
         color = :blue,
@@ -313,7 +313,6 @@ let
     )
 
 
-
     reveal(vis)
 end
 
@@ -322,13 +321,13 @@ ix = ihplus
 
 # ╔═╡ ab97b97f-a7ad-4fc5-aa35-8876e8d79eea
 let
-	jwe=currents(result,ix,electrode=:we)
-	jbulk=currents(result,ix,electrode=:bulk)
-scalarplot(
-    volts,
-	(jwe-jbulk),
-    size = (600, 200),
-)
+    jwe = currents(result, ix, electrode = :we)
+    jbulk = currents(result, ix, electrode = :bulk)
+    scalarplot(
+        volts,
+        (jwe - jbulk),
+        size = (600, 200),
+    )
 end
 
 # ╔═╡ d7b10140-7db7-4be0-88c3-53ba1f203310
@@ -345,7 +344,7 @@ let
         (celldata.v[ihplus] + κ * celldata.v0) * sol[ihplus, :] +
         (celldata.v[iso4] + κ * celldata.v0) * sol[iso4, :]
     @info extrema(check)
-    title = "Φ_we=$(vshow), I=$(round(vinter(vshow),sigdigits=3))"
+    title = "Φ_we=$(vshow), I=$(round(vinter(vshow), sigdigits = 3))"
     vis = GridVisualizer(;
         size = (600, 250),
         yscale = :log,
@@ -383,7 +382,7 @@ function xhalfcellbc(f, u, bnode, data)
     bulkbcondition(f, u, bnode, data)
     (; iϕ, eneutral, ϕ_we, Γ_we, RT) = data
 
-    if bnode.region == Γ_we
+    return if bnode.region == Γ_we
         f .= 0.0
         if !eneutral
             boundary_dirichlet!(
@@ -395,24 +394,19 @@ function xhalfcellbc(f, u, bnode, data)
                 value = data.ϕ_we,
             )
         end
-        μsolv, μ = @inline chemical_potentials!(MVector{5,eltype(u)}(undef), u, data)
+        μsolv, μ = @inline chemical_potentials!(MVector{5, eltype(u)}(undef), u, data)
         A =
             (
-                4 * μ[ihplus] + μ[io2] - 2μ[ih2o] +
+            4 * μ[ihplus] + μ[io2] - 2μ[ih2o] +
                 Δg +
                 eneutral * 4 * F * (u[iϕ] - data.ϕ_we)
-            ) / (RT)
+        ) / (RT)
         r = rrate(R0, β, A)
         f[ihplus] -= 4 * r
         f[io2] -= r
         f[ih2o] += 2r + 4κ * r # shedding of the solvation shell of ihplus
     end
 end
-
-
-
-
-
 
 
 # ╔═╡ 8a83ef93-415b-4fe9-97cb-6e381382059e
@@ -440,7 +434,6 @@ begin
         (1 + κ) * xc_bulk[ihplus] - c_slv
 
 
-
     @assert isapprox(xcelldata.c_bulk' * xcelldata.z, 0, atol = 1.0e-12)
 
     xcell = PNPSystem(grid; bcondition = xhalfcellbc, celldata = xcelldata)
@@ -457,7 +450,7 @@ let
     v = xcelldata.v
     κx = xcelldata.κ
     cv = c0 * v0
-    for i = 1:xcelldata.nc
+    for i in 1:xcelldata.nc
         cv += xc_bulk[i] * (v[i] + κx[i] * v0)
     end
     cv
@@ -465,17 +458,17 @@ end
 
 # ╔═╡ 4c537d80-e6e2-4fc2-b388-9e277c5b67b2
 begin
-#    xvolts, xj_we, xj_bulk, xsols 
+    #    xvolts, xj_we, xj_bulk, xsols
 
-	xresult= LiquidElectrolytes.ivsweep(
+    xresult = LiquidElectrolytes.ivsweep(
         xcell;
         voltages = vmin:vdelta:vmax,
-		store_solutions=true,
+        store_solutions = true,
         solver_control...,
     )
     xtsol = voltages_solutions(xresult)
 
-    for it = 1:length(xtsol.t)
+    for it in 1:length(xtsol.t)
         xtsol.u[it][io2, :] /= mol / dm^3
         xtsol.u[it][ihplus, :] /= mol / dm^3
         xtsol.u[it][iso4, :] /= mol / dm^3
@@ -489,9 +482,9 @@ end
 # ╔═╡ c1098a16-c62c-4eeb-b9be-bda21f6b2bca
 let
     sol = xtsol(xvshow)
-    vinter = linear_interpolation(xresult.voltages, currents(xresult,io2))
+    vinter = linear_interpolation(xresult.voltages, currents(xresult, io2))
     c0 = solventconcentration(sol * (mol / dm^3), xcelldata) / (mol / dm^3)
-    title = "Φ_we=$(vshow), I=$(round(vinter(vshow),sigdigits=3))"
+    title = "Φ_we=$(vshow), I=$(round(vinter(vshow), sigdigits = 3))"
 
     vis = GridVisualizer(;
         size = (600, 250),
@@ -523,14 +516,14 @@ end
 # ╔═╡ 8d0910d4-bfbb-4659-ab6e-9ff0e696722d
 let
     vis = GridVisualizer(; size = (600, 200), legend = :rt)
-	j_bulk=currents(result, io2)
-	x_bulk=currents(xresult, io2)
+    j_bulk = currents(result, io2)
+    x_bulk = currents(xresult, io2)
     sol = tsol(yvshow)
     c0 = solventconcentration(sol * (mol / dm^3), celldata) / (mol / dm^3)
-#    j = linear_interpolation(volts, j_bulk)(yvshow)
-#    jh2o = -j[ihplus] - j[iso4] - j[io2]
-#    @info j[1:3], jh2o
-#    @info linear_interpolation(xvolts, xj_bulk)(yvshow)[1:4]
+    #    j = linear_interpolation(volts, j_bulk)(yvshow)
+    #    jh2o = -j[ihplus] - j[iso4] - j[io2]
+    #    @info j[1:3], jh2o
+    #    @info linear_interpolation(xvolts, xj_bulk)(yvshow)[1:4]
     xsol = xtsol(yvshow)
     scalarplot!(vis, grid, xsol[ih2o, :], color = :green, label = "explicit")
     scalarplot!(vis, grid, c0, color = :red, label = "implicit", clear = false)
@@ -544,38 +537,38 @@ TableOfContents()
 begin
     hrule() = html"""<hr>"""
     highlight(mdstring, color) =
-        htl"""<blockquote style="padding: 10px; background-color: $(color);">$(mdstring)</blockquote>"""
+    htl"""<blockquote style="padding: 10px; background-color: $(color);">$(mdstring)</blockquote>"""
 
     macro important_str(s)
-        :(highlight(Markdown.parse($s), "#ffcccc"))
+        return :(highlight(Markdown.parse($s), "#ffcccc"))
     end
     macro definition_str(s)
-        :(highlight(Markdown.parse($s), "#ccccff"))
+        return :(highlight(Markdown.parse($s), "#ccccff"))
     end
     macro statement_str(s)
-        :(highlight(Markdown.parse($s), "#ccffcc"))
+        return :(highlight(Markdown.parse($s), "#ccffcc"))
     end
 
 
     html"""
-        <style>
-         h1{background-color:#dddddd;  padding: 10px;}
-         h2{background-color:#e7e7e7;  padding: 10px;}
-         h3{background-color:#eeeeee;  padding: 10px;}
-         h4{background-color:#f7f7f7;  padding: 10px;}
-        
-	     pluto-log-dot-sizer  { max-width: 655px;}
-         pluto-log-dot.Stdout { background: #002000;
-	                            color: #10f080;
-                                border: 6px solid #b7b7b7;
-                                min-width: 18em;
-                                max-height: 300px;
-                                width: 675px;
-                                    overflow: auto;
- 	                           }
-	
-    </style>
-"""
+            <style>
+             h1{background-color:#dddddd;  padding: 10px;}
+             h2{background-color:#e7e7e7;  padding: 10px;}
+             h3{background-color:#eeeeee;  padding: 10px;}
+             h4{background-color:#f7f7f7;  padding: 10px;}
+            
+    	     pluto-log-dot-sizer  { max-width: 655px;}
+             pluto-log-dot.Stdout { background: #002000;
+    	                            color: #10f080;
+                                    border: 6px solid #b7b7b7;
+                                    min-width: 18em;
+                                    max-height: 300px;
+                                    width: 675px;
+                                        overflow: auto;
+     	                           }
+    	
+        </style>
+    """
 end
 
 # ╔═╡ 5beb3a0d-e57a-4aea-b7a0-59b8ce9ff5ce

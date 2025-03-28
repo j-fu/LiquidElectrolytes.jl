@@ -97,6 +97,8 @@ end
 
 end
 
+# Notebooks should "disable in file" the cell activating
+# the docs enviroment
 notebooks = [
     "EquilibriumCheck.jl",
     "ORR.jl",
@@ -106,18 +108,11 @@ notebooks = [
     "ElectroOsmosis.jl",
 ]
 
-using Pkg
-currentproject=dirname(Pkg.project().path)
-Pkg.activate(joinpath(@__DIR__, "..", "docs"))
-Pkg.develop(path = joinpath(@__DIR__, ".."))
-Pkg.instantiate()
-Pkg.activate(currentproject)
 
 @testset "Notebooks" begin
     @testscripts(joinpath(@__DIR__, "..", "notebooks"), notebooks)
 end
 
-Pkg.activate(currentproject)
 
 @testset "ExplicitImports" begin
     @test ExplicitImports.check_no_implicit_imports(LiquidElectrolytes, skip=(Base, Core, Markdown)) === nothing

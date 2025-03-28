@@ -4,15 +4,28 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ a70cef7d-2a2f-4155-bdf3-fec9df94c63f
+# ╔═╡ 4a215269-da12-431b-9e56-beec46112998
+# ╠═╡ skip_as_script = true
+#=╠═╡
 begin
-    using Pkg
+   using Pkg
     Pkg.activate(joinpath(@__DIR__, "..", "docs")) # hide
     using Revise
+	    using GridVisualize
+
+   	import CairoMakie	
+	    using CairoMakie: lines!
+  	 	default_plotter!(CairoMakie)
+ 		CairoMakie.activate!(type="png")
+  
+end
+  ╠═╡ =#
+
+# ╔═╡ a70cef7d-2a2f-4155-bdf3-fec9df94c63f
+begin
     using LiquidElectrolytes
     using Printf
     using ExtendableGrids
-    using GridVisualize
     using LinearAlgebra
     using PlutoUI
     using ExtendableFEM
@@ -20,12 +33,6 @@ begin
     using LessUnitful
     using Test
 
-    if isdefined(Main,:PlutoRunner)
-     	import CairoMakie	
-	    using CairoMakie: lines!
-  	 	default_plotter!(CairoMakie)
- 		CairoMakie.activate!(type="png")
-    end
 end
 
 # ╔═╡ baa3e08e-5d64-4c8f-9f6d-5fdb40e97bc5
@@ -64,6 +71,7 @@ begin
 end
 
 # ╔═╡ f49f1197-257b-4fdb-ad80-5236c3aa1ee7
+#=╠═╡
 let
     if isdefined(Main,:PlutoRunner)
         vis = GridVisualizer(layout = (1, 2), size = (650, 300), linewidth = 0.1)
@@ -72,6 +80,7 @@ let
         reveal(vis)
     end
 end
+  ╠═╡ =#
 
 # ╔═╡ 154c142a-c2b2-4229-80ec-9d7cf924c04c
 begin
@@ -111,26 +120,26 @@ function flowbcond(flowsolver)
 end
 
 # ╔═╡ 280f5233-621e-4d9d-95f2-8c97a2c343fc
-default_pnpdata=ElectrolyteData();
+default_pnpdata = ElectrolyteData();
 
 # ╔═╡ eb84642a-a26d-4b26-8530-35a499a179a8
-function PNPData(;molar_volume=default_pnpdata.v0, scheme=:μex, κ=20)	
-	pnpdata = ElectrolyteData()
+function PNPData(; molar_volume = default_pnpdata.v0, scheme = :μex, κ = 20)
+    pnpdata = ElectrolyteData()
     pnpdata.edgevelocity = zeros(num_edges(pnpgrid))
-    pnpdata.solvepressure=false
+    pnpdata.solvepressure = false
     pnpdata.scheme = scheme
     pnpdata.κ .= κ
     pnpdata.D .= 1.0e-9 * m^2 / s
-	pnpdata.pscale = 1
-    pnpdata.v.=molar_volume
-    pnpdata
+    pnpdata.pscale = 1
+    pnpdata.v .= molar_volume
+    return pnpdata
 end
 
 # ╔═╡ 9aaa7a1f-23ea-466b-9d54-6193879ae9fa
-gcdata=PNPData(molar_volume=0, κ=0)
+gcdata = PNPData(molar_volume = 0, κ = 0)
 
 # ╔═╡ f78d5edc-9e67-4d93-87f2-a08a9fc3b845
-dgldata=PNPData()
+dgldata = PNPData()
 
 # ╔═╡ d176f9d9-4f50-4d99-97b7-bbe9d1dd1396
 begin
@@ -139,7 +148,7 @@ begin
         pnpgrid,
         μ,
         velospace = H1BR,
-        pnpdata=gcdata,
+        pnpdata = gcdata,
         pnpbcond,
         pnpreaction = (y, u, bnode, data) -> nothing,
         flowbcond
@@ -153,7 +162,7 @@ begin
         pnpgrid,
         μ,
         velospace = H1BR,
-        pnpdata=dgldata,
+        pnpdata = dgldata,
         pnpbcond,
         pnpreaction = (y, u, bnode, data) -> nothing,
         flowbcond
@@ -187,6 +196,7 @@ dglpnpsol, dglflowsol = solve(
 )
 
 # ╔═╡ 666d12aa-5fcb-49d5-a2ce-b245274af693
+#=╠═╡
 if isdefined(Main,:PlutoRunner)
     LiquidElectrolytes.flowplot(gcflowsol, gcsolver.flowsolver;
                                 Plotter = CairoMakie,
@@ -194,8 +204,10 @@ if isdefined(Main,:PlutoRunner)
                                 aspect = 0.25,
                                 rasterpoints = 30)
 end
+  ╠═╡ =#
 
 # ╔═╡ 804642e9-a290-4c37-b500-3e11345c1ad5
+#=╠═╡
 if isdefined(Main,:PlutoRunner)
     LiquidElectrolytes.flowplot(dglflowsol, dglsolver.flowsolver;
                                 Plotter = CairoMakie,
@@ -203,8 +215,10 @@ if isdefined(Main,:PlutoRunner)
                                 aspect = 0.25,
                                 rasterpoints = 30)
 end
+  ╠═╡ =#
 
 # ╔═╡ 00d1e5e7-f53f-4aa4-b06f-d283b9cde21a
+#=╠═╡
 let
     if isdefined(Main,:PlutoRunner)
         vis = GridVisualizer(; layout = (2, 2), size = (650, 600))
@@ -215,8 +229,10 @@ let
         reveal(vis)
     end
 end
+  ╠═╡ =#
 
 # ╔═╡ a91c5744-e744-4c25-a748-30d7155e9b63
+#=╠═╡
 let
     if isdefined(Main,:PlutoRunner)
         vis = GridVisualizer(; layout = (2, 2), size = (650, 600))
@@ -227,9 +243,10 @@ let
         reveal(vis)
     end
 end
+  ╠═╡ =#
 
 # ╔═╡ fe4a9591-0842-42ac-9c77-76f6125d6688
-function midvelo(flowsol,pnpsol, solver)
+function midvelo(flowsol, pnpsol, solver)
     nodevelo = LiquidElectrolytes.node_velocity(flowsol, solver.flowsolver)
     nx = length(pnpX)
     iymid = (length(Y) - 1) ÷ 2 + 1
@@ -243,6 +260,7 @@ function midvelo(flowsol,pnpsol, solver)
 end
 
 # ╔═╡ 98a70371-71b0-4416-8395-6a03eb6873c0
+#=╠═╡
 if isdefined(Main, :PlutoRunner)
 	fig=CairoMakie.Figure(size=(650,300))
 	c_p, c_m, ϕ, p, u = midvelo(gcflowsol,gcpnpsol, gcsolver)
@@ -298,13 +316,14 @@ CairoMakie.axislegend(ax1, data, ["u_z","c^+","c^-","Φ"], position=:ct, backgro
 	fig
 	
 end
+  ╠═╡ =#
 
 # ╔═╡ 43b89443-58ad-4321-8db7-ead924a4b17b
 begin
-	gc_c_p, gc_c_m, gc_ϕ, gc_p, gc_u = midvelo(gcflowsol,gcpnpsol, gcsolver)
-	dgl_c_p, dgl_c_m, dgl_ϕ, dgl_p, dgl_u = midvelo(dglflowsol,dglpnpsol, dglsolver)
-	@test gc_u[1]<dgl_u[1]
-	@test gc_c_p[end]>dgl_c_p[end]
+    gc_c_p, gc_c_m, gc_ϕ, gc_p, gc_u = midvelo(gcflowsol, gcpnpsol, gcsolver)
+    dgl_c_p, dgl_c_m, dgl_ϕ, dgl_p, dgl_u = midvelo(dglflowsol, dglpnpsol, dglsolver)
+    @test gc_u[1] < dgl_u[1]
+    @test gc_c_p[end] > dgl_c_p[end]
 end
 
 # ╔═╡ 8af12f1c-d35b-4cc9-8185-1bb5adbb69e8
@@ -362,6 +381,7 @@ end;
 
 
 # ╔═╡ Cell order:
+# ╠═4a215269-da12-431b-9e56-beec46112998
 # ╠═a70cef7d-2a2f-4155-bdf3-fec9df94c63f
 # ╠═8db5d72c-34a9-411e-ade5-5f48b99f9231
 # ╠═8af5f374-d379-44a6-b567-ca34f6a2149e
