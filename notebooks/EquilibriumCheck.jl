@@ -4,11 +4,21 @@
 using Markdown
 using InteractiveUtils
 
+# ╔═╡ 2b901eca-db3b-4ad2-b0ee-e031854c57fa
+# ╠═╡ skip_as_script = true
+#=╠═╡
+begin
+  using Pkg
+  Pkg.activate(joinpath(@__DIR__, "..", "docs"))
+  using Revise
+  using CairoMakie
+  using GridVisualize
+  using Colors
+end
+  ╠═╡ =#
+
 # ╔═╡ 60941eaa-1aea-11eb-1277-97b991548781
 begin
-    using Pkg
-    Pkg.activate(joinpath(@__DIR__, "..", "docs"))
-    using Revise
     using PlutoUI
     using VoronoiFVM
     using ExtendableGrids
@@ -19,11 +29,6 @@ begin
     using LessUnitful.MoreUnitful
     using LiquidElectrolytes
     using Test
-    if isdefined(Main, :PlutoRunner)
-        using CairoMakie
-        using GridVisualize
-        using Colors
-    end
 end
 
 # ╔═╡ ef660f6f-9de3-4896-a65e-13c60df5de1e
@@ -36,6 +41,12 @@ md"""
 #=╠═╡
 TableOfContents(title="",depth=5)
   ╠═╡ =#
+
+# ╔═╡ 462f512b-9b92-442b-bae6-b4aa168b32ee
+begin
+	mylog=RLog()
+	LiquidElectrolytes.rlog(x::Number)=mylog(x)
+end
 
 # ╔═╡ 920b7d84-56c6-4958-aed9-fc67ba0c43f6
 md"""
@@ -961,6 +972,8 @@ Compare with Fig 4.2 of [Fuhrmann (2015)](https://dx.doi.org/10.1016/j.cpc.2015.
 """
 
 # ╔═╡ a22a5421-05bf-484f-a2d3-91a06a0c6476
+# ╠═╡ skip_as_script = true
+#=╠═╡
 function capsplot(vis, result, title)
     hmol = 1 / length(result)
     for imol in 1:length(result)
@@ -977,9 +990,12 @@ function capsplot(vis, result, title)
     return vis
 end
 
+  ╠═╡ =#
 
 # ╔═╡ 85856abf-ee16-424a-ac06-97f76e32e444
-if isdefined(Main, :PlutoRunner)
+# ╠═╡ skip_as_script = true
+#=╠═╡
+let
     vis = GridVisualizer(Plotter = CairoMakie, legend = :lt, layout = (2, 2), size = (650, 650))
 
     capsplot(vis[1, 1], result_sy, "Algebraic pressure")
@@ -989,11 +1005,14 @@ if isdefined(Main, :PlutoRunner)
 
     reveal(vis)
 end
+  ╠═╡ =#
 
 # ╔═╡ Cell order:
 # ╟─ef660f6f-9de3-4896-a65e-13c60df5de1e
+# ╠═2b901eca-db3b-4ad2-b0ee-e031854c57fa
 # ╠═60941eaa-1aea-11eb-1277-97b991548781
 # ╟─4082c3d3-b728-4bcc-b480-cdee41d9ab99
+# ╠═462f512b-9b92-442b-bae6-b4aa168b32ee
 # ╟─920b7d84-56c6-4958-aed9-fc67ba0c43f6
 # ╟─87ac16f4-a4fc-4205-8fb9-e5459517e1b8
 # ╟─7d77ad32-3df6-4243-8bad-b8df4126e6ea
@@ -1102,5 +1121,5 @@ end
 # ╠═b43c5e74-5010-4870-a058-d3ad2c1ed548
 # ╠═ee76e884-86e6-45f6-bbb2-c8e73daa5883
 # ╟─0b6f33b9-41d4-48fd-8026-8a3bddcc1989
-# ╟─a22a5421-05bf-484f-a2d3-91a06a0c6476
-# ╟─85856abf-ee16-424a-ac06-97f76e32e444
+# ╠═a22a5421-05bf-484f-a2d3-91a06a0c6476
+# ╠═85856abf-ee16-424a-ac06-97f76e32e444

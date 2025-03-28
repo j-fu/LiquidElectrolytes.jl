@@ -16,24 +16,28 @@ macro bind(def, element)
     #! format: on
 end
 
-# ╔═╡ 60941eaa-1aea-11eb-1277-97b991548781
+# ╔═╡ 18ce65e8-078d-4dec-bc4d-a05ce77acfd3
+# ╠═╡ skip_as_script = true
+#=╠═╡
 begin
     import Pkg # hide
     Pkg.activate(joinpath(@__DIR__, "..", "docs")) # hide
     using Revise # hide
-    using PlutoUI, HypertextLiteral,UUIDs
-	using LinearAlgebra
-	using Interpolations
-	using VoronoiFVM,GridVisualize,ExtendableGrids
-	using LiquidElectrolytes
-	using LessUnitful,Unitful
-    if isdefined(Main,:PlutoRunner)
-	using CairoMakie	
+	using GridVisualize
+		using CairoMakie	
 		default_plotter!(CairoMakie)
 		CairoMakie.activate!(type="svg")
-    end
+end
+  ╠═╡ =#
 
-	pkgdir(LiquidElectrolytes)
+# ╔═╡ 60941eaa-1aea-11eb-1277-97b991548781
+begin
+    using PlutoUI, HypertextLiteral, UUIDs
+    using LinearAlgebra
+    using Interpolations
+    using VoronoiFVM, ExtendableGrids
+    using LiquidElectrolytes
+    using LessUnitful, Unitful
 end
 
 # ╔═╡ 25a19579-9cba-4416-87cb-83d00e5926f3
@@ -58,14 +62,14 @@ See LessUnitful.jl  `ph` and `ufac` and Unitful.jl for `u`
 
 # ╔═╡ b6338637-1f3c-4410-8e82-3afdaf603656
 begin
-	const ε=78.49
-	const ε_0=ph"ε_0"
-	const F=ph"N_A"*ph"e"	
-	const K=ufac"K"
-	const nm=ufac"nm"
-	const dm=ufac"dm"
-	const V=ufac"V"
-	const mol=ufac"mol"
+    const ε = 78.49
+    const ε_0 = ph"ε_0"
+    const F = ph"N_A" * ph"e"
+    const K = ufac"K"
+    const nm = ufac"nm"
+    const dm = ufac"dm"
+    const V = ufac"V"
+    const mol = ufac"mol"
 end;
 
 # ╔═╡ 371df98d-9f55-4244-8243-e6b597cc8d84
@@ -75,24 +79,24 @@ Parameters:
 
 # ╔═╡ 10be79ba-9ab9-4e6f-8568-2de93ea77964
 begin
-	const molarity=0.01
-    const c_bulk=[molarity,molarity]*mol/dm^3 # bulk ion molar concentrations
-	const z=[1,-1] # species charge numbers
-	const c̄=55.508mol/dm^3 # solvent (water) molar concentration
-	const nref=0 # grid refinement level
-	const T=298.15K # temperature
-	const L = 20.0nm # computational domain size
-	const hmin = 1.0e-1 * nm * 2.0^(-nref) # grid size at working electrode
+    const molarity = 0.01
+    const c_bulk = [molarity, molarity] * mol / dm^3 # bulk ion molar concentrations
+    const z = [1, -1] # species charge numbers
+    const c̄ = 55.508mol / dm^3 # solvent (water) molar concentration
+    const nref = 0 # grid refinement level
+    const T = 298.15K # temperature
+    const L = 20.0nm # computational domain size
+    const hmin = 1.0e-1 * nm * 2.0^(-nref) # grid size at working electrode
     const hmax = 1.0 * nm * 2.0^(-nref) # grid size at bulk
 
 end;
 
 # ╔═╡ 41715397-020c-4505-a61a-4f2910318423
 begin
-	pbo_electrolyte=ElectrolyteData()
-	pbo_electrolyte.c_bulk=c_bulk
-	pbo_electrolyte.κ.=0
-	pbo_electrolyte.v.=0
+    pbo_electrolyte = ElectrolyteData()
+    pbo_electrolyte.c_bulk = c_bulk
+    pbo_electrolyte.κ .= 0
+    pbo_electrolyte.v .= 0
 
 end
 
@@ -121,13 +125,15 @@ $(dlcap0(pbo_electrolyte) |> x->round(x,sigdigits=5) |>u"μF/cm^2")
 """
 
 # ╔═╡ 7da889ce-9c6b-4abc-b19d-6311aacc32b1
- X = geomspace(0, L, hmin, hmax)
+X = geomspace(0, L, hmin, hmax)
 
 # ╔═╡ a2a8132a-d54d-48a7-aa02-ff83593f0e16
-grid=simplexgrid(X)
+grid = simplexgrid(X)
 
 # ╔═╡ db023dac-5ce0-4126-bfd0-9036ccec11f4
+#=╠═╡
 gridplot(grid,size=(600,200))
+  ╠═╡ =#
 
 # ╔═╡ a4a4c6a4-ea90-4d23-b13a-2020790b2889
 md"""
@@ -140,34 +146,36 @@ md"""
 
 # ╔═╡ 66a988e0-9388-4bbe-8d92-9177dfca8ac4
 function pb_bcondition(f, u, bnode, data)
-    (; Γ_we, Γ_bulk, ϕ_we, iϕ,ip ) = data
+    (; Γ_we, Γ_bulk, ϕ_we, iϕ, ip) = data
     ## Dirichlet ϕ=ϕ_we at Γ_we
     boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_we, value = ϕ_we)
     boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_bulk, value = data.ϕ_bulk)
-    boundary_dirichlet!(f, u, bnode, species = ip, region = Γ_bulk, value = data.p_bulk)
-    
+    return boundary_dirichlet!(f, u, bnode, species = ip, region = Γ_bulk, value = data.p_bulk)
+
 end
 
 
 # ╔═╡ 91a661ee-9c0c-496e-b6fb-4bb692cb7255
-pbo_system=PBSystem(grid; celldata=pbo_electrolyte, bcondition=pb_bcondition)
+pbo_system = PBSystem(grid; celldata = pbo_electrolyte, bcondition = pb_bcondition)
 
 # ╔═╡ 240b9017-bb20-4e0f-b372-3248a1cf0a9f
-pbo_result=dlcapsweep(pbo_system; voltages=range(0,1,length=101),
-					  store_solutions=true)
+pbo_result = dlcapsweep(
+    pbo_system; voltages = range(0, 1, length = 101),
+    store_solutions = true
+)
 
 
 # ╔═╡ 7ce95a6a-dd5f-4c2a-810b-6483f02ce661
-pbo_volts=voltages(pbo_result)
+pbo_volts = voltages(pbo_result)
 
 # ╔═╡ 7a014d29-535b-4389-987c-cbfcde5fd8a4
-pbo_caps=pbo_result.dlcaps
+pbo_caps = pbo_result.dlcaps
 
 # ╔═╡ c4af7d22-52ad-495e-b1db-0cd129173c60
-pbo_sols=voltages_solutions(pbo_result);
+pbo_sols = voltages_solutions(pbo_result);
 
 # ╔═╡ ad804cc3-93cd-421b-8314-a7d11e051e3d
-@bind pbo_v PlutoUI.Slider(range(pbo_volts[begin],pbo_volts[end],length=201),default=0.05,show_value=true)
+@bind pbo_v PlutoUI.Slider(range(pbo_volts[begin], pbo_volts[end], length = 201), default = 0.05, show_value = true)
 
 # ╔═╡ db5b6820-5a53-465c-b380-66756fd722a6
 md"""
@@ -185,33 +193,36 @@ end
 
 # ╔═╡ dbc500d6-99e8-40d8-9b60-dcccf1889ce8
 begin
-	pbi_electrolyte = deepcopy(pbo_electrolyte)
-	pbi_electrolyte.v .= pbi_electrolyte.v0
-	pbi_electrolyte
+    pbi_electrolyte = deepcopy(pbo_electrolyte)
+    pbi_electrolyte.v .= pbi_electrolyte.v0
+    pbi_electrolyte
 end
 
 # ╔═╡ 5ccc639b-0fe9-4bd0-a672-4a9d8910d0aa
-pbi_system=PBSystem(grid; celldata=pbi_electrolyte, bcondition=pb_bcondition)
+pbi_system = PBSystem(grid; celldata = pbi_electrolyte, bcondition = pb_bcondition)
 
 # ╔═╡ 7bcad22f-4ad8-4f54-b920-4e5fbe3f2104
-pbi_result=dlcapsweep(pbi_system; voltages=range(0,1,length=101),
-					  verbose="",
-					  store_solutions=true)
+pbi_result = dlcapsweep(
+    pbi_system; voltages = range(0, 1, length = 101),
+    verbose = "",
+    store_solutions = true
+)
 
 
 # ╔═╡ 00ea2ca4-5051-4f38-aeb3-122a9664ba39
-pbi_volts=voltages(pbi_result)
+pbi_volts = voltages(pbi_result)
 
 # ╔═╡ 930aa7cc-47da-434a-b185-98283b3baa0d
-pbi_caps=pbi_result.dlcaps
+pbi_caps = pbi_result.dlcaps
 
 # ╔═╡ f45d7707-1626-42e7-8211-8cdcc4cccbea
-pbi_sols=voltages_solutions(pbi_result);
+pbi_sols = voltages_solutions(pbi_result);
 
 # ╔═╡ 26266ce9-1fd5-4dec-9ea7-2a79c724685d
-@bind pbi_v PlutoUI.Slider(range(pbi_volts[begin],pbi_volts[end],length=201),default=0.05,show_value=true)
+@bind pbi_v PlutoUI.Slider(range(pbi_volts[begin], pbi_volts[end], length = 201), default = 0.05, show_value = true)
 
 # ╔═╡ e373824d-6e0d-44c8-8c8a-192cccf10298
+#=╠═╡
 function plotcdl(pbvolts,pbcaps,pbv)
 	vc=linear_interpolation(pbvolts,pbcaps)
 	cdl=round(vc(pbv)/ufac"μF/cm^2",sigdigits=4)
@@ -221,14 +232,20 @@ function plotcdl(pbvolts,pbcaps,pbv)
 	label="$(cdl)")
 	reveal(vis)
 end
+  ╠═╡ =#
 
 # ╔═╡ 811fca9b-bac0-4003-a0f9-bfefcbfbfa30
+#=╠═╡
 plotcdl(pbo_volts,pbo_caps,pbo_v)
+  ╠═╡ =#
 
 # ╔═╡ eb7d0765-d5e7-4ef9-916d-764c5aca9822
+#=╠═╡
 plotcdl(pbi_volts,pbi_caps,pbi_v)
+  ╠═╡ =#
 
 # ╔═╡ e480b378-7afa-4906-9e8a-70eac7712b5e
+#=╠═╡
 function plotsols(pbsols,pbv)
     vis=GridVisualizer(size=(700,200),layout=(1,2),xlabel="x/nm")
 	sol=pbsols(pbv)
@@ -240,12 +257,17 @@ function plotsols(pbsols,pbv)
 	scalarplot!(vis[1,2],X/nm,cm,color=:blue,clear=false)
 	reveal(vis)
 end
+  ╠═╡ =#
 
 # ╔═╡ 65a25bd3-c420-4da3-b808-0e1888c6b4ba
+#=╠═╡
 plotsols(pbo_sols,pbo_v)
+  ╠═╡ =#
 
 # ╔═╡ 5d15d24d-6317-4ad1-a53e-5af5c5bcf28a
+#=╠═╡
 plotsols(pbi_sols,pbi_v)
+  ╠═╡ =#
 
 # ╔═╡ f9b4d4dc-7def-409f-b40a-f4eba1163741
 TableOfContents()
@@ -254,61 +276,61 @@ TableOfContents()
 begin
     hrule() = html"""<hr>"""
     highlight(mdstring, color) =
-        htl"""<blockquote style="padding: 10px; background-color: $(color);">$(mdstring)</blockquote>"""
+    htl"""<blockquote style="padding: 10px; background-color: $(color);">$(mdstring)</blockquote>"""
 
     macro important_str(s)
-        :(highlight(Markdown.parse($s), "#ffcccc"))
+        return :(highlight(Markdown.parse($s), "#ffcccc"))
     end
     macro definition_str(s)
-        :(highlight(Markdown.parse($s), "#ccccff"))
+        return :(highlight(Markdown.parse($s), "#ccccff"))
     end
     macro statement_str(s)
-        :(highlight(Markdown.parse($s), "#ccffcc"))
+        return :(highlight(Markdown.parse($s), "#ccffcc"))
     end
 
 
     html"""
-        <style>
-    	/* Headers */
-         h1{background-color:#dddddd;  padding: 10px;}
-         h2{background-color:#e7e7e7;  padding: 10px;}
-         h3{background-color:#eeeeee;  padding: 10px;}
-         h4{background-color:#f7f7f7;  padding: 10px;}
+            <style>
+        	/* Headers */
+             h1{background-color:#dddddd;  padding: 10px;}
+             h2{background-color:#e7e7e7;  padding: 10px;}
+             h3{background-color:#eeeeee;  padding: 10px;}
+             h4{background-color:#f7f7f7;  padding: 10px;}
 
-		/* "Terminal"  */
-	     pluto-log-dot-sizer  { max-width: 655px;}
-         pluto-log-dot.Stdout { background: #002000;
-	                            color: #10f080;
-                                border: 6px solid #b7b7b7;
-                                min-width: 18em;
-                                max-height: 300px;
-                                width: 675px;
-                                overflow: auto;
- 	                           }
-        /* Standard cell width etc*/
-		main {
-   			flex: 1;
-		    max-width: calc(700px + 25px + 6px); /* 700px + both paddings */
-    		padding-top: 0px;
-    		padding-bottom: 4rem;
-    		padding-left: 25px;
-    		padding-right: 6px;
-    		align-content: center;
-    		width: 100%;
-			}
+    		/* "Terminal"  */
+    	     pluto-log-dot-sizer  { max-width: 655px;}
+             pluto-log-dot.Stdout { background: #002000;
+    	                            color: #10f080;
+                                    border: 6px solid #b7b7b7;
+                                    min-width: 18em;
+                                    max-height: 300px;
+                                    width: 675px;
+                                    overflow: auto;
+     	                           }
+            /* Standard cell width etc*/
+    		main {
+       			flex: 1;
+    		    max-width: calc(700px + 25px + 6px); /* 700px + both paddings */
+        		padding-top: 0px;
+        		padding-bottom: 4rem;
+        		padding-left: 25px;
+        		padding-right: 6px;
+        		align-content: center;
+        		width: 100%;
+    			}
 
-       /* Cell width for slides*/
-		xmain {
-			margin: 0 auto;
-			max-width: 750px;
-    		padding-left: max(20px, 3%);
-    		padding-right: max(20px, 3%);
-	        }
+           /* Cell width for slides*/
+    		xmain {
+    			margin: 0 auto;
+    			max-width: 750px;
+        		padding-left: max(20px, 3%);
+        		padding-right: max(20px, 3%);
+    	        }
 
-	
-	
-    </style>
-"""
+    	
+    	
+        </style>
+    """
 end
 
 # ╔═╡ 9b5f389f-b105-4610-bab7-f79305fedc31
@@ -321,102 +343,105 @@ hrule()
 begin
     function floataside(text::Markdown.MD; top = 1)
         uuid = uuid1()
-        @htl("""
-       		<style>
+        return @htl(
+            """
+            		<style>
 
 
-       		@media (min-width: calc(700px + 30px + 300px)) {
-       			aside.plutoui-aside-wrapper-$(uuid) {
+            		@media (min-width: calc(700px + 30px + 300px)) {
+            			aside.plutoui-aside-wrapper-$(uuid) {
 
-       	color: var(--pluto-output-color);
-       	position:fixed;
-       	right: 1rem;
-       	top: $(top)px;
-       	width: 400px;
-       	padding: 10px;
-       	border: 3px solid rgba(0, 0, 0, 0.15);
-       	border-radius: 10px;
-       	box-shadow: 0 0 11px 0px #00000010;
-       	/* That is, viewport minus top minus Live Docs */
-       	max-height: calc(100vh - 5rem - 56px);
-       	overflow: auto;
-       	z-index: 40;
-       	background-color: var(--main-bg-color);
-       	transition: transform 300ms cubic-bezier(0.18, 0.89, 0.45, 1.12);
+            	color: var(--pluto-output-color);
+            	position:fixed;
+            	right: 1rem;
+            	top: $(top)px;
+            	width: 400px;
+            	padding: 10px;
+            	border: 3px solid rgba(0, 0, 0, 0.15);
+            	border-radius: 10px;
+            	box-shadow: 0 0 11px 0px #00000010;
+            	/* That is, viewport minus top minus Live Docs */
+            	max-height: calc(100vh - 5rem - 56px);
+            	overflow: auto;
+            	z-index: 40;
+            	background-color: var(--main-bg-color);
+            	transition: transform 300ms cubic-bezier(0.18, 0.89, 0.45, 1.12);
 
-       			}
-       			aside.plutoui-aside-wrapper > div {
-       #				width: 300px;
-       			}
-       		}
-       		</style>
+            			}
+            			aside.plutoui-aside-wrapper > div {
+            #				width: 300px;
+            			}
+            		}
+            		</style>
 
-       		<aside class="plutoui-aside-wrapper-$(uuid)">
-       		<div>
-       		$(text)
-       		</div>
-       		</aside>
+            		<aside class="plutoui-aside-wrapper-$(uuid)">
+            		<div>
+            		$(text)
+            		</div>
+            		</aside>
 
-       		""")
+            		"""
+        )
     end
     floataside(stuff; kwargs...) = floataside(md"""$(stuff)"""; kwargs...)
 end;
 
 # ╔═╡ 4652157f-3288-45b6-877e-17ed8dc7d18e
 function slidemodeswitch()
-	uuid=uuid1()
-	html"""
-	<script id=$(uuid)>
+    uuid = uuid1()
+    return html"""
+    	<script id=$(uuid)>
 
-    const right = document.querySelector('button.changeslide.next')
-    const left = document.querySelector('button.changeslide.prev')
+        const right = document.querySelector('button.changeslide.next')
+        const left = document.querySelector('button.changeslide.prev')
 
-    let fullScreen = false
+        let fullScreen = false
 
-    const func = (e) => {
-        if (e.key == "F10") {
-            e.preventDefault()
-            window.present()
-            if (fullScreen) {
-                document.exitFullscreen().then(() => fullScreen = false)
-            } else {
-
-                document.documentElement.requestFullscreen().then(() => fullScreen = true)
-            }
-        }
-        if (document.body.classList.contains('presentation')) {
-         
-            if (e.target.tagName == "TEXTAREA") return
-            if (e.key == "PageUp") {
+        const func = (e) => {
+            if (e.key == "F10") {
                 e.preventDefault()
-                left.click()
-                return
-         }
-
-            if (e.key == "PageDown") {
-                e.preventDefault()
-                right.click()
-                return
-            }
-            if (e.key == "Escape") {
                 window.present()
-                fullScreen = false
-            document.exitFullscreen().catch(() => {return})
+                if (fullScreen) {
+                    document.exitFullscreen().then(() => fullScreen = false)
+                } else {
+
+                    document.documentElement.requestFullscreen().then(() => fullScreen = true)
+                }
+            }
+            if (document.body.classList.contains('presentation')) {
+             
+                if (e.target.tagName == "TEXTAREA") return
+                if (e.key == "PageUp") {
+                    e.preventDefault()
+                    left.click()
+                    return
+             }
+
+                if (e.key == "PageDown") {
+                    e.preventDefault()
+                    right.click()
+                    return
+                }
+                if (e.key == "Escape") {
+                    window.present()
+                    fullScreen = false
+                document.exitFullscreen().catch(() => {return})
+                }
             }
         }
-    }
 
-    document.addEventListener('keydown',func)
+        document.addEventListener('keydown',func)
 
-    invalidation.then(() => {document.removeEventListener('keydown',func)})
-</script>
-"""
+        invalidation.then(() => {document.removeEventListener('keydown',func)})
+    </script>
+    """
 end;
 
 
 # ╔═╡ Cell order:
 # ╟─25a19579-9cba-4416-87cb-83d00e5926f3
 # ╟─1afa972d-74cf-47ce-86cf-8751a9e85218
+# ╠═18ce65e8-078d-4dec-bc4d-a05ce77acfd3
 # ╠═60941eaa-1aea-11eb-1277-97b991548781
 # ╟─b181a82b-46e7-4dae-b0b1-6886dd40886a
 # ╟─5a5e3586-2009-4381-ae9d-a0bd34539b65
