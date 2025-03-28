@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.4
+# v0.20.5
 
 using Markdown
 using InteractiveUtils
@@ -784,27 +784,29 @@ end
 
 
 # ╔═╡ 595715e5-f108-4167-b104-ac7c6f652e48
- elydata = ElectrolyteData(c_bulk = fill(0.01 * ufac"mol / dm^3", 2), 
-	                       κ = zeros(2))
+elydata = ElectrolyteData(
+    c_bulk = fill(0.01 * ufac"mol / dm^3", 2),
+    κ = zeros(2)
+)
 
 # ╔═╡ 00464966-2b1e-455c-a3a1-2af61c6649b7
-dlcap_exact=0.22846691848825248
+dlcap_exact = 0.22846691848825248
 
 # ╔═╡ c53791b6-6c12-483a-910f-6183149fac80
-@test dlcap0(elydata) ≈  dlcap_exact
+@test dlcap0(elydata) ≈ dlcap_exact
 
 # ╔═╡ 05334798-a072-41ae-b23e-f884baadb071
 begin
-	equidata = EquilibriumData()
-	set_molarity!(equidata, 0.01)
+    equidata = EquilibriumData()
+    set_molarity!(equidata, 0.01)
     equidata.χ = 78.49 - 1
 end
 
 # ╔═╡ ddb3e60b-8571-465f-acf3-2403fb884363
- @test dlcap0(equidata) |> unitfactor ≈ dlcap_exact
+@test dlcap0(equidata) |> unitfactor ≈ dlcap_exact
 
 # ╔═╡ 512b631e-93ec-42fc-8416-8d10ca97f23d
- @test dlcap0(EquilibriumData(elydata)) ≈ dlcap_exact
+@test dlcap0(EquilibriumData(elydata)) ≈ dlcap_exact
 
 # ╔═╡ a629e8a1-b1d7-42d8-8c17-43475785218e
 begin
@@ -833,33 +835,37 @@ sys_pp = create_equilibrium_pp_system(grid, data, Γ_bulk = 2)
 inival = unknowns(sys_sy, inival = 0);
 
 # ╔═╡ 1c0145d5-76b1-48c1-8852-de1a2668285a
-molarities = [0.001, 0.01, 0.1, ]
+molarities = [0.001, 0.01, 0.1]
 
 # ╔═╡ 70e1a34b-9041-4151-91aa-4dd7907a5b13
-function capscalc(sys, molarities; iϕ=3)
-	result=[]
+function capscalc(sys, molarities)
+    result = []
     for imol in 1:length(molarities)
         if isa(sys.physics.data, EquilibriumData)
             set_molarity!(sys.physics.data, molarities[imol])
             t = @elapsed volts, caps = dlcapsweep_equi(sys, vmax = 1V, nsteps = 101)
         else
-            sys.physics.data.c_bulk .= molarities[imol]*ufac"mol/dm^3"
-            t = @elapsed r = dlcapsweep(sys, 
-				voltages=range(-1,1,length=201), 
-				verbose="",
-			    inival = unknowns(sys, inival = 0); iϕ)
+            sys.physics.data.c_bulk .= molarities[imol] * ufac"mol/dm^3"
+            t = @elapsed r = dlcapsweep(
+                sys,
+                voltages = range(-1, 1, length = 201)
+            )
             volts = voltages(r)
             caps = r.dlcaps
         end
         cdl0 = dlcap0(sys.physics.data)
         @info "elapsed=$(t)"
-		push!(result,
-				(voltages=volts,
-				 dlcaps=caps,
-				cdl0=cdl0,
-				molarity=molarities[imol]))
-	end
-	return result
+        push!(
+            result,
+            (
+                voltages = volts,
+                dlcaps = caps,
+                cdl0 = cdl0,
+                molarity = molarities[imol],
+            )
+        )
+    end
+    return result
 end
 
 
@@ -869,7 +875,7 @@ md"""
 """
 
 # ╔═╡ 398b3511-4f7c-4436-9fe8-8edd76e3e0e7
-result_sy=capscalc(sys_sy, molarities)
+result_sy = capscalc(sys_sy, molarities)
 
 # ╔═╡ e114ec0d-13d3-4455-b1c9-d1c5d76671d9
 md"""
@@ -877,7 +883,7 @@ md"""
 """
 
 # ╔═╡ ca3bd6ba-1b3d-42c7-b008-8012b06368e4
-result_pp=capscalc(sys_pp, molarities)
+result_pp = capscalc(sys_pp, molarities)
 
 # ╔═╡ 9b1dc273-9938-43a0-ac10-1928a80f89d8
 md"""
@@ -895,10 +901,7 @@ end
 sys_pnp = PNPSystem(grid; bcondition = pnp_bcondition, celldata = elydata)
 
 # ╔═╡ 966ed6ab-d6fa-43f1-9ddb-45eb024d949c
-result_pnp=capscalc(sys_pnp, molarities)
-
-# ╔═╡ 51c5fb91-b273-40c6-a3a8-ea580a8d0d14
-
+result_pnp = capscalc(sys_pnp, molarities)
 
 # ╔═╡ 98464285-2bd4-4631-8c4f-8790fe15cb93
 md"""
@@ -907,20 +910,19 @@ md"""
 
 # ╔═╡ a8e26e1a-a9ac-4d51-b09c-7951acd4b4b7
 function pb_bcondition(f, u, bnode, data)
-    (; Γ_we, Γ_bulk, ϕ_we) = data
-	iϕ, ip = 1, 2
+    (; Γ_we, Γ_bulk, ϕ_we, iϕ, ip) = data
     ## Dirichlet ϕ=ϕ_we at Γ_we
     boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_we, value = ϕ_we)
     boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_bulk, value = data.ϕ_bulk)
-    boundary_dirichlet!(f, u, bnode, species = ip, region = Γ_bulk, value = data.p_bulk)
-    
+    return boundary_dirichlet!(f, u, bnode, species = ip, region = Γ_bulk, value = data.p_bulk)
+
 end
 
 # ╔═╡ 88d38a68-1f8a-425a-bbae-90355a2213d0
-sys_pb = PBSystem(grid; celldata = deepcopy(elydata), bcondition=pb_bcondition)
+sys_pb = PBSystem(grid; celldata = deepcopy(elydata), bcondition = pb_bcondition)
 
 # ╔═╡ f2ba0e8a-4a9f-4b98-85b8-d54c71fd3616
-result_pb=capscalc(sys_pb, molarities; iϕ=1)
+result_pb = capscalc(sys_pb, molarities)
 
 # ╔═╡ 289d2c59-e920-47fe-b9ad-cb0a33ef0c9c
 md"""
@@ -928,28 +930,28 @@ md"""
 """
 
 # ╔═╡ 1fcfbad3-2fad-4eee-a1a3-031dc29c9083
-function resultcompare(r1,r2; tol=1.0e-3)
- 	for i=1:length(r1)
-		for f in fieldnames(typeof(r1[i]))
-			if !isapprox(r1[i][f],r2[i][f]; rtol=tol  )	
-				return false
-			end
-		end
-	end
-	true
+function resultcompare(r1, r2; tol = 1.0e-3)
+    for i in 1:length(r1)
+        for f in fieldnames(typeof(r1[i]))
+            if !isapprox(r1[i][f], r2[i][f]; rtol = tol)
+                return false
+            end
+        end
+    end
+    return true
 end
 
 # ╔═╡ 25a183d9-c6a2-4ac3-a283-a02e4e9231dd
-@test resultcompare(result_pp, result_sy; tol=5.0e-3)
+@test resultcompare(result_pp, result_sy; tol = 5.0e-3)
 
 # ╔═╡ 6d1d8ae2-6a9e-48c1-a545-1f7354125bf0
-@test resultcompare(result_pb, result_pp; tol=5.0e-3)
+@test resultcompare(result_pb, result_pp; tol = 5.0e-3)
 
 # ╔═╡ b43c5e74-5010-4870-a058-d3ad2c1ed548
-@test resultcompare(result_pp, result_pnp; tol=5.0e-3)
+@test resultcompare(result_pp, result_pnp; tol = 5.0e-3)
 
 # ╔═╡ ee76e884-86e6-45f6-bbb2-c8e73daa5883
-@test resultcompare(result_pb, result_pnp; tol=1.0e-10)
+@test resultcompare(result_pb, result_pnp; tol = 1.0e-10)
 
 # ╔═╡ 0b6f33b9-41d4-48fd-8026-8a3bddcc1989
 md"""
@@ -965,27 +967,27 @@ function capsplot(vis, result, title)
         c = RGB(1 - imol * hmol, 0, imol * hmol)
         scalarplot!(
             vis, result[imol].voltages, result[imol].dlcaps / (μF / cm^2),
-            color = c, clear = false, label = "$(result[imol].molarity)M", markershape = :none, title=title
+            color = c, clear = false, label = "$(result[imol].molarity)M", markershape = :none, title = title
         )
         scalarplot!(
             vis, [0], [result[imol].cdl0] / (μF / cm^2),
-            clear = false, markershape = :circle, markersize=8, label = ""
+            clear = false, markershape = :circle, markersize = 8, label = ""
         )
     end
-	vis
+    return vis
 end
 
 
 # ╔═╡ 85856abf-ee16-424a-ac06-97f76e32e444
-if isdefined(Main,:PlutoRunner) 
-	vis=GridVisualizer(Plotter=CairoMakie, legend=:lt, layout=(2,2), size=(650,650))
+if isdefined(Main, :PlutoRunner)
+    vis = GridVisualizer(Plotter = CairoMakie, legend = :lt, layout = (2, 2), size = (650, 650))
 
-capsplot(vis[1,1],result_sy, "Algebraic pressure" )
-capsplot(vis[1,2],result_pp, "Pressure Poisson" )
-capsplot(vis[2,1],result_pb, "Poisson-Boltzmann" )
-capsplot(vis[2,2],result_pnp, "Poisson-Nernst-Planck" )
+    capsplot(vis[1, 1], result_sy, "Algebraic pressure")
+    capsplot(vis[1, 2], result_pp, "Pressure Poisson")
+    capsplot(vis[2, 1], result_pb, "Poisson-Boltzmann")
+    capsplot(vis[2, 2], result_pnp, "Poisson-Nernst-Planck")
 
-	reveal(vis)
+    reveal(vis)
 end
 
 # ╔═╡ Cell order:
@@ -1089,8 +1091,7 @@ end
 # ╠═53cdf6d7-a025-49e0-af7b-cc0838cfb422
 # ╠═cf646a34-bd94-49af-8f8e-ec06446e18ca
 # ╠═966ed6ab-d6fa-43f1-9ddb-45eb024d949c
-# ╠═51c5fb91-b273-40c6-a3a8-ea580a8d0d14
-# ╠═98464285-2bd4-4631-8c4f-8790fe15cb93
+# ╟─98464285-2bd4-4631-8c4f-8790fe15cb93
 # ╠═a8e26e1a-a9ac-4d51-b09c-7951acd4b4b7
 # ╠═88d38a68-1f8a-425a-bbae-90355a2213d0
 # ╠═f2ba0e8a-4a9f-4b98-85b8-d54c71fd3616
