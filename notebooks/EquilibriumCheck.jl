@@ -14,7 +14,6 @@ begin
   using CairoMakie
   using GridVisualize
   using Colors
-	
 end
   ╠═╡ =#
 
@@ -42,6 +41,12 @@ md"""
 #=╠═╡
 TableOfContents(title="",depth=5)
   ╠═╡ =#
+
+# ╔═╡ 462f512b-9b92-442b-bae6-b4aa168b32ee
+begin
+	mylog=RLog()
+	LiquidElectrolytes.rlog(x::Number)=mylog(x)
+end
 
 # ╔═╡ 920b7d84-56c6-4958-aed9-fc67ba0c43f6
 md"""
@@ -1007,6 +1012,7 @@ end
 # ╠═2b901eca-db3b-4ad2-b0ee-e031854c57fa
 # ╠═60941eaa-1aea-11eb-1277-97b991548781
 # ╟─4082c3d3-b728-4bcc-b480-cdee41d9ab99
+# ╠═462f512b-9b92-442b-bae6-b4aa168b32ee
 # ╟─920b7d84-56c6-4958-aed9-fc67ba0c43f6
 # ╟─87ac16f4-a4fc-4205-8fb9-e5459517e1b8
 # ╟─7d77ad32-3df6-4243-8bad-b8df4126e6ea
