@@ -59,12 +59,20 @@ Demonstration of oxygen reduction reaction
 # ╔═╡ 5482615c-cb5b-4c44-99c4-19416eabae7f
 md"""
 ```math
-  4H^+ + O_2 + 4e^- \leftrightharpoons  2H_2O
+  4(H^+⋅κH_2O) + O_2 + 4e^- \leftrightharpoons  (2+4κ)H_2O
 ```
+- Negative potential: electrons available, protons attracted, water produced
+- Positive potential: electrons sucked away, protons pushed away, water destroyed
 """
 
 # ╔═╡ 9eebfe1a-2d14-4b9f-a697-71078be8c6d9
 pkgdir(LiquidElectrolytes)
+
+# ╔═╡ 9387dd7d-efac-4d50-90c0-79c0d2ba3d6b
+begin
+	mylog=RLog()
+	LiquidElectrolytes.rlog(x::Number)=mylog(x)
+end
 
 # ╔═╡ 84e05551-7d51-4b2c-88f2-b186ad6a244a
 md"""
@@ -95,7 +103,7 @@ begin
     const vdelta = 0.025 * V
     const molarity = 0.1
     const nref = 0
-    const κ = 10.0
+    const κ = 10
     const vfac = 1
     const scheme = :μex
     const R0 = 5.0e-16mol / (cm^2 * s)
@@ -121,8 +129,9 @@ solver_control = (
     tol_round = 1.0e-8,
     reltol = 1.0e-8,
     abstol = 1.0e-9,
-    verbose = "",
+    verbose = "ne",
     maxiters = 20,
+	damp_initial=0.1
 )
 
 # ╔═╡ 970389b5-d2c1-4992-9978-aca1ccd3d2fc
@@ -138,7 +147,7 @@ In the following reaction function, the  balance with the solvent is fulfilled a
 # ╔═╡ b916eb92-8ba8-49aa-bd7c-1bfc91e813d4
 function halfcellbc(f, u, bnode, data)
     bulkbcondition(f, u, bnode, data)
-    (; iϕ, eneutral, ϕ_we, Γ_we, RT) = data
+    (; iϕ, eneutral, ϕ_we, Γ_we, RT, κ) = data
 
     return if bnode.region == Γ_we
         f .= 0.0
@@ -150,7 +159,7 @@ function halfcellbc(f, u, bnode, data)
         end
         μh2o, μ = chemical_potentials!(MVector{4, eltype(u)}(undef), u, data)
         A = (
-            4 * μ[ihplus] + μ[io2] - 2μh2o + Δg +
+            4 * μ[ihplus] + μ[io2] - (2+4κ[ihplus])*μh2o + Δg +
                 4 * eneutral * F * (u[iϕ] - ϕ_we)
         ) / (RT)
         r = rrate(R0, β, A)
@@ -192,6 +201,7 @@ begin
     c_bulk[io2] = 0.001 * mol / dm^3
     c_bulk[iso4] = molarity * mol / dm^3
     c_bulk[ihplus] = 2.0 * molarity * mol / dm^3
+	#celldata.pscale=1
 end
 
 # ╔═╡ 36306b3d-681f-423c-9b32-db6562c5c157
@@ -599,10 +609,11 @@ hrule()
 # ╔═╡ Cell order:
 # ╟─1f5732a6-c15a-4df0-8927-f1e031643d26
 # ╟─b609ba76-e066-4192-a2fc-97b9e659fa12
-# ╟─5482615c-cb5b-4c44-99c4-19416eabae7f
+# ╠═5482615c-cb5b-4c44-99c4-19416eabae7f
 # ╠═445a1039-cb46-4e2b-a5e9-cff6036350b7
 # ╠═60941eaa-1aea-11eb-1277-97b991548781
 # ╠═9eebfe1a-2d14-4b9f-a697-71078be8c6d9
+# ╠═9387dd7d-efac-4d50-90c0-79c0d2ba3d6b
 # ╟─84e05551-7d51-4b2c-88f2-b186ad6a244a
 # ╟─16b9af50-11c5-4bdf-b5d8-8d2d9331b5e9
 # ╠═515baffb-2e22-401d-aacd-15971dd4365e
@@ -639,7 +650,7 @@ hrule()
 # ╠═33ee0ded-5bc8-4fe7-bd2f-1cc44bc73f78
 # ╟─6a0ff3ea-25af-4682-a8f6-40c481b53d8d
 # ╠═63dd0cef-7acd-4507-bbc6-3976181a143d
-# ╠═c7185947-56ea-4e79-a619-03bf77d5219d
+# ╟─c7185947-56ea-4e79-a619-03bf77d5219d
 # ╠═c6b9f3ce-dd3e-474e-b947-3daacc5cd1d0
 # ╟─b729b190-a7ed-48b9-9584-fe5271e5dfa4
 # ╟─42dda2f6-ea60-4cbc-8372-fafd4a1218a8

@@ -206,6 +206,22 @@ begin
     pnpdata
 end
 
+# ╔═╡ 96c9de51-da71-4c06-9997-47a481aed273
+let
+	fig=Figure()
+	ax=Axis(fig[1,1])
+	T=0:1.0e-3:10
+	lines!(ax,T, sawtooth.(T))
+	fig
+end
+
+# ╔═╡ 6531a9c9-e8f9-4a52-8797-218257e5984c
+let
+	T=0:1.0e-3:10
+	S=sawtooth.(T)
+	(S[2:end]-S[1:end-1])./(T[2:end]-T[1:end-1])
+end
+
 # ╔═╡ f0745600-be37-49d3-92fe-231bcc2e7013
 function halfcellbc(f, u, bnode, data)
     (; nc, Γ_we, Γ_bulk, ip, iϕ, v, v0, RT, κ) = data
@@ -244,6 +260,7 @@ valuetype = guidata.double64 ? Double64 : Float64
 # ╔═╡ 43cc60e3-8a4d-4fac-9454-7e599243e058
 begin
     mylog = RLog(valuetype)
+	LiquidElectrolytes.rlog(x::Number)=mylog(x)
     mylog10(x) = mylog(x) / log(10)
     Makie.defined_interval(::typeof(mylog10)) = Makie.defined_interval(log10)
     Makie.defaultlimits(::T) where {T <: typeof(mylog10)} = Makie.defaultlimits(log10)
@@ -270,7 +287,7 @@ pnpresult = sweep(pnpdata; eneutral = false, tunnel = false)
 
 # ╔═╡ 9d9d5b00-3453-4a62-8b0d-f671140b7a11
 let
-    fig = Figure()
+    fig = Figure(size=(600,200))
     ax = Axis(fig[1, 1], yscale = log10)
     T = pnpresult.times
     #lines!(ax,T, voltages.(T))
@@ -286,13 +303,10 @@ let
     fig = Figure(size = (650, 400))
     ax = Axis(fig[1, 1])
     lines!(
-        ax, voltages(pnpresult), currents(pnpresult, iO),
+        ax, voltages(pnpresult), currents(pnpresult, iO ,electrode=:we),
         color = RGBf.(range(0.1, 1, length(voltages(pnpresult))), 0.0, 0.0)
     )
-    lines!(
-        ax, voltages(pnpresult), currents(nnpresult, iO),
-        color = RGBf.(0.0, range(0.1, 1, length(voltages(nnpresult))), 0.0)
-    )
+    lines!(       ax, voltages(nnpresult), currents(nnpresult, iO),color = RGBf.(0.0, range(0.1, 1, length(voltages(nnpresult))), 0.0))
     #ylims!(-0.0001, 0.0001)
     fig
 end
@@ -344,6 +358,8 @@ end
 # ╠═a70cef7d-2a2f-4155-bdf3-fec9df94c63f
 # ╠═43b83ec3-3c85-4e2c-9a7d-e102ebc29619
 # ╠═2496ac21-e027-49d2-a78d-964193d808e0
+# ╠═96c9de51-da71-4c06-9997-47a481aed273
+# ╠═6531a9c9-e8f9-4a52-8797-218257e5984c
 # ╠═43cc60e3-8a4d-4fac-9454-7e599243e058
 # ╠═430f4195-7693-4682-8e81-4ef2d218a2f9
 # ╠═b218dbfc-c627-489c-8f27-8ebb7a721a44
@@ -351,7 +367,7 @@ end
 # ╠═f0745600-be37-49d3-92fe-231bcc2e7013
 # ╠═483eefd0-a96d-4c32-a939-2517f08a6b3d
 # ╠═76dab1ef-520c-41ea-b939-80e7212b27a9
-# ╟─5a692843-9dc7-4104-a0aa-cff229b1fabb
+# ╠═5a692843-9dc7-4104-a0aa-cff229b1fabb
 # ╟─57a31265-0012-43c4-87b1-ff1f2f4d0c29
 # ╠═02b9f166-e56d-42ad-aa9e-6c7b084860bc
 # ╠═c7d0a14b-b24f-4dfa-90d9-65f06d86ed50
