@@ -146,26 +146,26 @@ models are supported:
   - `:ρconst`: Constant density (``M_i=M_0v_i/v_0``) (for consistent coupling with stokes)
 """
 function set_model!(electrolyte, model)
-    if model==:BAO
-        electrolyte.κ.=0
-        electrolyte.M.=electrolyte.M0
-        electrolyte.solvepressure=false
-        electrolyte.model=:BAO
-    elseif model==:default || model==:DGL
-        electrolyte.model=:DGL
-    elseif model==:DGM
-        electrolyte.κ.=0
-        electrolyte.v.=electrolyte.v0
-        electrolyte.model=:DGM
-    elseif model==:ρconst
-        electrolyte.M.=electrolyte.v.*electrolyte.M/electrolyte.v0
-        electrolyte.model=:DGM
+    if model == :BAO
+        electrolyte.κ .= 0
+        electrolyte.M .= electrolyte.M0
+        electrolyte.solvepressure = false
+        electrolyte.model = :BAO
+    elseif model == :default || model == :DGL
+        electrolyte.model = :DGL
+    elseif model == :DGM
+        electrolyte.κ .= 0
+        electrolyte.v .= electrolyte.v0
+        electrolyte.model = :DGM
+    elseif model == :ρconst
+        electrolyte.M .= electrolyte.v .* electrolyte.M / electrolyte.v0
+        electrolyte.model = :DGM
     else
         error("Unknown electrolyte model: $(model)")
     end
     return nothing
 end
-    
+
 """
     solvepressure(electrolyte)
 
@@ -316,7 +316,6 @@ function c0_barc(c, electrolyte)
 end
 
 
-
 """
        solventconcentration(U::Array, electrolyte)
 
@@ -340,7 +339,9 @@ Calculate chemical potential of species with concentration c
         μ = \\bar v(p-p_{ref}) + RT\\log \\frac{c}{\\bar c}
 ```
 """
-chemical_potential(c, barc, p, barv, electrolyte) = rlog(c / barc) * electrolyte.RT + barv * electrolyte.pscale * (p - electrolyte.p_bulk)
+function chemical_potential(c, barc, p, barv, electrolyte)
+    return rlog(c / barc) * electrolyte.RT + barv * (electrolyte.pscale * p - electrolyte.p_bulk)
+end
 
 """
     chemical_potentials!(μ,u,electrolyte)
@@ -369,7 +370,7 @@ round(μ0, sigdigits = 5), round.(μ, sigdigits = 5)
     to calculate the ion chemical potentials. Examples with κ=0 are not affected.
 """
 function chemical_potentials!(μ, u::AbstractVector, data::AbstractElectrolyteData)
-    (; ip, pscale, RT, v0, v, nc) = data
+    (; ip, v0, v, nc) = data
     c0, barc = c0_barc(u, data)
     μ0 = chemical_potential(c0, barc, u[ip], data.v0, data)
     for i in 1:nc
@@ -425,7 +426,6 @@ Reaction rate expression
 function rrate(R0, β, A)
     return R0 * (rexp(-β * A) - rexp((1 - β) * A))
 end
-
 
 
 """

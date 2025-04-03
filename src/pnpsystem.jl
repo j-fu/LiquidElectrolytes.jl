@@ -107,7 +107,7 @@ ck/cl= bp/betaK  / bm/betal
 
 Flux expression based on central differences, see Gaudeul/Fuhrmann 2022
 """
-function cflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte;  evelo = 0.0)
+function cflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte; evelo = 0.0)
     (; D, z, F, RT) = electrolyte
     μk = rlog(ck) * RT
     μl = rlog(cl) * RT
@@ -136,7 +136,7 @@ function pnpflux(f, u, edge, electrolyte)
     @views c0l, bar_cl = c0_barc(u[:, 2], electrolyte)
 
     dϕ = ϕk - ϕl
-  
+
     f[iϕ] = ε * ε_0 * dϕ * !eneutral
 
     if solvepressure(electrolyte)
@@ -145,7 +145,7 @@ function pnpflux(f, u, edge, electrolyte)
 
     for ic in 1:nc
         ck, cl = u[ic, 1], u[ic, 2]
-        Mrel = M[ic] / M0  + κ[ic]
+        Mrel = M[ic] / M0 + κ[ic]
         barv = v[ic] + κ[ic] * v0
         tildev = barv - Mrel * v0
         γk = rexp(tildev * pk / RT) * (bar_ck / c0k)^Mrel * (1 / (v0 * bar_ck))
