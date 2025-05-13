@@ -54,7 +54,7 @@ function main(;
     defaults = (;
         max_round = 3,
         tol_round = 1.0e-9,
-        verbose = "e",
+        verbose = "",
         reltol = 1.0e-8,
         tol_mono = 1.0e-10,
     )
@@ -194,6 +194,8 @@ function main(;
 
     currs = LiquidElectrolytes.currents(result, ife2)
 
+    testresult = sum(currs)
+    
     sol = LiquidElectrolytes.voltages_solutions(result)
 
     xmax = xmax * nm
@@ -258,7 +260,11 @@ function main(;
         ylabel = "ϕ",
     )
 
-    return reveal(vis)
+    return isnothing(Plotter) ? testresult : reveal(vis)
+end
+
+function runtests()
+    main() ≈ -3.6857861517e+05
 end
 
 function generateplots(dir; Plotter = nothing, kwargs...)    #hide

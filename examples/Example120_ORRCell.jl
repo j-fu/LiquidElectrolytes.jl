@@ -31,7 +31,7 @@ const mylog = RLog(eps(Double64))
 LiquidElectrolytes.rlog(x::Number) = mylog(x)
 
 function main(;
-        voltages = -1:0.1:1,
+        voltages = -1:0.01:1,
         compare = false,
         molarity = 0.1,
         nref = 0,
@@ -54,8 +54,8 @@ function main(;
         max_round = 3,
         tol_round = 1.0e-10,
         reltol = 1.0e-7,
-        tol_mono = 1.0e-7,
-        verbose = "e",
+                tol_mono = 1.0e-7,
+                verbose = ""
     )
     kwargs = merge(defaults, kwargs)
 
@@ -173,6 +173,9 @@ function main(;
 
     result = ivsweep(cell; voltages, store_solutions = true, kwargs...)
     currs = LiquidElectrolytes.currents(result, io2)
+
+    testresult = sum(currs)
+    
     sol = LiquidElectrolytes.voltages_solutions(result)
     volts = result.voltages
 
@@ -244,7 +247,11 @@ function main(;
         legend = :rc,
     )
 
-    return reveal(vis)
+    return isnothing(Plotter) ? testresult : reveal(vis)
+end
+
+function runtests()
+    main() ≈ 1.7980444243915981e5
 end
 
 function generateplots(dir; Plotter = nothing, kwargs...)    #hide

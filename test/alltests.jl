@@ -44,13 +44,13 @@ end
 
     grid = simplexgrid(X)
     function xtest(κ)
-        acelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, scheme = :act, κ, c_bulk = fill(molarity , 2))
+        acelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, scheme = :act, κ, c_bulk = fill(molarity, 2))
         acell = PNPSystem(grid; bcondition, celldata = acelldata)
         aresult = dlcapsweep(acell; voltages, δ)
         avolts = aresult.voltages
         acaps = aresult.dlcaps
 
-        μcelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, scheme = :μex, κ, c_bulk = fill(molarity , 2))
+        μcelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, scheme = :μex, κ, c_bulk = fill(molarity, 2))
         μcell = PNPSystem(grid; bcondition, celldata = μcelldata)
         μresult = dlcapsweep(μcell; voltages, δ)
         μvolts = μresult.voltages
@@ -71,7 +71,7 @@ end
             boundary_dirichlet!(f, u, bnode, species = ip, region = Γ_bulk, value = data.p_bulk)
         end
 
-        pcelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, scheme = :cent, κ, c_bulk = fill(molarity , 2))
+        pcelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, scheme = :cent, κ, c_bulk = fill(molarity, 2))
         pcell = PBSystem(grid; bcondition = pbbcondition, celldata = pcelldata)
         presult = dlcapsweep(pcell; voltages, δ)
         pvolts = presult.voltages
@@ -97,6 +97,22 @@ end
 
 end
 
+
+examples = [
+    "Example101_DLCap.jl",
+    "Example110_Fe23Cell.jl",
+#    "Example111_SurfaceKinetics.jl",
+    "Example120_ORRCell.jl",
+    "Example210_Leveque.jl",
+    "Example211_Levich.jl",
+#    "Example220_SimpleCV.jl",
+]
+
+@testset "Examples" begin
+    @testmodules(joinpath(@__DIR__, "..", "examples"), examples)
+end
+
+
 # Notebooks should "disable in file" the cell activating
 # the docs enviroment
 notebooks = [
@@ -115,7 +131,7 @@ end
 
 
 @testset "ExplicitImports" begin
-    @test ExplicitImports.check_no_implicit_imports(LiquidElectrolytes, skip=(Base, Core, Markdown)) === nothing
+    @test ExplicitImports.check_no_implicit_imports(LiquidElectrolytes, skip = (Base, Core, Markdown)) === nothing
     @test ExplicitImports.check_all_explicit_imports_are_public(LiquidElectrolytes) === nothing
     @test ExplicitImports.check_no_stale_explicit_imports(LiquidElectrolytes) === nothing
 end
