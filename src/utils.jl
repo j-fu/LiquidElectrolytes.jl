@@ -12,6 +12,7 @@ myround(i::Int; kwargs...) = i
 myround(b::Bool; kwargs...) = b
 myround(::Nothing; kwargs...) = "nothing"
 myround(f::Function; kwargs...) = string(f)
+myround(c::DiffCache; kwargs...) = typeof(c)
 
 
 """
@@ -22,7 +23,7 @@ Print struct with field names and field values.
 function showstruct(io::IO, this)
     print(io,"$(typeof(this))(")
     for name in fieldnames(typeof(this))
-        print(io, "$name = $(myround.(getfield(this, name), sigdigits = 5)), ")
+        print(io, "$name = $(myround(getfield(this, name), sigdigits = 5)), ")
     end
     println(io,")")
     return nothing

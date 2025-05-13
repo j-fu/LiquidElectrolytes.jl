@@ -61,7 +61,8 @@ function main(;voltages=-2:0.01:2,           ## Voltages/V
 
     ## Create Poisson-Nernst-Planck system
     cell=PNPSystem(grid;bcondition,celldata)
-    
+
+    testresult = 0.0
     ## Visualization
     vis=GridVisualizer(;resolution=(500,300),
                        legend=:rt,
@@ -75,12 +76,15 @@ function main(;voltages=-2:0.01:2,           ## Voltages/V
 	color=RGB(1-imol/length(molarities),0,imol/length(molarities))
 
         celldata.c_bulk.=molarities[imol]*M
-
+        update_derived!(celldata)
+        
 	result=dlcapsweep(cell;
                           δ=1.0e-6,
                           voltages=collect(voltages)*V,
                           kwargs...)
 
+        testresult += sum(result.dlcaps)
+        
 	cdl0=dlcap0(celldata)
         
 	scalarplot!(vis,result.voltages/V,result.dlcaps/(μF/cm^2);
@@ -94,7 +98,11 @@ function main(;voltages=-2:0.01:2,           ## Voltages/V
                     markershape=:circle,
                     label="")
     end
-    reveal(vis)
+    return isnothing(Plotter) ?  testresult : reveal(vis)
+end
+
+function runtests()
+    main() ≈ 889.0148902982739
 end
 
 function generateplots(dir; Plotter = nothing, kwargs...)    #hide

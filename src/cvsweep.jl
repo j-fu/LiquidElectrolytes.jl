@@ -114,19 +114,19 @@ Calculate molar reaction rates and working electrode flux rates.
 Returns a [`CVSweepResult`](@ref).
 """
 function cvsweep(
-        sys;
+        esys::AbstractElectrochemicalSystem;
         voltages = SawTooth(),
         nperiods = 1,
         store_solutions = false,
         solver_kwargs...
 )
+    sys=esys.vfvmsys
     F = ph"N_A" * ph"e"
     data = sys.physics.data
     factory = VoronoiFVM.TestFunctionFactory(sys)
     tf_we = testfunction(factory, [data.Γ_bulk], [data.Γ_we])
     tf_bulk = testfunction(factory, [data.Γ_we], [data.Γ_bulk])
 
-    data = electrolytedata(sys)
     data.ϕ_we = voltages(0)
     control = SolverControl(;
         verbose = "",
@@ -144,7 +144,7 @@ function cvsweep(
     times = [i * period(voltages) for i = 0:nperiods]
     iϕ = data.iϕ
     @info "Solving for $(voltages(0))V..."
-    inival = solve(sys; inival = pnpunknowns(sys), control = deepcopy(control), damp_initial = 0.1)
+    inival = solve(sys; inival = unknowns(esys), control = deepcopy(control), damp_initial = 0.1)
     result = CVSweepResult()
     allprogress = times[end] - times[begin]
     tprogress = 0

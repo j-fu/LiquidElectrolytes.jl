@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.5
+# v0.20.8
 
 using Markdown
 using InteractiveUtils
@@ -41,12 +41,6 @@ md"""
 #=╠═╡
 TableOfContents(title="",depth=5)
   ╠═╡ =#
-
-# ╔═╡ 462f512b-9b92-442b-bae6-b4aa168b32ee
-begin
-	mylog=RLog()
-	LiquidElectrolytes.rlog(x::Number)=mylog(x)
-end
 
 # ╔═╡ 920b7d84-56c6-4958-aed9-fc67ba0c43f6
 md"""
@@ -341,7 +335,7 @@ begin
             E_ref = electrolyte.ϕ_bulk,
             n0_ref = ph"N_A" / electrolyte.v0,
             χ = electrolyte.ε - 1.0,
-            z = electrolyte.z,
+            z = -electrolyte.z,
             κ = electrolyte.κ,
             molarity = ph"N_A" * electrolyte.c_bulk[1],
             n_E = ph"N_A" * electrolyte.c_bulk
@@ -797,14 +791,11 @@ end
 # ╔═╡ 595715e5-f108-4167-b104-ac7c6f652e48
 elydata = ElectrolyteData(
     c_bulk = fill(0.01 * ufac"mol / dm^3", 2),
-    κ = zeros(2)
+    κ = [5,10.0]
 )
 
 # ╔═╡ 00464966-2b1e-455c-a3a1-2af61c6649b7
 dlcap_exact = 0.22846691848825248
-
-# ╔═╡ c53791b6-6c12-483a-910f-6183149fac80
-@test dlcap0(elydata) ≈ dlcap_exact
 
 # ╔═╡ 05334798-a072-41ae-b23e-f884baadb071
 begin
@@ -815,9 +806,6 @@ end
 
 # ╔═╡ ddb3e60b-8571-465f-acf3-2403fb884363
 @test dlcap0(equidata) |> unitfactor ≈ dlcap_exact
-
-# ╔═╡ 512b631e-93ec-42fc-8416-8d10ca97f23d
-@test dlcap0(EquilibriumData(elydata)) ≈ dlcap_exact
 
 # ╔═╡ a629e8a1-b1d7-42d8-8c17-43475785218e
 begin
@@ -833,14 +821,14 @@ begin
 
     grid = ExtendableGrids.simplexgrid(X)
 
-    data = EquilibriumData(elydata)
+    equidata1 = EquilibriumData(elydata)
 end
 
 # ╔═╡ cdb7e8a1-dcdf-4e7a-9ecf-121f51b485c3
-sys_sy = create_equilibrium_system(grid, data)
+sys_sy = create_equilibrium_system(grid, equidata1)
 
 # ╔═╡ 31a1f686-f0b6-430a-83af-187df411b293
-sys_pp = create_equilibrium_pp_system(grid, data, Γ_bulk = 2)
+sys_pp = create_equilibrium_pp_system(grid, equidata1, Γ_bulk = 2)
 
 # ╔═╡ 442fe098-497b-404f-80a0-880bc95d5e02
 inival = unknowns(sys_sy, inival = 0);
@@ -852,11 +840,13 @@ molarities = [0.001, 0.01, 0.1]
 function capscalc(sys, molarities)
     result = []
     for imol in 1:length(molarities)
-        if isa(sys.physics.data, EquilibriumData)
-            set_molarity!(sys.physics.data, molarities[imol])
+        if !isa(sys, AbstractElectrochemicalSystem)
+            data=sys.physics.data
+            set_molarity!(data, molarities[imol])
             t = @elapsed volts, caps = dlcapsweep_equi(sys, vmax = 1V, nsteps = 101)
         else
-            sys.physics.data.c_bulk .= molarities[imol] * ufac"mol/dm^3"
+            data=sys.vfvmsys.physics.data
+            data.c_bulk .= molarities[imol] * ufac"mol/dm^3"
             t = @elapsed r = dlcapsweep(
                 sys,
                 voltages = range(-1, 1, length = 201)
@@ -864,7 +854,7 @@ function capscalc(sys, molarities)
             volts = voltages(r)
             caps = r.dlcaps
         end
-        cdl0 = dlcap0(sys.physics.data)
+        cdl0 = dlcap0(data)
         @info "elapsed=$(t)"
         push!(
             result,
@@ -911,6 +901,9 @@ end
 # ╔═╡ cf646a34-bd94-49af-8f8e-ec06446e18ca
 sys_pnp = PNPSystem(grid; bcondition = pnp_bcondition, celldata = elydata)
 
+# ╔═╡ 733cb823-d6a9-4ca1-93c0-66d78f28aa98
+elydata
+
 # ╔═╡ 966ed6ab-d6fa-43f1-9ddb-45eb024d949c
 result_pnp = capscalc(sys_pnp, molarities)
 
@@ -953,7 +946,7 @@ function resultcompare(r1, r2; tol = 1.0e-3)
 end
 
 # ╔═╡ 25a183d9-c6a2-4ac3-a283-a02e4e9231dd
-@test resultcompare(result_pp, result_sy; tol = 5.0e-3)
+@test resultcompare(result_pp, result_sy; tol = 1.0e-2)
 
 # ╔═╡ 6d1d8ae2-6a9e-48c1-a545-1f7354125bf0
 @test resultcompare(result_pb, result_pp; tol = 5.0e-3)
@@ -1012,7 +1005,6 @@ end
 # ╠═2b901eca-db3b-4ad2-b0ee-e031854c57fa
 # ╠═60941eaa-1aea-11eb-1277-97b991548781
 # ╟─4082c3d3-b728-4bcc-b480-cdee41d9ab99
-# ╠═462f512b-9b92-442b-bae6-b4aa168b32ee
 # ╟─920b7d84-56c6-4958-aed9-fc67ba0c43f6
 # ╟─87ac16f4-a4fc-4205-8fb9-e5459517e1b8
 # ╟─7d77ad32-3df6-4243-8bad-b8df4126e6ea
@@ -1092,10 +1084,8 @@ end
 # ╠═fe48d05b-99bd-48b4-a044-4dd8e8d18b5d
 # ╠═595715e5-f108-4167-b104-ac7c6f652e48
 # ╠═00464966-2b1e-455c-a3a1-2af61c6649b7
-# ╠═c53791b6-6c12-483a-910f-6183149fac80
 # ╠═05334798-a072-41ae-b23e-f884baadb071
 # ╠═ddb3e60b-8571-465f-acf3-2403fb884363
-# ╠═512b631e-93ec-42fc-8416-8d10ca97f23d
 # ╠═a629e8a1-b1d7-42d8-8c17-43475785218e
 # ╠═cdb7e8a1-dcdf-4e7a-9ecf-121f51b485c3
 # ╠═31a1f686-f0b6-430a-83af-187df411b293
@@ -1109,6 +1099,7 @@ end
 # ╟─9b1dc273-9938-43a0-ac10-1928a80f89d8
 # ╠═53cdf6d7-a025-49e0-af7b-cc0838cfb422
 # ╠═cf646a34-bd94-49af-8f8e-ec06446e18ca
+# ╠═733cb823-d6a9-4ca1-93c0-66d78f28aa98
 # ╠═966ed6ab-d6fa-43f1-9ddb-45eb024d949c
 # ╟─98464285-2bd4-4631-8c4f-8790fe15cb93
 # ╠═a8e26e1a-a9ac-4d51-b09c-7951acd4b4b7

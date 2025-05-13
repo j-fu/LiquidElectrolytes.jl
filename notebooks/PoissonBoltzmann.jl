@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.5
+# v0.20.8
 
 using Markdown
 using InteractiveUtils
@@ -93,12 +93,14 @@ end;
 
 # ╔═╡ 41715397-020c-4505-a61a-4f2910318423
 begin
-    pbo_electrolyte = ElectrolyteData()
-    pbo_electrolyte.c_bulk = c_bulk
-    pbo_electrolyte.κ .= 0
-    pbo_electrolyte.v .= 0
-
-end
+	function  pbo_gamma(γ, c,p, electrolyte)
+     	for i=1:electrolyte.nc
+		   γ[i]=1
+    	end
+	    return nothing
+    end
+    pbo_electrolyte = ElectrolyteData(;γ! = pbo_gamma, c_bulk)
+ end
 
 # ╔═╡ 834c81c8-9035-449f-b331-73bbee87756c
 md"""
@@ -182,19 +184,24 @@ md"""
 ## "Poisson-Bikerman"
 """
 
-# ╔═╡ 46b3f0fb-d527-4fca-a7f9-f4b0851b3f9f
-
-function pnp_bcondition(f, u, bnode, data::ElectrolyteData)
-    (; iϕ, Γ_we, ϕ_we) = data
-    boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_we, value = ϕ_we)
-    return bulkbcondition(f, u, bnode, data)
-end
-
-
 # ╔═╡ dbc500d6-99e8-40d8-9b60-dcccf1889ce8
 begin
-    pbi_electrolyte = deepcopy(pbo_electrolyte)
-    pbi_electrolyte.v .= pbi_electrolyte.v0
+	function  pbi_gamma(γ, c,p, electrolyte)
+		sumc=zero(eltype(c))
+		for i=1:electrolyte.nc
+			sumc+=c[i]
+		end
+	    g= 1.0/(1.0 - sumc*electrolyte.v0)
+     	for i=1:electrolyte.nc
+		   γ[i]=g
+    	end
+	    return nothing
+    end
+   
+    pbi_electrolyte = ElectrolyteData(c_bulk=pbo_electrolyte.c_bulk, 
+									  γ! =pbi_gamma
+									 )
+	pbi_electrolyte.v .= pbi_electrolyte.v0
     pbi_electrolyte
 end
 
@@ -205,7 +212,8 @@ pbi_system = PBSystem(grid; celldata = pbi_electrolyte, bcondition = pb_bconditi
 pbi_result = dlcapsweep(
     pbi_system; voltages = range(0, 1, length = 101),
     verbose = "",
-    store_solutions = true
+    store_solutions = true,
+	damp_initial=0.1
 )
 
 
@@ -220,6 +228,45 @@ pbi_sols = voltages_solutions(pbi_result);
 
 # ╔═╡ 26266ce9-1fd5-4dec-9ea7-2a79c724685d
 @bind pbi_v PlutoUI.Slider(range(pbi_volts[begin], pbi_volts[end], length = 201), default = 0.05, show_value = true)
+
+# ╔═╡ bd6749ab-8b75-4a45-8ac4-0650ba4a903c
+md"""
+## "Poisson-Bikerman" #2 
+"""
+
+# ╔═╡ b31af4a2-716c-4c17-b283-0103630fdf38
+begin
+   
+    pbi2_electrolyte = ElectrolyteData(c_bulk=pbo_electrolyte.c_bulk)
+	pbi2_electrolyte.v .= pbi_electrolyte.v0
+	pbi2_electrolyte.κ .= 0
+	pbi2_electrolyte.M .= pbi_electrolyte.M0
+    update_derived!(pbi2_electrolyte)
+end
+
+# ╔═╡ 56016697-5ce9-4e0a-b14a-bb5d276a358c
+pbi2_system = PBSystem(grid; celldata = pbi2_electrolyte, bcondition = pb_bcondition)
+
+# ╔═╡ d261c10c-6003-45b9-91ce-7b7f9acbdc8e
+pbi2_result = dlcapsweep(
+    pbi2_system; voltages = range(0, 1, length = 101),
+    verbose = "",
+    store_solutions = true,
+	damp_initial=0.1
+)
+
+
+# ╔═╡ d99c6463-9ae2-479a-8c6f-ef59af17fffa
+pbi2_volts = voltages(pbi_result)
+
+# ╔═╡ cb8b5bdf-148e-4834-b423-79c221a43f7b
+pbi2_caps = pbi2_result.dlcaps
+
+# ╔═╡ 29140461-4e06-4435-87ff-81061dc80d4c
+@bind pbi2_v PlutoUI.Slider(range(pbi2_volts[begin], pbi2_volts[end], length = 201), default = 0.05, show_value = true)
+
+# ╔═╡ d64cf39a-5f91-4d3f-ad82-1aef00a0a290
+pbi2_sols = voltages_solutions(pbi2_result);
 
 # ╔═╡ e373824d-6e0d-44c8-8c8a-192cccf10298
 #=╠═╡
@@ -242,6 +289,11 @@ plotcdl(pbo_volts,pbo_caps,pbo_v)
 # ╔═╡ eb7d0765-d5e7-4ef9-916d-764c5aca9822
 #=╠═╡
 plotcdl(pbi_volts,pbi_caps,pbi_v)
+  ╠═╡ =#
+
+# ╔═╡ fc55ef51-b7f4-4640-b8e5-ad7b4f8a411c
+#=╠═╡
+plotcdl(pbi2_volts,pbi2_caps,pbi2_v)
   ╠═╡ =#
 
 # ╔═╡ e480b378-7afa-4906-9e8a-70eac7712b5e
@@ -267,6 +319,11 @@ plotsols(pbo_sols,pbo_v)
 # ╔═╡ 5d15d24d-6317-4ad1-a53e-5af5c5bcf28a
 #=╠═╡
 plotsols(pbi_sols,pbi_v)
+  ╠═╡ =#
+
+# ╔═╡ f29de74d-66dd-4d95-9d6a-c33bfb8361c9
+#=╠═╡
+plotsols(pbi2_sols,pbi2_v)
   ╠═╡ =#
 
 # ╔═╡ f9b4d4dc-7def-409f-b40a-f4eba1163741
@@ -468,7 +525,6 @@ end;
 # ╠═811fca9b-bac0-4003-a0f9-bfefcbfbfa30
 # ╠═65a25bd3-c420-4da3-b808-0e1888c6b4ba
 # ╟─db5b6820-5a53-465c-b380-66756fd722a6
-# ╠═46b3f0fb-d527-4fca-a7f9-f4b0851b3f9f
 # ╠═dbc500d6-99e8-40d8-9b60-dcccf1889ce8
 # ╠═5ccc639b-0fe9-4bd0-a672-4a9d8910d0aa
 # ╠═7bcad22f-4ad8-4f54-b920-4e5fbe3f2104
@@ -476,8 +532,18 @@ end;
 # ╠═930aa7cc-47da-434a-b185-98283b3baa0d
 # ╠═f45d7707-1626-42e7-8211-8cdcc4cccbea
 # ╟─26266ce9-1fd5-4dec-9ea7-2a79c724685d
-# ╟─eb7d0765-d5e7-4ef9-916d-764c5aca9822
+# ╠═eb7d0765-d5e7-4ef9-916d-764c5aca9822
 # ╠═5d15d24d-6317-4ad1-a53e-5af5c5bcf28a
+# ╟─bd6749ab-8b75-4a45-8ac4-0650ba4a903c
+# ╠═b31af4a2-716c-4c17-b283-0103630fdf38
+# ╠═56016697-5ce9-4e0a-b14a-bb5d276a358c
+# ╠═d261c10c-6003-45b9-91ce-7b7f9acbdc8e
+# ╠═d99c6463-9ae2-479a-8c6f-ef59af17fffa
+# ╠═cb8b5bdf-148e-4834-b423-79c221a43f7b
+# ╟─29140461-4e06-4435-87ff-81061dc80d4c
+# ╠═fc55ef51-b7f4-4640-b8e5-ad7b4f8a411c
+# ╠═d64cf39a-5f91-4d3f-ad82-1aef00a0a290
+# ╠═f29de74d-66dd-4d95-9d6a-c33bfb8361c9
 # ╟─9b5f389f-b105-4610-bab7-f79305fedc31
 # ╠═e373824d-6e0d-44c8-8c8a-192cccf10298
 # ╠═e480b378-7afa-4906-9e8a-70eac7712b5e

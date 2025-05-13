@@ -1,9 +1,27 @@
 """
 $(TYPEDEF)
 
+Abstract super type for electrochemical systems
+"""
+abstract type AbstractElectrochemicalSystem end
+
+"""
+$(TYPEDEF)
+
 Abstract super type for electrolytes.
 """
 abstract type AbstractElectrolyteData end
+
+
+function γ_DGL!(γ, c, p, electrolyte)
+    (; Mrel, tildev, v0, RT, v0, nc)  = electrolyte
+    c0, barc = c0_barc(c,electrolyte)
+    for ic=1:nc
+        γ[ic]=rexp(tildev[ic] * p / RT)* (barc / c0)^Mrel[ic] * (1 / (v0 * barc))
+    end
+    return nothing
+end
+
 
 """
 $(TYPEDEF)
@@ -12,14 +30,14 @@ Data for electrolyte. It is defined using `Base.@kwdef`
 allowing for keyword constructors like
 ```julia
     ElectrolyteData(nc=3,z=[-1,2,1])
-```
+``
 
 To see default values, just create an instance as `ElectrolyteData()`.
 Fields (reserved fields are modified by some algorithms):
 
 $(TYPEDFIELDS)
 """
-@kwdef mutable struct ElectrolyteData <: AbstractElectrolyteData
+@kwdef mutable struct ElectrolyteData{Tγ, Tcache} <: AbstractElectrolyteData
     "Number of ionic species."
     nc::Int = 2
 
@@ -55,6 +73,10 @@ $(TYPEDFIELDS)
 
     "Bulk ion concentrations"
     c_bulk::Vector{Float64} = fill(0.1 * ufac"M", nc)
+    
+    "Activity coefficient function"
+    γ!::Tγ = γ_DGL!
+
 
     "Bulk voltage"
     ϕ_bulk::Float64 = 0.0 * ufac"V"
@@ -65,30 +87,44 @@ $(TYPEDFIELDS)
     "Bulk boundary number"
     Γ_bulk::Int = 2
 
-    """
-    Working electrode voltage. 
-    Reserved.
-    Used by sweep algorithms to pass boundary data.
-    """
-    ϕ_we::Float64 = 0.0 * ufac"V"
-
     "Working electrode boundary number"
     Γ_we::Int = 1
 
     "Temperature"
     T::Float64 = (273.15 + 25) * ufac"K"
 
-    "Molar gas constant scaled with temperature"
-    RT::Float64 = ph"R" * T
-
-    "Faraday constant"
-    F::Float64 = ph"N_A" * ph"e"
-
     "Dielectric permittivity of solvent"
     ε::Float64 = 78.49
 
-    "Dielectric permittivity of vacuum"
+    "Molar gas constant scaled with temperature (derived)"
+    RT::Float64 = ph"R" * T
+
+    "Faraday constant (fixed)"
+    F::Float64 = ph"N_A" * ph"e"
+
+    "Dielectric permittivity of vacuum (fixed)"
     ε_0::Float64 = ph"ε_0"
+
+    "Solvated molar mass ratio (derived)"
+    Mrel::Vector{Float64} = M / M0 + κ
+
+    "Solvated molar volume (derived)"
+    barv::Vector{Float64} = v + κ * v0
+
+    "Pressure relevant volume (derived)"
+    tildev::Vector{Float64} = barv - Mrel * v0
+
+    "Cache for activity coefficient calculation (reserved)"
+    γk_cache::Tcache = DiffCache(zeros(nc), 10*nc)
+
+    "Cache for activity coefficient calculation (reserved)"
+    γl_cache::Tcache = DiffCache(zeros(nc), 10*nc)
+
+    """
+    Working electrode voltage (reserved)
+    Used by sweep algorithms to pass boundary data.
+    """
+    ϕ_we::Float64 = 0.0 * ufac"V"
 
     "Pressure scaling factor"
     pscale::Float64 = 1.0e9
@@ -106,32 +142,42 @@ $(TYPEDFIELDS)
     scheme::Symbol = :μex
 
     """
-    Solve for pressure. 
-
-    This is `true` by default. Setting this to `false` can serve two purposes:
-    - Take the pressure from the solution of a flow equation
-    - Ignore the pressure contribution to the excess chemical potential
-    """
-    solvepressure::Bool = true
-
-    """
     Species weights for norms in solver control.
     """
     weights::Vector{Float64} = [v..., zeros(na)..., 1.0, 0.0]
 
     """
+    Solve for pressure. 
+
+    This is `true` by default. Setting this to `false` can serve two purposes:
+    - Use the pressure from the solution of a flow equation
+    - Ignore the pressure contribution to the excess chemical potential
+    """
+    solvepressure::Bool = true
+
+
+    """
     Edge velocity projection.
     """
     edgevelocity::Union{Float64, Vector{Float64}} = 0.0
-
-    """
-    Electrolyte model
-    """
-    model::Symbol = :DGL
 end
 
 function Base.show(io::IOContext{Base.TTY}, this::ElectrolyteData)
     return showstruct(io, this)
+end
+
+"""
+    update_derived!(electrolyte::ElectrolyteData)
+
+Update derived electrolyte data.
+"""
+function update_derived!(electrolyte::ElectrolyteData)
+    (; M, M0, κ, T, v, v0, T) = electrolyte
+    electrolyte.Mrel .=  M / M0 + κ
+    electrolyte.barv .= v + κ * v0
+    electrolyte.tildev .= electrolyte.barv - electrolyte.Mrel * v0
+    electrolyte.RT =  ph"R" * T
+    return electrolyte
 end
 
 

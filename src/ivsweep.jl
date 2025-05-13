@@ -48,11 +48,12 @@ Calculate molar reaction rates and bulk flux rates for each voltage in `voltages
 Returns a [`IVSweepResult`](@ref).
 """
 function ivsweep(
-        sys;
+        esys::AbstractElectrochemicalSystem;
         voltages = (-0.5:0.1:0.5) * ufac"V",
         store_solutions = false,
         solver_kwargs...
 )
+    sys=esys.vfvmsys
     ranges = _splitz(voltages)
     F = ph"N_A" * ph"e"
     data = sys.physics.data
@@ -68,7 +69,7 @@ function ivsweep(
     vplus = zeros(0)
     sminus = []
     splus = []
-    data = electrolytedata(sys)
+    data = electrolytedata(esys)
     data.ϕ_we = 0
     control = SolverControl(;
         verbose = true,
@@ -84,7 +85,7 @@ function ivsweep(
 
     iϕ = data.iϕ
     @info "Solving for 0V..."
-    inival = solve(sys; inival = pnpunknowns(sys), control)
+    inival = solve(sys; inival = unknowns(esys), control)
 
     result_plus = IVSweepResult()
     result_minus = IVSweepResult()

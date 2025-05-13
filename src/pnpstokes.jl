@@ -60,13 +60,13 @@ function SciMLBase.solve(
         nembed = 0, niter = 20, damp_initial = 1, kwargs...
     )
     (; flowsolver, pnpsolver) = pnpssolver
-    pnpstate = VoronoiFVM.SystemState(pnpsolver)
-    pnpdata = pnpsolver.physics.data
-    pnpgrid = pnpsolver.grid
+    pnpstate = VoronoiFVM.SystemState(pnpsolver.vfvmsys)
+    pnpdata = pnpsolver.vfvmsys.physics.data
+    pnpgrid = pnpsolver.vfvmsys.grid
     (; iϕ, ip) = pnpdata
 
     flowsol = extended_unknowns(flowsolver)
-    pnpsol = unknowns(pnpsolver, inival = 0)
+    pnpsol = unknowns(pnpsolver.vfvmsys, inival = 0)
     t_pnp = 0.0
     t_stokes = 0.0
     t_project = 0.0
