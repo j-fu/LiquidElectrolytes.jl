@@ -6,7 +6,7 @@ $(read(joinpath(@__DIR__, "..", "README.md"), String))
 module LiquidElectrolytes
 using Base: @kwdef
 using DocStringExtensions: DocStringExtensions,  TYPEDEF, TYPEDFIELDS
-using ExtendableGrids: ExtendableGrids, num_nodes
+using ExtendableGrids: ExtendableGrids, ExtendableGrid, num_nodes
 using LessUnitful: LessUnitful, @local_phconstants, @local_unitfactors, @ph_str, @ufac_str
 using InteractiveUtils: InteractiveUtils
 using Markdown: @md_str
@@ -29,7 +29,7 @@ export RExp, RLog
 VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public rexp, rlog"))
 
 include("electrolyte.jl")
-export ElectrolyteData, AbstractElectrolyteData, update_derived!
+export AbstractElectrochemicalSystem, ElectrolyteData, AbstractElectrolyteData, update_derived!
 export dlcap0, chargedensity, chemical_potentials!, rrate, debyelength, chemical_potential, c0_barc, solventconcentration
 export isincompressible, iselectroneutral
 export chemical_potentials, electrochemical_potentials

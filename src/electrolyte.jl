@@ -1,6 +1,13 @@
 """
 $(TYPEDEF)
 
+Abstract super type for electrochemical systems
+"""
+abstract type AbstractElectrochemicalSystem end
+
+"""
+$(TYPEDEF)
+
 Abstract super type for electrolytes.
 """
 abstract type AbstractElectrolyteData end

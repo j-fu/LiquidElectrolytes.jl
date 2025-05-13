@@ -39,6 +39,9 @@ function pbflux(f, u, edge, electrolyte)
     return
 end
 
+struct PBSystem <: AbstractElectrochemicalSystem
+    vfvmsys::VoronoiFVM.System
+end
 
 """
     PBSystem(grid;
@@ -53,13 +56,13 @@ Create VoronoiFVM system generalized Poisson-Boltzmann. Input:
 - `kwargs`: Keyword arguments of VoronoiFVM.System
 """
 function PBSystem(
-        grid;
+        grid::ExtendableGrid;
         celldata = ElectrolyteData(),
         bcondition = (f, u, n, e) -> nothing,
         kwargs...
     )
 
-    return VoronoiFVM.System(
+    sys= VoronoiFVM.System(
         grid;
         data = celldata,
         flux = pbflux,
@@ -68,4 +71,6 @@ function PBSystem(
         species = [1:(celldata.nc)..., celldata.iϕ, celldata.ip],
         kwargs...
     )
+
+    return PBSystem(sys)
 end

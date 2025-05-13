@@ -42,8 +42,8 @@ Assumptions:
 - Only one double layer in the system - close to working electrode.
 """
 function dlcapsweep(
-        sys;
-        electrolyte = electrolytedata(sys),
+        esys::AbstractElectrochemicalSystem;
+        electrolyte = electrolytedata(esys),
         inival = nothing,
         voltages = (-1:0.1:1) * ufac"V",
         molarity = nothing,
@@ -51,7 +51,8 @@ function dlcapsweep(
         store_solutions = false,
         solver_kwargs...
     )
-    (; ip, iϕ)= electrolyte
+    sys = esys.vfvmsys
+    (; ip, iϕ) = electrolyte
     if !isnothing(molarity)
         error("The molarity kwarg of dlcapsweep has been removed. Pass the molarity information with electrolyte.c_bulk.")
     end
@@ -61,7 +62,7 @@ function dlcapsweep(
     electrolyte.ϕ_we = 0.0
 
     if isnothing(inival)
-        inival = pnpunknowns(sys)
+        inival = pnpunknowns(esys)
     end
 
     inival = solve(sys; inival, damp_initial = 0.1, solver_kwargs...)
@@ -75,10 +76,12 @@ function dlcapsweep(
     result_plus = DLCapSweepResult()
     result_minus = DLCapSweepResult()
 
-    control = VoronoiFVM.SolverControl(; max_round = 3, tol_round = 1.0e-9,
-                                       unorm = u -> wnorm(u, electrolyte.weights, Inf),
-                                       rnorm = u -> wnorm(u, electrolyte.weights, 1),
-                                       solver_kwargs...)
+    control = VoronoiFVM.SolverControl(;
+        max_round = 3, tol_round = 1.0e-9,
+        unorm = u -> wnorm(u, electrolyte.weights, Inf),
+        rnorm = u -> wnorm(u, electrolyte.weights, 1),
+        solver_kwargs...
+    )
     for range in ranges
         sol = inival
         success = true
@@ -118,7 +121,7 @@ function dlcapsweep(
                 break
             end
             Qδ = VoronoiFVM.integrate(sys, sys.physics.reaction, sol)
-            
+
             cdl = (Qδ[iϕ] - Q[iϕ]) / δ
 
             push!(result.voltages, ϕ)
@@ -134,4 +137,3 @@ function dlcapsweep(
         solutions = vcat(reverse(result_minus.solutions), result_plus.solutions)
     )
 end
-

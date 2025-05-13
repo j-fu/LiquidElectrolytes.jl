@@ -214,7 +214,7 @@ function main(;
     )
     scalarplot!(
         vis[1, 2],
-        cell,
+        cell.vfvmsys,
         sol;
         species = ife2,
         aspect,
@@ -226,7 +226,7 @@ function main(;
     )
     scalarplot!(
         vis[1, 3],
-        cell,
+        cell.vfvmsys,
         sol;
         species = ife3,
         aspect,
@@ -238,7 +238,7 @@ function main(;
     )
     scalarplot!(
         vis[1, 4],
-        cell,
+        cell.vfvmsys,
         sol;
         species = iϕ,
         aspect,
@@ -250,7 +250,7 @@ function main(;
     )
     scalarplot!(
         vis[1, 5],
-        cell,
+        cell.vfvmsys,
         sol;
         species = ip,
         aspect,

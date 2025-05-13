@@ -171,6 +171,10 @@ function pnpflux(f, u, edge, electrolyte)
     return
 end
 
+struct PNPSystem <: AbstractElectrochemicalSystem
+    vfvmsys::VoronoiFVM.System
+end
+
 """
     PNPSystem(grid;
              celldata=ElectrolyteData(),
@@ -186,7 +190,7 @@ Create VoronoiFVM system for generalized Poisson-Nernst-Planck. Input:
 - `kwargs`: Keyword arguments of VoronoiFVM.System
 """
 function PNPSystem(
-        grid;
+        grid::ExtendableGrid;
         celldata = ElectrolyteData(),
         bcondition = (f, u, n, e) -> nothing,
         reaction = (f, u, n, e) -> nothing,
@@ -212,22 +216,23 @@ function PNPSystem(
     for ia in (celldata.nc + 1):(celldata.nc + celldata.na)
         enable_boundary_species!(sys, ia, [celldata.Γ_we])
     end
-    return sys
+    return PNPSystem(sys)
 end
 
 """
     electrolytedata(sys)
 Extract electrolyte data from system.
 """
-electrolytedata(sys) = sys.physics.data
+electrolytedata(sys::AbstractElectrochemicalSystem) = sys.vfvmsys.physics.data
 
 """
     pnpunknowns(sys)
 
 Return vector of unknowns initialized with bulk data.
 """
-function pnpunknowns(sys)
-    (; iϕ, ip, nc, na, c_bulk, Γ_we) = electrolytedata(sys)
+function pnpunknowns(esys::AbstractElectrochemicalSystem)
+    sys=esys.vfvmsys
+    (; iϕ, ip, nc, na, c_bulk, Γ_we) = electrolytedata(esys)
     u = unknowns(sys)
     @views u[iϕ, :] .= 0
     @views u[ip, :] .= 0

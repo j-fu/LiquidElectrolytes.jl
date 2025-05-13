@@ -195,7 +195,7 @@ function main(;
     )
     scalarplot!(
         vis[1, 2],
-        cell,
+        cell.vfvmsys,
         sol;
         scale = 1.0 / (mol / dm^3),
         species = io2,
@@ -206,7 +206,7 @@ function main(;
     )
     scalarplot!(
         vis[1, 3],
-        cell,
+        cell.vfvmsys,
         sol;
         species = ihplus,
         aspect,
