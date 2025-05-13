@@ -4,16 +4,18 @@
 Reaction expression for Poisson-Boltzmann
 """
 function pbreaction(f, u, node, electrolyte)
-    (; ip, iϕ, v0, v, M0, z, M, κ, F, RT, nc, pscale, p_bulk, c_bulk, gamma) = electrolyte
-    c0, bar_c = c0_barc(u, electrolyte)
-    c0_bulk, barc_bulk = c0_barc(c_bulk, electrolyte)
+    (; ip, iϕ, v0, v, M0, z, M, κ, F, RT, nc, pscale, p_bulk, c_bulk,
+     γ!,γk_cache, γl_cache
+     ) = electrolyte
     p = u[ip] * pscale - p_bulk
     ϕ = u[iϕ]
+    γ=get_tmp(γk_cache, u)
+    γ_bulk=get_tmp(γl_cache, u)
+    γ!(γ_bulk, c_bulk, p_bulk, electrolyte)
+    γ!(γ, u, p, electrolyte)
     q = zero(eltype(u))
     for ic in 1:nc
-        γ_bulk = gamma(ic, c_bulk, c0_bulk, barc_bulk, p_bulk, electrolyte)
-        γ = gamma(ic, u, c0, bar_c, p, electrolyte)
-        f[ic] = u[ic] - c_bulk[ic] * rexp(-z[ic] * F * ϕ / RT)*γ_bulk/γ 
+        f[ic] = u[ic] - c_bulk[ic] * rexp(-z[ic] * F * ϕ / RT)*γ_bulk[ic]/γ[ic]
         q += z[ic] * u[ic]
     end
     f[iϕ] = -F * q

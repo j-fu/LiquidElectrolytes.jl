@@ -1,13 +1,23 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## 2.0.0 
+
+### Breaking
+- `aflux`, `sflux` and `cflux` replaced with  `aflux!`, `sflux!` and `cflux!` 
+
+### Features
+- ElectrolyteData now has a function entry `γ!` for user definable function which calculates activity coefficients
+- Fixed implementation of PBSystem, now cases with different `κ` etc should work
+
 ## 1.1.0 - 2025-03-16
 
 ### Features
 - Add cvsweep 
 - Reorgnization of source files
 - Document which entries of ElectrolyteData are modified by algorithms
-- Use ReTest, tighten CI with Aqua etc.
+- Use ReTest, tighten CI with Aqua etc
 
 ### Breaking
 - `molarity` kwarg is removed from `dlcapsweep`.

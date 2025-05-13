@@ -17,6 +17,8 @@ using SciMLBase: SciMLBase, solve!
 using VoronoiFVM: VoronoiFVM, TransientSolution, enable_boundary_species!, solve, testfunction, unknowns
 using VoronoiFVM: boundary_dirichlet!, fbernoulli_pm, SolverControl
 using LinearAlgebra: LinearAlgebra
+using PreallocationTools: DiffCache, get_tmp
+
 
 function __init__()
     return LessUnitful.ensureSIBase()
@@ -27,7 +29,7 @@ export RExp, RLog
 VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public rexp, rlog"))
 
 include("electrolyte.jl")
-export ElectrolyteData, AbstractElectrolyteData
+export ElectrolyteData, AbstractElectrolyteData, update_derived!
 export dlcap0, chargedensity, chemical_potentials!, rrate, debyelength, chemical_potential, c0_barc, solventconcentration
 export isincompressible, iselectroneutral
 export chemical_potentials, electrochemical_potentials
@@ -36,7 +38,7 @@ include("pnpsystem.jl")
 export PNPSystem
 export pnpunknowns, electrolytedata, bulkbcondition
 
-VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public aflux, sflux, cflux"))
+VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public aflux!, sflux!, cflux!"))
 
 include("pbsystem.jl")
 export PBSystem

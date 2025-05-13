@@ -7,6 +7,7 @@ built on top of [Unitful.jl](https://github.com/PainterQubits/Unitful.jl).
 ```@docs
 AbstractElectrolyteData
 ElectrolyteData
+update_derived!
 ```
 
 The default values for electrolyte data are those of an symmetric 0.1M aqueous binary electrolyte at 

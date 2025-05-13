@@ -23,9 +23,9 @@ LiquidElectrolytes.pnpreaction
 LiquidElectrolytes.pnpflux
 LiquidElectrolytes.pnpstorage
 LiquidElectrolytes.pnpbstorage
-LiquidElectrolytes.sflux
-LiquidElectrolytes.aflux
-LiquidElectrolytes.cflux
+LiquidElectrolytes.sflux!
+LiquidElectrolytes.aflux!
+LiquidElectrolytes.cflux!
 LiquidElectrolytes.dμex
 ```
 
