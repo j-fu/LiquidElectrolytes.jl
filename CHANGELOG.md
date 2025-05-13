@@ -6,10 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### Breaking
 - `aflux`, `sflux` and `cflux` replaced with  `aflux!`, `sflux!` and `cflux!` 
+- PNPSystem and PBSystem are now distinct types in order to be able to implement more specific methods
+- pnpunkonowns has been removed in favor of extension of VoronoiFVM.unknowns
 
 ### Features
 - ElectrolyteData now has a function entry `γ!` for user definable function which calculates activity coefficients
 - Fixed implementation of PBSystem, now cases with different `κ` etc should work
+
 
 ## 1.1.0 - 2025-03-16
 

@@ -144,7 +144,7 @@ function cvsweep(
     times = [i * period(voltages) for i = 0:nperiods]
     iϕ = data.iϕ
     @info "Solving for $(voltages(0))V..."
-    inival = solve(sys; inival = pnpunknowns(sys), control = deepcopy(control), damp_initial = 0.1)
+    inival = solve(sys; inival = unknowns(esys), control = deepcopy(control), damp_initial = 0.1)
     result = CVSweepResult()
     allprogress = times[end] - times[begin]
     tprogress = 0

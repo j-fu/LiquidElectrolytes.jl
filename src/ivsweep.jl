@@ -85,7 +85,7 @@ function ivsweep(
 
     iϕ = data.iϕ
     @info "Solving for 0V..."
-    inival = solve(sys; inival = pnpunknowns(esys), control)
+    inival = solve(sys; inival = unknowns(esys), control)
 
     result_plus = IVSweepResult()
     result_minus = IVSweepResult()

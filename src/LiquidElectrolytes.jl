@@ -16,9 +16,9 @@ using ProgressLogging: @withprogress, @logprogress
 using SciMLBase: SciMLBase, solve!
 using VoronoiFVM: VoronoiFVM, TransientSolution, enable_boundary_species!, solve, testfunction, unknowns
 using VoronoiFVM: boundary_dirichlet!, fbernoulli_pm, SolverControl
+import VoronoiFVM
 using LinearAlgebra: LinearAlgebra
 using PreallocationTools: DiffCache, get_tmp
-
 
 function __init__()
     return LessUnitful.ensureSIBase()
@@ -36,7 +36,7 @@ export chemical_potentials, electrochemical_potentials
 
 include("pnpsystem.jl")
 export PNPSystem
-export pnpunknowns, electrolytedata, bulkbcondition
+export electrolytedata, bulkbcondition, unknowns
 
 VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public aflux!, sflux!, cflux!"))
 

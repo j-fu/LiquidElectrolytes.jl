@@ -62,7 +62,7 @@ function dlcapsweep(
     electrolyte.ϕ_we = 0.0
 
     if isnothing(inival)
-        inival = pnpunknowns(esys)
+        inival = unknowns(esys)
     end
 
     inival = solve(sys; inival, damp_initial = 0.1, solver_kwargs...)

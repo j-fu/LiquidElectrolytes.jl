@@ -34,7 +34,6 @@ c0_barc
 
 ```@docs
 PNPSystem
-pnpunknowns
 electrolytedata
 solventconcentration
 chemical_potentials

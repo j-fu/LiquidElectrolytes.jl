@@ -226,11 +226,11 @@ Extract electrolyte data from system.
 electrolytedata(sys::AbstractElectrochemicalSystem) = sys.vfvmsys.physics.data
 
 """
-    pnpunknowns(sys)
+    unknowns(sys)
 
 Return vector of unknowns initialized with bulk data.
 """
-function pnpunknowns(esys::AbstractElectrochemicalSystem)
+function VoronoiFVM.unknowns(esys::AbstractElectrochemicalSystem)
     sys=esys.vfvmsys
     (; iϕ, ip, nc, na, c_bulk, Γ_we) = electrolytedata(esys)
     u = unknowns(sys)
