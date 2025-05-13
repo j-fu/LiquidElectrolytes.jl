@@ -88,7 +88,7 @@ ck/cl = bp/bm = exp(z ϕk*F/RT + μex_k/RT)/exp(z ϕl*F/RT + μex_l/RT)
 =#
 
 """
-    aflux(ic,dϕ,ck,cl,γk,γl,bar_ck,bar_cl,electrolyte; evelo=0)
+    aflux!(ic,dϕ,ck,cl,γk,γl,electrolyte; evelo=0)
 
 Flux expression based on  activities, see Fuhrmann, CPC 2015
 ??? Do we need to divide the velocity by the inverse activity coefficient ?
@@ -110,7 +110,7 @@ ck/cl= bp/betaK  / bm/betal
 =#
 
 """
-    cflux(ic,dϕ,ck,cl,γk,γl,electrolyte; evelo = 0)
+    cflux!(ic,dϕ,ck,cl,γk,γl,electrolyte; evelo = 0)
 
 Flux expression based on central differences, see Gaudeul/Fuhrmann 2022
 """
@@ -130,7 +130,7 @@ end
 """
     pnpflux(f, u, edge, electrolyte)
 
-Finite volume flux. It calls either [`sflux`](@ref), [`cflux`](@ref) or [`aflux`](@ref).
+Finite volume flux. It calls either [`sflux!`](@ref), [`cflux!`](@ref) or [`aflux!`](@ref).
 """
 function pnpflux(f, u, edge, electrolyte)
     (;

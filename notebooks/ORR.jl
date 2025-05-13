@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.5
+# v0.20.8
 
 using Markdown
 using InteractiveUtils
@@ -424,7 +424,7 @@ function cplot(cell, result)
     aspect = 2 * xmax / (tsol.t[end] - tsol.t[begin])
     scalarplot!(
         vis[1, 1],
-        cell,
+        cell.vfvmsys,
         tsol;
         scale,
         species = io2,
@@ -435,7 +435,7 @@ function cplot(cell, result)
     )
     scalarplot!(
         vis[1, 2],
-        cell,
+        cell.vfvmsys,
         tsol;
         species = ihplus,
         aspect,
@@ -644,7 +644,7 @@ hrule()
 # ╠═e5ea40e3-ef3f-4c89-bc69-91e95dfb3cd0
 # ╠═9226027b-725d-446e-bc14-dd335a60ec09
 # ╠═cc80544f-ca62-49fb-b907-4bd194b11ee5
-# ╟─1ac7646a-76ae-4e8f-9d9d-ecaccc262857
+# ╠═1ac7646a-76ae-4e8f-9d9d-ecaccc262857
 # ╟─1317a982-c416-4d44-804a-8694cc2bbef2
 # ╠═950f43ba-6555-463a-bed7-36511e17e882
 # ╠═33ee0ded-5bc8-4fe7-bd2f-1cc44bc73f78

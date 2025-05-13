@@ -11,14 +11,12 @@ LiquidElectrolytes.wnorm
 
 ## Poisson-Boltzmann
 ```@docs
-LiquidElectrolytes.pbspacecharge
 LiquidElectrolytes.pbreaction
 LiquidElectrolytes.pbflux
 ```
 
 ## Poisson-Nernst-Planck
 ```@docs
-LiquidElectrolytes.set_model!(electrolyte, model)
 LiquidElectrolytes.pnpreaction
 LiquidElectrolytes.pnpflux
 LiquidElectrolytes.pnpstorage
@@ -37,7 +35,7 @@ LiquidElectrolytes.flowsolver
 
 ## Electrochemical calculations
 ```@docs
-LiquidElectrolytes.splitz
+LiquidElectrolytes._splitz
 ```
 
 ## General tools
