@@ -103,7 +103,7 @@ begin
     const vdelta = 0.025 * V
     const molarity = 0.1
     const nref = 0
-    const κ = 10
+    const κ = 10.0
     const vfac = 1
     const scheme = :μex
     const R0 = 5.0e-16mol / (cm^2 * s)

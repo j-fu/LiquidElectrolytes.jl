@@ -5,6 +5,13 @@ Abstract super type for electrolytes.
 """
 abstract type AbstractElectrolyteData end
 
+
+function gamma_DGL(ic, c, c0, barc, p, electrolyte)
+    (; Mrel, tildev, v0, RT, v0)  = electrolyte
+    return rexp(tildev[ic] * p / RT)* (barc / c0)^Mrel[ic] * (1 / (v0 * barc))
+end
+
+
 """
 $(TYPEDEF)
 
@@ -19,7 +26,7 @@ Fields (reserved fields are modified by some algorithms):
 
 $(TYPEDFIELDS)
 """
-@kwdef mutable struct ElectrolyteData <: AbstractElectrolyteData
+@kwdef mutable struct ElectrolyteData{Tγ} <: AbstractElectrolyteData
     "Number of ionic species."
     nc::Int = 2
 
@@ -55,7 +62,19 @@ $(TYPEDFIELDS)
 
     "Bulk ion concentrations"
     c_bulk::Vector{Float64} = fill(0.1 * ufac"M", nc)
+    
+    "Solvated molar mass ratio"
+    Mrel::Vector{Float64} = M / M0 + κ
 
+    "Solvated molar volume"
+    barv::Vector{Float64} = v + κ * v0
+
+    "Pressure relevant volume"
+    tildev::Vector{Float64} = barv - Mrel * v0
+
+    "Activity coefficient function"
+    gamma::Tγ = gamma_DGL
+    
     "Bulk voltage"
     ϕ_bulk::Float64 = 0.0 * ufac"V"
 
@@ -123,11 +142,6 @@ $(TYPEDFIELDS)
     Edge velocity projection.
     """
     edgevelocity::Union{Float64, Vector{Float64}} = 0.0
-
-    """
-    Electrolyte model
-    """
-    model::Symbol = :DGL
 end
 
 function Base.show(io::IOContext{Base.TTY}, this::ElectrolyteData)

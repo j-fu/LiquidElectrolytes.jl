@@ -51,7 +51,8 @@ end
 Calculate differences of excess chemical potentials from activity coefficients
 """
 @inline function dμex(γk, γl, electrolyte)
-    return (rlog(γk) - rlog(γl)) * (electrolyte.RT)
+    f=(rlog(γk) - rlog(γl)) * (electrolyte.RT)
+    return f
 end
 
 """
@@ -69,7 +70,8 @@ Verification calculation is in the paper.
 function sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte; evelo = 0.0)
     (; D, z, F, RT) = electrolyte
     bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(γk, γl, electrolyte) / RT - evelo / D[ic])
-    return D[ic] * (bm * ck - bp * cl)
+    f= D[ic] * (bm * ck - bp * cl)
+    return f
 end
 
 #=
@@ -123,9 +125,11 @@ end
 Finite volume flux. It calls either [`sflux`](@ref), [`cflux`](@ref) or [`aflux`](@ref).
 """
 function pnpflux(f, u, edge, electrolyte)
-    iϕ = electrolyte.iϕ # index of potential
-    ip = electrolyte.ip
-    (; ip, iϕ, v0, v, M0, M, κ, ε_0, ε, RT, nc, eneutral, pscale, p_bulk, scheme) = electrolyte
+    (;
+        ip, iϕ, v0, v, M0, M, κ, ε_0, ε, RT, nc,
+        eneutral, pscale, p_bulk, scheme, gamma,
+    ) = electrolyte
+
     evelo = edgevelocity(electrolyte, edge.index)
 
     pk, pl = u[ip, 1] * pscale - p_bulk, u[ip, 2] * pscale - p_bulk
@@ -142,15 +146,19 @@ function pnpflux(f, u, edge, electrolyte)
     if solvepressure(electrolyte)
         f[ip] = u[ip, 1] - u[ip, 2] + (qk + ql) * dϕ / (2 * pscale)
     end
-
     for ic in 1:nc
         ck, cl = u[ic, 1], u[ic, 2]
-        Mrel = M[ic] / M0 + κ[ic]
-        barv = v[ic] + κ[ic] * v0
-        tildev = barv - Mrel * v0
-        γk = rexp(tildev * pk / RT) * (bar_ck / c0k)^Mrel * (1 / (v0 * bar_ck))
-        γl = rexp(tildev * pl / RT) * (bar_cl / c0l)^Mrel * (1 / (v0 * bar_cl))
+        # Mrel = M[ic] / M0 + κ[ic]
+        # barv = v[ic] + κ[ic] * v0
+        # tildev = barv - Mrel * v0
 
+        # γk = rexp(tildev * pk / RT) * (bar_ck / c0k)^Mrel * (1 / (v0 * bar_ck))
+        # γl = rexp(tildev * pl / RT) * (bar_cl / c0l)^Mrel * (1 / (v0 * bar_cl))
+
+        
+        γk = gamma(ic, ck, c0k, bar_ck, pk, electrolyte)
+        γl = gamma(ic, cl, c0l, bar_cl, pl, electrolyte)
+        
         if scheme == :μex
             f[ic] = sflux(ic, dϕ, ck, cl, γk, γl, bar_ck, bar_cl, electrolyte; evelo)
         elseif electrolyte.scheme == :act

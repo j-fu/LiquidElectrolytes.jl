@@ -4,23 +4,16 @@
 Reaction expression for Poisson-Boltzmann
 """
 function pbreaction(f, u, node, electrolyte)
-    (; ip, iϕ, v0, v, M0, z, M, κ, F, RT, nc, pscale, p_bulk, c_bulk) = electrolyte
+    (; ip, iϕ, v0, v, M0, z, M, κ, F, RT, nc, pscale, p_bulk, c_bulk, gamma) = electrolyte
     c0, bar_c = c0_barc(u, electrolyte)
     c0_bulk, barc_bulk = c0_barc(c_bulk, electrolyte)
     p = u[ip] * pscale - p_bulk
     ϕ = u[iϕ]
     q = zero(eltype(u))
     for ic in 1:nc
-        if v[ic]==0
-            f[ic] = u[ic] - c_bulk[ic] * rexp(-z[ic] * F * ϕ / RT)
-        else
-            Mrel = M[ic] / M0 + κ[ic]
-            barv = v[ic] + κ[ic] * v0
-            tildev = barv - Mrel * v0
-            γ_bulk = barc_bulk * (c0_bulk / barc_bulk)^Mrel
-            γ = bar_c * rexp( -tildev * p / RT) * (c0 / bar_c)^Mrel
-            f[ic] = u[ic] - c_bulk[ic] * rexp(-z[ic] * F * ϕ / RT) * γ / γ_bulk
-        end
+        γ_bulk = gamma(ic, c_bulk, c0_bulk, barc_bulk, p_bulk, electrolyte)
+        γ = gamma(ic, u, c0, bar_c, p, electrolyte)
+        f[ic] = u[ic] - c_bulk[ic] * rexp(-z[ic] * F * ϕ / RT)*γ_bulk/γ 
         q += z[ic] * u[ic]
     end
     f[iϕ] = -F * q
@@ -36,21 +29,18 @@ Flux expression for Poisson-Boltzmann
 """
 function pbflux(f, u, edge, electrolyte)
     (; ε_0, ε, iϕ, ip, nc, z, F, pscale) = electrolyte
-    f[iϕ] = ε * ε_0 * (u[iϕ, 1] - u[iϕ, 2])
-    qk = zero(eltype(u))
-    ql = zero(eltype(u))
-    for ic in 1:nc
-        qk += z[ic] * u[ic, 1]
-        ql += z[ic] * u[ic, 2]
-    end
-    f[ip] = (u[ip, 1] - u[ip, 2]) + F * (u[iϕ, 1] - u[iϕ, 2]) * (qk + ql) / 2 * pscale
+    dϕ= u[iϕ, 1] - u[iϕ, 2]
+
+    f[iϕ] = ε * ε_0 * dϕ
+    @views qk, ql = chargedensity(u[:, 1], electrolyte), chargedensity(u[:, 2], electrolyte)
+    f[ip] = u[ip, 1] - u[ip, 2] + (qk + ql) * dϕ / (2 * pscale)
     return
 end
 
 
 """
     PBSystem(grid;
-             celldata=ElectrolyteData(),
+                 celldata=ElectrolyteData(),
              bcondition=(f, u, n, e)-> nothing,
              kwargs...)
 

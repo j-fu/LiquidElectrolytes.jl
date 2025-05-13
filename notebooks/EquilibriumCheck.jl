@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.5
+# v0.20.8
 
 using Markdown
 using InteractiveUtils
@@ -41,12 +41,6 @@ md"""
 #=╠═╡
 TableOfContents(title="",depth=5)
   ╠═╡ =#
-
-# ╔═╡ 462f512b-9b92-442b-bae6-b4aa168b32ee
-begin
-	mylog=RLog()
-	LiquidElectrolytes.rlog(x::Number)=mylog(x)
-end
 
 # ╔═╡ 920b7d84-56c6-4958-aed9-fc67ba0c43f6
 md"""
@@ -833,14 +827,14 @@ begin
 
     grid = ExtendableGrids.simplexgrid(X)
 
-    data = EquilibriumData(elydata)
+    equidata1 = EquilibriumData(elydata)
 end
 
 # ╔═╡ cdb7e8a1-dcdf-4e7a-9ecf-121f51b485c3
-sys_sy = create_equilibrium_system(grid, data)
+sys_sy = create_equilibrium_system(grid, equidata1)
 
 # ╔═╡ 31a1f686-f0b6-430a-83af-187df411b293
-sys_pp = create_equilibrium_pp_system(grid, data, Γ_bulk = 2)
+sys_pp = create_equilibrium_pp_system(grid, equidata1, Γ_bulk = 2)
 
 # ╔═╡ 442fe098-497b-404f-80a0-880bc95d5e02
 inival = unknowns(sys_sy, inival = 0);
@@ -910,6 +904,9 @@ end
 
 # ╔═╡ cf646a34-bd94-49af-8f8e-ec06446e18ca
 sys_pnp = PNPSystem(grid; bcondition = pnp_bcondition, celldata = elydata)
+
+# ╔═╡ 733cb823-d6a9-4ca1-93c0-66d78f28aa98
+elydata
 
 # ╔═╡ 966ed6ab-d6fa-43f1-9ddb-45eb024d949c
 result_pnp = capscalc(sys_pnp, molarities)
@@ -1012,7 +1009,6 @@ end
 # ╠═2b901eca-db3b-4ad2-b0ee-e031854c57fa
 # ╠═60941eaa-1aea-11eb-1277-97b991548781
 # ╟─4082c3d3-b728-4bcc-b480-cdee41d9ab99
-# ╠═462f512b-9b92-442b-bae6-b4aa168b32ee
 # ╟─920b7d84-56c6-4958-aed9-fc67ba0c43f6
 # ╟─87ac16f4-a4fc-4205-8fb9-e5459517e1b8
 # ╟─7d77ad32-3df6-4243-8bad-b8df4126e6ea
@@ -1109,6 +1105,7 @@ end
 # ╟─9b1dc273-9938-43a0-ac10-1928a80f89d8
 # ╠═53cdf6d7-a025-49e0-af7b-cc0838cfb422
 # ╠═cf646a34-bd94-49af-8f8e-ec06446e18ca
+# ╠═733cb823-d6a9-4ca1-93c0-66d78f28aa98
 # ╠═966ed6ab-d6fa-43f1-9ddb-45eb024d949c
 # ╟─98464285-2bd4-4631-8c4f-8790fe15cb93
 # ╠═a8e26e1a-a9ac-4d51-b09c-7951acd4b4b7

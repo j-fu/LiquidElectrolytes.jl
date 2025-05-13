@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.5
+# v0.20.8
 
 using Markdown
 using InteractiveUtils
@@ -93,10 +93,9 @@ end;
 
 # ╔═╡ 41715397-020c-4505-a61a-4f2910318423
 begin
-    pbo_electrolyte = ElectrolyteData()
+	pbo_gamma(args...) = 1
+    pbo_electrolyte = ElectrolyteData(;gamma=pbo_gamma)
     pbo_electrolyte.c_bulk = c_bulk
-    pbo_electrolyte.κ .= 0
-    pbo_electrolyte.v .= 0
 
 end
 
@@ -193,8 +192,13 @@ end
 
 # ╔═╡ dbc500d6-99e8-40d8-9b60-dcccf1889ce8
 begin
-    pbi_electrolyte = deepcopy(pbo_electrolyte)
-    pbi_electrolyte.v .= pbi_electrolyte.v0
+	pbi_gamma(i, c, c0, cbar, p, electrolyte) = 1.0/(1.0 - (c[1]+c[2])*electrolyte.v0)
+
+    pbi_electrolyte = ElectrolyteData(c_bulk=pbo_electrolyte.c_bulk, 
+									  gamma=pbi_gamma,
+									  κ=[0.0, 0],
+									 )
+	pbi_electrolyte.v .= pbi_electrolyte.v0
     pbi_electrolyte
 end
 
@@ -205,7 +209,8 @@ pbi_system = PBSystem(grid; celldata = pbi_electrolyte, bcondition = pb_bconditi
 pbi_result = dlcapsweep(
     pbi_system; voltages = range(0, 1, length = 101),
     verbose = "",
-    store_solutions = true
+    store_solutions = true,
+	damp_initial=0.1
 )
 
 
