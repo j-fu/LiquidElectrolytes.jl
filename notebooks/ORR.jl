@@ -104,7 +104,7 @@ begin
     const nref = 0
     const κ = 10.0
     const vfac = 1
-    const flux! = LiquidElectrolytes.sflux!
+    const upwindflux! = LiquidElectrolytes.μex_flux!
     const R0 = 5.0e-16mol / (cm^2 * s)
 
     const Δg = 0.0
@@ -128,7 +128,7 @@ solver_control = (
     tol_round = 1.0e-8,
     reltol = 1.0e-8,
     abstol = 1.0e-9,
-    verbose = "ne",
+    verbose = "",
     maxiters = 20,
     damp_initial = 0.1,
 )
@@ -190,7 +190,7 @@ begin
         Γ_we = 1,
         Γ_bulk = 2,
         eneutral = false,
-        flux!,
+        upwindflux!,
         rlog = mylog
     )
 

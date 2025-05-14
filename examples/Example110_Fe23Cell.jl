@@ -34,7 +34,7 @@ function main(;
         dlcap = false,
         R0 = 1.0e-10,
         molarities = [0.001, 0.01, 0.1, 1],
-        flux! = LiquidElectrolytes.sflux!,
+        upwindflux! = LiquidElectrolytes.μex_flux!,
         xmax = 1,
         κ = 10.0,
         Plotter = nothing,
@@ -99,7 +99,7 @@ function main(;
         κ = fill(κ, 4),
         Γ_we = 1,
         Γ_bulk = 2,
-        flux!,
+        upwindflux!,
         rlog = RLog(eps(valuetype))                        
     )
 

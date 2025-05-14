@@ -19,10 +19,10 @@ abstract type AbstractElectrolyteData end
 Activity coefficients according to Dreyer, Guhlke, Landstorfer.
 """
 function gamma_DGL!(γ, c, p, electrolyte)
-    (; Mrel, tildev, v0, RT, v0, nc, rexp)  = electrolyte
-    c0, barc = c0_barc(c,electrolyte)
-    for ic=1:nc
-        γ[ic]=rexp(tildev[ic] * p / RT)* (barc / c0)^Mrel[ic] * (1 / (v0 * barc))
+    (; Mrel, tildev, v0, RT, v0, nc, rexp) = electrolyte
+    c0, barc = c0_barc(c, electrolyte)
+    for ic in 1:nc
+        γ[ic] = rexp(tildev[ic] * p / RT) * (barc / c0)^Mrel[ic] * (1 / (v0 * barc))
     end
     return nothing
 end
@@ -78,7 +78,7 @@ $(TYPEDFIELDS)
 
     "Bulk ion concentrations"
     c_bulk::Vector{Float64} = fill(0.1 * ufac"M", nc)
-    
+
     """
         actcoeff!(γ, c, p, ::ElectrolyteData)
     Activity coefficient function. Write activity
@@ -108,12 +108,12 @@ $(TYPEDFIELDS)
     """
     Regularized exponential, default: exp (unregularized)
     """
-    rexp::Texp=exp
+    rexp::Texp = exp
 
     """
     Regularized logarithm, default: log (unregularized)
     """
-    rlog::Tlog=log
+    rlog::Tlog = log
 
     "Pressure scaling factor. Default: 1.0e9"
     pscale::Float64 = 1.0e9
@@ -122,13 +122,13 @@ $(TYPEDFIELDS)
     eneutral::Bool = false
 
     """
-    [Flux caculation function](@id fluxes)
+    [Upwind flux](@id fluxes)  caculation method for ionic species.
     This allows to choose between
-    -  [`sflux!`](@ref) (default): excess chemical potential (SEDAN) scheme
-    -  [`aflux!`](@ref): scheme based on reciprocal activity coefficients
-    -  [`cflux!`](@ref): central scheme, see
+    -  [`μex_flux!`](@ref) (default, strongly preferrable): excess chemical potential (SEDAN) scheme
+    -  [`act_flux!`](@ref): scheme based on reciprocal activity coefficients
+    -  [`cent_flux!`](@ref): central scheme
     """
-    flux!::Tflux = sflux!
+    upwindflux!::Tflux = μex_flux!
 
     """
     Species weights for norms in solver control.
@@ -164,12 +164,12 @@ $(TYPEDFIELDS)
 
     "Activity coefficient of at bulk interface (derived)"
     γ_bulk::Vector{Float64} = ones(nc)
-    
-    "Cache for activity coefficient calculation (reserved)"
-    γk_cache::Tcache = DiffCache(zeros(nc), 10*nc)
 
     "Cache for activity coefficient calculation (reserved)"
-    γl_cache::Tcache = DiffCache(zeros(nc), 10*nc)
+    γk_cache::Tcache = DiffCache(zeros(nc), 10 * nc)
+
+    "Cache for activity coefficient calculation (reserved)"
+    γl_cache::Tcache = DiffCache(zeros(nc), 10 * nc)
 
     """
     Working electrode voltage (reserved)
@@ -181,8 +181,26 @@ $(TYPEDFIELDS)
     Edge velocity projection (reserved).
     """
     edgevelocity::Union{Float64, Vector{Float64}} = 0.0
+
+    """
+    Scheme parameter. Deprecated and disabled. 
+    Use `upwindflux!` instead to change the discretization scheme.
+    """
+    scheme::Symbol = :deprecated
 end
 
+function Base.setproperty!(this::ElectrolyteData, key::Symbol, value)
+    if key == :scheme
+        @warn """ Setting ElectrolyteData.scheme  is deprecated and has been disabled. 
+                Use `upwindflux!` instead to change the discretization scheme.
+            """
+        return nothing
+    elseif key == :edgevelocity
+        return Base.setfield!(this, key, value)
+    else
+        return Base.setfield!(this, key, convert(typeof(getfield(this,key)),value))
+    end
+end
 function Base.show(io::IOContext{Base.TTY}, this::ElectrolyteData)
     return showstruct(io, this)
 end
@@ -194,10 +212,10 @@ Update derived electrolyte data.
 """
 function update_derived!(electrolyte::ElectrolyteData)
     (; M, M0, κ, T, v, v0, T, c_bulk, p_bulk, actcoeff!) = electrolyte
-    electrolyte.Mrel .=  M / M0 + κ
+    electrolyte.Mrel .= M / M0 + κ
     electrolyte.barv .= v + κ * v0
     electrolyte.tildev .= electrolyte.barv - electrolyte.Mrel * v0
-    electrolyte.RT =  ph"R" * T
+    electrolyte.RT = ph"R" * T
     actcoeff!(electrolyte.γ_bulk, c_bulk, p_bulk, electrolyte)
     return electrolyte
 end
@@ -498,7 +516,7 @@ function rrate(R0, β, A)
 end
 
 function rrate(R0, β, A, electrolyte)
-    (; rexp) =electrolyte
+    (; rexp) = electrolyte
     return R0 * (rexp(-β * A) - rexp((1 - β) * A))
 end
 

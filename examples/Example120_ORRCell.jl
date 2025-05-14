@@ -35,7 +35,7 @@ function main(;
         κ = 10.0,
         vfac = 1.0,
         eneutral = false,
-        flux! = LiquidElectrolytes.sflux!,   ## Flux calculation scheme
+        upwindflux! = LiquidElectrolytes.μex_flux!,   ## Flux calculation scheme
         Plotter = nothing,
         R0::Float64 = 4.0e-15,
         valuetype = Double64,
@@ -105,7 +105,7 @@ function main(;
     celldata = ElectrolyteData(;
         nc = 3,
         z, κ, Γ_we = 1, Γ_bulk = 2,
-        eneutral, flux!,
+        eneutral, upwindflux!,
         rlog = RLog(eps(valuetype))
 
     )

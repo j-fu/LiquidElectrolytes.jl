@@ -10,7 +10,7 @@ using ExplicitImports
 using ExtendableFEM
 using Markdown
 using Aqua
-using LiquidElectrolytes: aflux!, cflux!, sflux!
+using LiquidElectrolytes: act_flux!, cent_flux!, μex_flux!
 
 ExampleJuggler.verbose!(true)
 
@@ -45,19 +45,19 @@ end
 
     grid = simplexgrid(X)
     function xtest(κ)
-        acelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, flux! = aflux!, κ, c_bulk = fill(molarity, 2))
+        acelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, upwindflux! = act_flux!, κ, c_bulk = fill(molarity, 2))
         acell = PNPSystem(grid; bcondition, celldata = acelldata)
         aresult = dlcapsweep(acell; voltages, δ)
         avolts = aresult.voltages
         acaps = aresult.dlcaps
 
-        μcelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, flux! = sflux!, κ, c_bulk = fill(molarity, 2))
+        μcelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, upwindflux! = μex_flux!, κ, c_bulk = fill(molarity, 2))
         μcell = PNPSystem(grid; bcondition, celldata = μcelldata)
         μresult = dlcapsweep(μcell; voltages, δ)
         μvolts = μresult.voltages
         μcaps = μresult.dlcaps
 
-        ccelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, flux! = cflux!, κ, c_bulk = fill(molarity, 2))
+        ccelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, upwindflux! = cent_flux!, κ, c_bulk = fill(molarity, 2))
         ccell = PNPSystem(grid; bcondition, celldata = ccelldata)
         cresult = dlcapsweep(ccell; voltages, δ)
         cvolts = cresult.voltages

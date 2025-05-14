@@ -1,9 +1,9 @@
 """
-    pnpstorage(f, u, node, electrolyte)            
+    pnpstorage!(f, u, node, electrolyte)            
 
 Finite volume storage term
 """
-function pnpstorage(f, u, node, electrolyte)
+function pnpstorage!(f, u, node, electrolyte)
     f[electrolyte.iϕ] = zero(eltype(u))
     f[electrolyte.ip] = zero(eltype(u))
     for ic in 1:(electrolyte.nc)
@@ -13,11 +13,11 @@ function pnpstorage(f, u, node, electrolyte)
 end
 
 """
-    pnpbstorage(f, u, node, electrolyte)
+    pnpbstorage!(f, u, node, electrolyte)
 
 Finite volume boundary storage term
 """
-function pnpbstorage(f, u, node, electrolyte)
+function pnpbstorage!(f, u, node, electrolyte)
     for ia in (electrolyte.nc + 1):(electrolyte.nc + electrolyte.na)
         f[ia] = u[ia]
     end
@@ -25,11 +25,11 @@ function pnpbstorage(f, u, node, electrolyte)
 end
 
 """
-    pnpreaction(f, u, node, electrolyte)            
+    pnpreaction!(f, u, node, electrolyte)            
 
 Finite volume reaction term
 """
-function pnpreaction(f, u, node, electrolyte)
+function pnpreaction!(f, u, node, electrolyte)
     ## Charge density
     f[electrolyte.iϕ] = -chargedensity(u, electrolyte)
     if solvepressure(electrolyte)
@@ -57,18 +57,19 @@ Calculate differences of excess chemical potentials from activity coefficients
 end
 
 """
-    sflux!(f,dϕ,ck,cl,γk,γl,electrolyte; evelo=0.0)
+    μex_flux!(f,dϕ,ck,cl,γk,γl,electrolyte; evelo=0.0)
 
- Sedan flux,  see Gaudeul/Fuhrmann 2022
+Excess chemical potential (Sedan) upweind flux, based on modified
+Scharfetter-Gummel scheme, see Gaudeul/Fuhrmann 2022.
 
 Appearantly first described by Yu, Zhiping  and Dutton, Robert, SEDAN III, www-tcad.stanford.edu/tcad/programs/sedan3.html
 
- see also the 198? Fortran code available via
- https://web.archive.org/web/20210518233152/http://www-tcad.stanford.edu/tcad/programs/oldftpable.html
+see also the 198? Fortran code available via
+https://web.archive.org/web/20210518233152/http://www-tcad.stanford.edu/tcad/programs/oldftpable.html
 
 Verification calculation is in the paper.
 """
-function sflux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
+function μex_flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
     (; D, z, F, RT, nc) = electrolyte
     for ic=1:nc
        bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(γk[ic], γl[ic], electrolyte) / RT - evelo / D[ic])
@@ -77,25 +78,15 @@ function sflux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
     return nothing
 end
 
-#=
-
-B(b-a)/B(a-b)= (b-a)*(exp(a-b)-1)/ (a-b)*(exp(b-a)-1)
-             = (1-exp(a-b))/(exp(b-a)-1)
-             = exp(-b)*(exp(b)-exp(a)) / exp(-a)*(exp(b)-exp(a))
-             = exp(a)/exp(b)
-
-c/barc= C
-ck/cl = bp/bm = exp(z ϕk*F/RT + μex_k/RT)/exp(z ϕl*F/RT + μex_l/RT)
-=#
 
 """
-    aflux!(ic,dϕ,ck,cl,γk,γl,electrolyte; evelo=0)
+    act_flux!(ic,dϕ,ck,cl,γk,γl,electrolyte; evelo=0)
 
-Flux expression based on  activities, see Fuhrmann, CPC 2015
-??? Do we need to divide the velocity by the inverse activity coefficient ?
-
+Scharfetter-Gummel upwind flux expression based on  activities, see Fuhrmann, CPC 2015.
+As shown in Chainais-Hilliaret, Cances, Fuhrmann, Gaudeul, 2019, this is
+consistent to thermodynamic equilibrium but shows inferior convergence behavior.
 """
-function aflux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
+function act_flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
     (; D, z, F, RT, nc) = electrolyte
     for ic=1:nc
         Dx = D[ic] * (1 / γk[ic] + 1 / γl[ic]) / 2
@@ -105,17 +96,15 @@ function aflux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
     return nothing
 end
 
-#=
-ck/cl= bp/betaK  / bm/betal
-     =  exp(z\phik *F/RT + \muexK/RT)/ exp(z\phil *F/RT + \muexL/RT)
-=#
-
 """
-    cflux!(ic,dϕ,ck,cl,γk,γl,electrolyte; evelo = 0)
+    cent_flux!(ic,dϕ,ck,cl,γk,γl,electrolyte; evelo = 0)
 
-Flux expression based on central differences, see Gaudeul/Fuhrmann 2022
+Flux expression based on central differences, see Gaudeul/Fuhrmann 2022.
+As shown in the paper  this is
+covergent,  consistent to thermodynamic equilibrium but may show 
+inferior convergence behavior.
 """
-function cflux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
+function cent_flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
     (; D, z, F, RT, nc, rlog) = electrolyte
     for ic=1:nc
         μk = rlog(ck[ic]) * RT
@@ -124,19 +113,16 @@ function cflux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
     end
     return nothing
 end
-#=
 
- ck/cl = exp(\muex_k + zF\phiK)/exp(\muex_l + zF\phil)
-=#
 """
     pnpflux(f, u, edge, electrolyte)
 
-Finite volume flux. It calls either [`sflux!`](@ref), [`cflux!`](@ref) or [`aflux!`](@ref).
+Finite volume flux. It calls either [`μex_flux!`](@ref), [`cent_flux!`](@ref) or [`act_flux!`](@ref).
 """
-function pnpflux(f, u, edge, electrolyte)
+function pnpflux!(f, u, edge, electrolyte)
     (;
      ip, iϕ, v0, v, M0, M, κ, ε_0, ε, D,F,z,RT, nc,
-     eneutral, pscale, p_bulk, flux!,
+     eneutral, pscale, p_bulk, upwindflux!,
      actcoeff!, γk_cache, γl_cache
      ) = electrolyte
 
@@ -160,7 +146,7 @@ function pnpflux(f, u, edge, electrolyte)
         f[ip] = u[ip, 1] - u[ip, 2] + (qk + ql) * dϕ / (2 * pscale)
     end
     
-    flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo)
+    upwindflux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo)
     return
 end
 
@@ -191,8 +177,8 @@ function PNPSystem(
     )
     update_derived!(celldata)
 
-    function _pnpreaction(f, u, node, electrolyte)
-        pnpreaction(f, u, node, electrolyte)
+    function _pnpreaction!(f, u, node, electrolyte)
+        pnpreaction!(f, u, node, electrolyte)
         reaction(f, u, node, electrolyte)
         return nothing
     end
@@ -200,9 +186,9 @@ function PNPSystem(
     sys = VoronoiFVM.System(
         grid;
         data = celldata,
-        flux = pnpflux,
-        reaction = _pnpreaction,
-        storage = pnpstorage,
+        flux = pnpflux!,
+        reaction = _pnpreaction!,
+        storage = pnpstorage!,
         bcondition,
         species = [1:(celldata.nc)..., celldata.iϕ, celldata.ip],
         kwargs...
