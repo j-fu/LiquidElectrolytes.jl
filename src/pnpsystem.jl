@@ -136,8 +136,8 @@ Finite volume flux. It calls either [`sflux!`](@ref), [`cflux!`](@ref) or [`aflu
 function pnpflux(f, u, edge, electrolyte)
     (;
      ip, iϕ, v0, v, M0, M, κ, ε_0, ε, D,F,z,RT, nc,
-     eneutral, pscale, p_bulk, flux,
-     γ!, γk_cache, γl_cache
+     eneutral, pscale, p_bulk, flux!,
+     actcoeff!, γk_cache, γl_cache
      ) = electrolyte
 
     evelo = edgevelocity(electrolyte, edge.index)
@@ -147,8 +147,8 @@ function pnpflux(f, u, edge, electrolyte)
     ck, cl = view(u, :, 1), view(u, :, 2)
 
     γk, γl=get_tmp(γk_cache, u), get_tmp(γl_cache, u)
-    γ!(γk, ck, pk, electrolyte)
-    γ!(γl, cl, pl, electrolyte)
+    actcoeff!(γk, ck, pk, electrolyte)
+    actcoeff!(γl, cl, pl, electrolyte)
 
     qk, ql = chargedensity(ck, electrolyte), chargedensity(cl, electrolyte)
 
@@ -160,7 +160,7 @@ function pnpflux(f, u, edge, electrolyte)
         f[ip] = u[ip, 1] - u[ip, 2] + (qk + ql) * dϕ / (2 * pscale)
     end
     
-    flux(f, dϕ, ck, cl, γk, γl, electrolyte; evelo)
+    flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo)
     return
 end
 
@@ -189,6 +189,7 @@ function PNPSystem(
         reaction = (f, u, n, e) -> nothing,
         kwargs...
     )
+    update_derived!(celldata)
 
     function _pnpreaction(f, u, node, electrolyte)
         pnpreaction(f, u, node, electrolyte)

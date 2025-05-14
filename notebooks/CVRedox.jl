@@ -182,7 +182,7 @@ begin
     const molX = molS - zR * molR - zO * molO
     const z = [zO, zR, zS, zX]
     const c_bulk = [molO, molR, molS, molX] * mol / dm^3
-    flux = LiquidElectrolytes.sflux!
+    const flux! = LiquidElectrolytes.sflux!
     const κ = Float64(guidata.κ)
     const R0 = 1.0e-10 * mol / (cm^2 * s)
     const Δg = 0.0
@@ -197,7 +197,7 @@ begin
         κ = fill(κ, 4),
         Γ_we = 1,
         Γ_bulk = 2,
-        flux,
+        flux!,
         rlog = mylog
     )
 

@@ -51,6 +51,7 @@ function dlcapsweep(
         store_solutions = false,
         solver_kwargs...
     )
+    update_derived!(electrolyte)
     sys = esys.vfvmsys
     (; ip, iϕ) = electrolyte
     if !isnothing(molarity)

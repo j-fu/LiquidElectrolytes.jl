@@ -118,14 +118,14 @@ md"""
 
 # ╔═╡ 41715397-020c-4505-a61a-4f2910318423
 begin
-	function  pbo_gamma(γ, c,p, electrolyte)
-     	for i=1:electrolyte.nc
-		   γ[i]=1
-    	end
-	    return nothing
+    function pbo_gamma!(γ, c, p, electrolyte)
+        for i in 1:electrolyte.nc
+            γ[i] = 1
+        end
+        return nothing
     end
-    pbo_electrolyte = ElectrolyteData(;γ! = pbo_gamma, c_bulk)
- end
+    pbo_electrolyte = ElectrolyteData(; actcoeff! = pbo_gamma!, c_bulk)
+end
 
 # ╔═╡ 7f209979-0776-40ab-9b2b-3b2d0145fa2c
 iselectroneutral(c_bulk, pbo_electrolyte)
@@ -186,22 +186,23 @@ md"""
 
 # ╔═╡ dbc500d6-99e8-40d8-9b60-dcccf1889ce8
 begin
-	function  pbi_gamma(γ, c,p, electrolyte)
-		sumc=zero(eltype(c))
-		for i=1:electrolyte.nc
-			sumc+=c[i]
-		end
-	    g= 1.0/(1.0 - sumc*electrolyte.v0)
-     	for i=1:electrolyte.nc
-		   γ[i]=g
-    	end
-	    return nothing
+    function pbi_gamma!(γ, c, p, electrolyte)
+        sumc = zero(eltype(c))
+        for i in 1:electrolyte.nc
+            sumc += c[i]
+        end
+        g = 1.0 / (1.0 - sumc * electrolyte.v0)
+        for i in 1:electrolyte.nc
+            γ[i] = g
+        end
+        return nothing
     end
-   
-    pbi_electrolyte = ElectrolyteData(c_bulk=pbo_electrolyte.c_bulk, 
-									  γ! =pbi_gamma
-									 )
-	pbi_electrolyte.v .= pbi_electrolyte.v0
+
+    pbi_electrolyte = ElectrolyteData(
+        c_bulk = pbo_electrolyte.c_bulk,
+        actcoeff! = pbi_gamma!
+    )
+    pbi_electrolyte.v .= pbi_electrolyte.v0
     pbi_electrolyte
 end
 
@@ -213,7 +214,7 @@ pbi_result = dlcapsweep(
     pbi_system; voltages = range(0, 1, length = 101),
     verbose = "",
     store_solutions = true,
-	damp_initial=0.1
+    damp_initial = 0.1
 )
 
 
@@ -236,11 +237,11 @@ md"""
 
 # ╔═╡ b31af4a2-716c-4c17-b283-0103630fdf38
 begin
-   
-    pbi2_electrolyte = ElectrolyteData(c_bulk=pbo_electrolyte.c_bulk)
-	pbi2_electrolyte.v .= pbi_electrolyte.v0
-	pbi2_electrolyte.κ .= 0
-	pbi2_electrolyte.M .= pbi_electrolyte.M0
+
+    pbi2_electrolyte = ElectrolyteData(c_bulk = pbo_electrolyte.c_bulk)
+    pbi2_electrolyte.v .= pbi_electrolyte.v0
+    pbi2_electrolyte.κ .= 0
+    pbi2_electrolyte.M .= pbi_electrolyte.M0
     update_derived!(pbi2_electrolyte)
 end
 
@@ -252,7 +253,7 @@ pbi2_result = dlcapsweep(
     pbi2_system; voltages = range(0, 1, length = 101),
     verbose = "",
     store_solutions = true,
-	damp_initial=0.1
+    damp_initial = 0.1
 )
 
 

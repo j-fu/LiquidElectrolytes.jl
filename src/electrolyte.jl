@@ -13,7 +13,12 @@ Abstract super type for electrolytes.
 abstract type AbstractElectrolyteData end
 
 
-function γ_DGL!(γ, c, p, electrolyte)
+"""
+    gamma_DGL!(γ, c, p, electrolyte)
+
+Activity coefficients according to Dreyer, Guhlke, Landstorfer.
+"""
+function gamma_DGL!(γ, c, p, electrolyte)
     (; Mrel, tildev, v0, RT, v0, nc, rexp)  = electrolyte
     c0, barc = c0_barc(c,electrolyte)
     for ic=1:nc
@@ -74,8 +79,13 @@ $(TYPEDFIELDS)
     "Bulk ion concentrations"
     c_bulk::Vector{Float64} = fill(0.1 * ufac"M", nc)
     
-    "Activity coefficient function"
-    γ!::Tγ = γ_DGL!
+    """
+        actcoeff!(γ, c, p, ::ElectrolyteData)
+    Activity coefficient function. Write activity
+    coefficients into `γ`.
+    Default: [`gamma_DGL!`](@ref).
+    """
+    actcoeff!::Tγ = gamma_DGL!
 
     "Bulk voltage"
     ϕ_bulk::Float64 = 0.0 * ufac"V"
@@ -105,7 +115,6 @@ $(TYPEDFIELDS)
     """
     rlog::Tlog=log
 
-
     "Pressure scaling factor. Default: 1.0e9"
     pscale::Float64 = 1.0e9
 
@@ -119,7 +128,7 @@ $(TYPEDFIELDS)
     -  [`aflux!`](@ref): scheme based on reciprocal activity coefficients
     -  [`cflux!`](@ref): central scheme, see
     """
-    flux::Tflux = sflux!
+    flux!::Tflux = sflux!
 
     """
     Species weights for norms in solver control.
@@ -153,6 +162,9 @@ $(TYPEDFIELDS)
     "Pressure relevant volume (derived)"
     tildev::Vector{Float64} = barv - Mrel * v0
 
+    "Activity coefficient of at bulk interface (derived)"
+    γ_bulk::Vector{Float64} = ones(nc)
+    
     "Cache for activity coefficient calculation (reserved)"
     γk_cache::Tcache = DiffCache(zeros(nc), 10*nc)
 
@@ -181,11 +193,12 @@ end
 Update derived electrolyte data.
 """
 function update_derived!(electrolyte::ElectrolyteData)
-    (; M, M0, κ, T, v, v0, T) = electrolyte
+    (; M, M0, κ, T, v, v0, T, c_bulk, p_bulk, actcoeff!) = electrolyte
     electrolyte.Mrel .=  M / M0 + κ
     electrolyte.barv .= v + κ * v0
     electrolyte.tildev .= electrolyte.barv - electrolyte.Mrel * v0
     electrolyte.RT =  ph"R" * T
+    actcoeff!(electrolyte.γ_bulk, c_bulk, p_bulk, electrolyte)
     return electrolyte
 end
 

@@ -115,19 +115,20 @@ Returns a [`CVSweepResult`](@ref).
 """
 function cvsweep(
         esys::AbstractElectrochemicalSystem;
+        electrolyte = electrolytedata(esys),
         voltages = SawTooth(),
         nperiods = 1,
         store_solutions = false,
         solver_kwargs...
 )
+    update_derived!(electrolyte)
     sys=esys.vfvmsys
     F = ph"N_A" * ph"e"
-    data = sys.physics.data
     factory = VoronoiFVM.TestFunctionFactory(sys)
-    tf_we = testfunction(factory, [data.Γ_bulk], [data.Γ_we])
-    tf_bulk = testfunction(factory, [data.Γ_we], [data.Γ_bulk])
+    tf_we = testfunction(factory, [electrolyte.Γ_bulk], [electrolyte.Γ_we])
+    tf_bulk = testfunction(factory, [electrolyte.Γ_we], [electrolyte.Γ_bulk])
 
-    data.ϕ_we = voltages(0)
+    electrolyte.ϕ_we = voltages(0)
     control = SolverControl(;
         verbose = "",
         handle_exceptions = true,
@@ -137,12 +138,12 @@ function cvsweep(
         Δt_max = 1.0e-2 * period(voltages),
         Δt = 1.0e-3 * period(voltages),
         Δt_grow = 1.2,
-        unorm = u -> wnorm(u, data.weights, Inf),
-        rnorm = u -> wnorm(u, data.weights, 1),
+        unorm = u -> wnorm(u, electrolyte.weights, Inf),
+        rnorm = u -> wnorm(u, electrolyte.weights, 1),
         solver_kwargs...
     )
     times = [i * period(voltages) for i = 0:nperiods]
-    iϕ = data.iϕ
+    iϕ = electrolyte.iϕ
     @info "Solving for $(voltages(0))V..."
     inival = solve(sys; inival = unknowns(esys), control = deepcopy(control), damp_initial = 0.1)
     result = CVSweepResult()
@@ -150,12 +151,12 @@ function cvsweep(
     tprogress = 0
     @withprogress begin
         function pre(sol, t)
-            data.ϕ_we = voltages(t)
+            electrolyte.ϕ_we = voltages(t)
         end
 
         function post(sol, oldsol, t, Δt)
             I = -VoronoiFVM.integrate(sys, sys.physics.breaction, sol; boundary = true)
-            I_react = I[:, data.Γ_we]
+            I_react = I[:, electrolyte.Γ_we]
             I_we = -VoronoiFVM.integrate(sys, tf_we, sol, oldsol, Δt)
             I_bulk = -VoronoiFVM.integrate(sys, tf_bulk, sol, oldsol, Δt)
             push!(result.times, t)
@@ -168,7 +169,7 @@ function cvsweep(
         end
 
         function delta(sys, u, v, t, Δt)
-            n = wnorm(u - v, data.weights, Inf)
+            n = wnorm(u - v, electrolyte.weights, Inf)
         end
         
         tsol = solve(

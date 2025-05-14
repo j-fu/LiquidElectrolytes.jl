@@ -24,7 +24,7 @@ function main(;
         voltages = -2:0.01:2,               ## Voltages/V
         molarities = [0.001, 0.01, 0.1, 1], ## Molarities/M
         nref = 0,                           ## Refinement level
-        flux = LiquidElectrolytes.sflux!,   ## Flux calculation scheme
+        flux! = LiquidElectrolytes.sflux!,   ## Flux calculation scheme
         κ = 10.0,                           ## Solvation number
         Plotter = nothing,                  ## Plotter
         kwargs...                           ## Solver kwargs
@@ -57,7 +57,7 @@ function main(;
         nc = 2,
         Γ_we = 1,
         Γ_bulk = 2;
-        flux,
+        flux!,
         κ = fill(κ, 2),
         c_bulk = fill(0.01M, 2)
     )

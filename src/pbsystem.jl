@@ -5,14 +5,12 @@ Reaction expression for Poisson-Boltzmann
 """
 function pbreaction(f, u, node, electrolyte)
     (; ip, iϕ, v0, v, M0, z, M, κ, F, RT, nc, pscale, p_bulk, c_bulk,
-     γ!,γk_cache, γl_cache, rexp
+     actcoeff!, γk_cache, rexp, γ_bulk
      ) = electrolyte
     p = u[ip] * pscale - p_bulk
     ϕ = u[iϕ]
     γ=get_tmp(γk_cache, u)
-    γ_bulk=get_tmp(γl_cache, u)
-    γ!(γ_bulk, c_bulk, p_bulk, electrolyte)
-    γ!(γ, u, p, electrolyte)
+    actcoeff!(γ, u, p, electrolyte)
     q = zero(eltype(u))
     for ic in 1:nc
         f[ic] = u[ic] - c_bulk[ic] * rexp(-z[ic] * F * ϕ / RT)*γ_bulk[ic]/γ[ic]
@@ -61,7 +59,7 @@ function PBSystem(
         bcondition = (f, u, n, e) -> nothing,
         kwargs...
     )
-
+    update_derived!(celldata)
     sys= VoronoiFVM.System(
         grid;
         data = celldata,
