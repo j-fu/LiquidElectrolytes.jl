@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 2.0.1 - 2025-05-14 
-- Bugfixes + additions wrt. 2.0.0
+- Bugfixes + additions wrt. 2.0.0. 2.0.0 wasn't fully working
 
 ## 2.0.0 - 2025-05-14
 
