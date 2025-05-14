@@ -5,7 +5,7 @@ Result data type for [`dlcapsweep`](@ref)
 
 $(TYPEDFIELDS)
 
-Access methods: [`voltages`](@ref), [`voltages_solutions`](@ref),  [`voltages_dlcaps`e](@ref)
+Access methods: [`voltages`](@ref), [`voltages_solutions`](@ref),  [`voltages_dlcaps`](@ref)
 """
 Base.@kwdef struct DLCapSweepResult <: AbstractSimulationResult
     """
@@ -51,6 +51,7 @@ function dlcapsweep(
         store_solutions = false,
         solver_kwargs...
     )
+    update_derived!(electrolyte)
     sys = esys.vfvmsys
     (; ip, iϕ) = electrolyte
     if !isnothing(molarity)

@@ -2,17 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
-## 2.0.0 
+## 2.0.1 - 2025-05-14 
+- Bugfixes + additions wrt. 2.0.0
+
+## 2.0.0 - 2025-05-14
 
 ### Breaking
-- `aflux`, `sflux` and `cflux` replaced with  `aflux!`, `sflux!` and `cflux!` 
+All code which just used default configurations should continue to work.
+
+- `scheme` paramter of ElectrolyteData replaced by `upwindflux!` parameter which should be one of `act_flux!`, `μex_flux!` and `cent_flux!`. The default is `μex_flux!`, based on the chemical excess potential, formerly selected via `schem=:μex`. This has been shown to be superior to the alternatives (`act_flux!` / `:act`,  `cent_flux!` / `:cent`). Unless experiments comparing these are required, there is no need to keep carrying the selection of schemes in the examples. Code setting `ElectrolyteData.scheme` still works, but the setting is ignored and a warning is emitted.
+- `aflux`, `sflux` and `cflux` calculating just one species upwind flux replaced with  `act_flux!`, `μex_flux!` and `cflux!`, respectively, which  calculate all ionic fluxes at once.
 - PNPSystem and PBSystem are now distinct types in order to be able to implement more specific methods
-- pnpunkonowns has been removed in favor of extension of VoronoiFVM.unknowns
+- `pnpunknowns` has been removed in favor of a method of `VoronoiFVM.unknowns`
+- `rexp`, `rlog` are now part of `ElectrolyteData`
 
 ### Features
-- ElectrolyteData now has a function entry `γ!` for user definable function which calculates activity coefficients
-- Fixed implementation of PBSystem, now cases with different `κ` etc should work
-
+- ElectrolyteData now has a field  `actcoeff!` for a user definable function which calculates activity coefficients
+- Fixed implementation of PBSystem, now cases with different `κ`  etc. for different species should work
+- Pre-calculate more data in ElectrolyteData, use `update_derived!` to update these fields.
 
 ## 1.1.0 - 2025-03-16
 

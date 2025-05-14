@@ -70,8 +70,7 @@ pkgdir(LiquidElectrolytes)
 
 # ╔═╡ 9387dd7d-efac-4d50-90c0-79c0d2ba3d6b
 begin
-	mylog=RLog()
-	LiquidElectrolytes.rlog(x::Number)=mylog(x)
+    mylog = RLog()
 end
 
 # ╔═╡ 84e05551-7d51-4b2c-88f2-b186ad6a244a
@@ -105,7 +104,7 @@ begin
     const nref = 0
     const κ = 10.0
     const vfac = 1
-    const scheme = :μex
+    const upwindflux! = LiquidElectrolytes.μex_flux!
     const R0 = 5.0e-16mol / (cm^2 * s)
 
     const Δg = 0.0
@@ -129,9 +128,9 @@ solver_control = (
     tol_round = 1.0e-8,
     reltol = 1.0e-8,
     abstol = 1.0e-9,
-    verbose = "ne",
+    verbose = "",
     maxiters = 20,
-	damp_initial=0.1
+    damp_initial = 0.1,
 )
 
 # ╔═╡ 970389b5-d2c1-4992-9978-aca1ccd3d2fc
@@ -159,7 +158,7 @@ function halfcellbc(f, u, bnode, data)
         end
         μh2o, μ = chemical_potentials!(MVector{4, eltype(u)}(undef), u, data)
         A = (
-            4 * μ[ihplus] + μ[io2] - (2+4κ[ihplus])*μh2o + Δg +
+            4 * μ[ihplus] + μ[io2] - (2 + 4κ[ihplus]) * μh2o + Δg +
                 4 * eneutral * F * (u[iϕ] - ϕ_we)
         ) / (RT)
         r = rrate(R0, β, A)
@@ -191,7 +190,8 @@ begin
         Γ_we = 1,
         Γ_bulk = 2,
         eneutral = false,
-        scheme
+        upwindflux!,
+        rlog = mylog
     )
 
     celldata.v .*= vfac
@@ -201,7 +201,7 @@ begin
     c_bulk[io2] = 0.001 * mol / dm^3
     c_bulk[iso4] = molarity * mol / dm^3
     c_bulk[ihplus] = 2.0 * molarity * mol / dm^3
-	#celldata.pscale=1
+    #celldata.pscale=1
 end
 
 # ╔═╡ 36306b3d-681f-423c-9b32-db6562c5c157

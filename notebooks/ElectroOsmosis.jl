@@ -123,15 +123,15 @@ end
 default_pnpdata = ElectrolyteData();
 
 # ╔═╡ eb84642a-a26d-4b26-8530-35a499a179a8
-function PNPData(; molar_volume = default_pnpdata.v0, scheme = :μex, κ = 20)
+function PNPData(; molar_volume = default_pnpdata.v0, κ = 20)
     pnpdata = ElectrolyteData()
     pnpdata.edgevelocity = zeros(num_edges(pnpgrid))
     pnpdata.solvepressure = false
-    pnpdata.scheme = scheme
     pnpdata.κ .= κ
     pnpdata.D .= 1.0e-9 * m^2 / s
     pnpdata.pscale = 1
     pnpdata.v .= molar_volume
+    update_derived!(pnpdata)
     return pnpdata
 end
 

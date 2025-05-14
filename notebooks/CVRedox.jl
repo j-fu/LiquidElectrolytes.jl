@@ -182,8 +182,7 @@ begin
     const molX = molS - zR * molR - zO * molO
     const z = [zO, zR, zS, zX]
     const c_bulk = [molO, molR, molS, molX] * mol / dm^3
-    scheme = :μex
-    #scheme = :act
+    const upwindflux! = LiquidElectrolytes.μex_flux!
     const κ = Float64(guidata.κ)
     const R0 = 1.0e-10 * mol / (cm^2 * s)
     const Δg = 0.0
@@ -198,7 +197,8 @@ begin
         κ = fill(κ, 4),
         Γ_we = 1,
         Γ_bulk = 2,
-        scheme
+        upwindflux!,
+        rlog = mylog
     )
 
     @assert iselectroneutral(c_bulk, pnpdata)
@@ -208,18 +208,18 @@ end
 
 # ╔═╡ 96c9de51-da71-4c06-9997-47a481aed273
 let
-	fig=Figure()
-	ax=Axis(fig[1,1])
-	T=0:1.0e-3:10
-	lines!(ax,T, sawtooth.(T))
-	fig
+    fig = Figure()
+    ax = Axis(fig[1, 1])
+    T = 0:1.0e-3:10
+    lines!(ax, T, sawtooth.(T))
+    fig
 end
 
 # ╔═╡ 6531a9c9-e8f9-4a52-8797-218257e5984c
 let
-	T=0:1.0e-3:10
-	S=sawtooth.(T)
-	(S[2:end]-S[1:end-1])./(T[2:end]-T[1:end-1])
+    T = 0:1.0e-3:10
+    S = sawtooth.(T)
+    (S[2:end] - S[1:(end - 1)]) ./ (T[2:end] - T[1:(end - 1)])
 end
 
 # ╔═╡ f0745600-be37-49d3-92fe-231bcc2e7013
@@ -260,7 +260,6 @@ valuetype = guidata.double64 ? Double64 : Float64
 # ╔═╡ 43cc60e3-8a4d-4fac-9454-7e599243e058
 begin
     mylog = RLog(valuetype)
-	LiquidElectrolytes.rlog(x::Number)=mylog(x)
     mylog10(x) = mylog(x) / log(10)
     Makie.defined_interval(::typeof(mylog10)) = Makie.defined_interval(log10)
     Makie.defaultlimits(::T) where {T <: typeof(mylog10)} = Makie.defaultlimits(log10)
@@ -287,7 +286,7 @@ pnpresult = sweep(pnpdata; eneutral = false, tunnel = false)
 
 # ╔═╡ 9d9d5b00-3453-4a62-8b0d-f671140b7a11
 let
-    fig = Figure(size=(600,200))
+    fig = Figure(size = (600, 200))
     ax = Axis(fig[1, 1], yscale = log10)
     T = pnpresult.times
     #lines!(ax,T, voltages.(T))
@@ -303,10 +302,10 @@ let
     fig = Figure(size = (650, 400))
     ax = Axis(fig[1, 1])
     lines!(
-        ax, voltages(pnpresult), currents(pnpresult, iO ,electrode=:we),
+        ax, voltages(pnpresult), currents(pnpresult, iO, electrode = :we),
         color = RGBf.(range(0.1, 1, length(voltages(pnpresult))), 0.0, 0.0)
     )
-    lines!(       ax, voltages(nnpresult), currents(nnpresult, iO),color = RGBf.(0.0, range(0.1, 1, length(voltages(nnpresult))), 0.0))
+    lines!(ax, voltages(nnpresult), currents(nnpresult, iO), color = RGBf.(0.0, range(0.1, 1, length(voltages(nnpresult))), 0.0))
     #ylims!(-0.0001, 0.0001)
     fig
 end

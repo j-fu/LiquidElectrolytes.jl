@@ -13,11 +13,16 @@ Abstract super type for electrolytes.
 abstract type AbstractElectrolyteData end
 
 
-function γ_DGL!(γ, c, p, electrolyte)
-    (; Mrel, tildev, v0, RT, v0, nc)  = electrolyte
-    c0, barc = c0_barc(c,electrolyte)
-    for ic=1:nc
-        γ[ic]=rexp(tildev[ic] * p / RT)* (barc / c0)^Mrel[ic] * (1 / (v0 * barc))
+"""
+    DGL_gamma!(γ, c, p, electrolyte)
+
+Activity coefficients according to Dreyer, Guhlke, Landstorfer.
+"""
+function DGL_gamma!(γ, c, p, electrolyte)
+    (; Mrel, tildev, v0, RT, v0, nc, rexp) = electrolyte
+    c0, barc = c0_barc(c, electrolyte)
+    for ic in 1:nc
+        γ[ic] = rexp(tildev[ic] * p / RT) * (barc / c0)^Mrel[ic] * (1 / (v0 * barc))
     end
     return nothing
 end
@@ -30,14 +35,14 @@ Data for electrolyte. It is defined using `Base.@kwdef`
 allowing for keyword constructors like
 ```julia
     ElectrolyteData(nc=3,z=[-1,2,1])
-``
+```
 
 To see default values, just create an instance as `ElectrolyteData()`.
 Fields (reserved fields are modified by some algorithms):
 
 $(TYPEDFIELDS)
 """
-@kwdef mutable struct ElectrolyteData{Tγ, Tcache} <: AbstractElectrolyteData
+@kwdef mutable struct ElectrolyteData{Tγ, Tcache, Texp, Tlog, Tflux} <: AbstractElectrolyteData
     "Number of ionic species."
     nc::Int = 2
 
@@ -73,10 +78,14 @@ $(TYPEDFIELDS)
 
     "Bulk ion concentrations"
     c_bulk::Vector{Float64} = fill(0.1 * ufac"M", nc)
-    
-    "Activity coefficient function"
-    γ!::Tγ = γ_DGL!
 
+    """
+        actcoeff!(γ, c, p, ::ElectrolyteData)
+    Activity coefficient function. Write activity
+    coefficients into `γ`.
+    Default: [`DGL_gamma!`](@ref).
+    """
+    actcoeff!::Tγ = DGL_gamma!
 
     "Bulk voltage"
     ϕ_bulk::Float64 = 0.0 * ufac"V"
@@ -96,50 +105,26 @@ $(TYPEDFIELDS)
     "Dielectric permittivity of solvent"
     ε::Float64 = 78.49
 
-    "Molar gas constant scaled with temperature (derived)"
-    RT::Float64 = ph"R" * T
+    "Regularized exponential, default: exp (unregularized)"
+    rexp::Texp = exp
 
-    "Faraday constant (fixed)"
-    F::Float64 = ph"N_A" * ph"e"
+    "Regularized logarithm, default: log (unregularized)"
+    rlog::Tlog = log
 
-    "Dielectric permittivity of vacuum (fixed)"
-    ε_0::Float64 = ph"ε_0"
-
-    "Solvated molar mass ratio (derived)"
-    Mrel::Vector{Float64} = M / M0 + κ
-
-    "Solvated molar volume (derived)"
-    barv::Vector{Float64} = v + κ * v0
-
-    "Pressure relevant volume (derived)"
-    tildev::Vector{Float64} = barv - Mrel * v0
-
-    "Cache for activity coefficient calculation (reserved)"
-    γk_cache::Tcache = DiffCache(zeros(nc), 10*nc)
-
-    "Cache for activity coefficient calculation (reserved)"
-    γl_cache::Tcache = DiffCache(zeros(nc), 10*nc)
-
-    """
-    Working electrode voltage (reserved)
-    Used by sweep algorithms to pass boundary data.
-    """
-    ϕ_we::Float64 = 0.0 * ufac"V"
-
-    "Pressure scaling factor"
+    "Pressure scaling factor. Default: 1.0e9"
     pscale::Float64 = 1.0e9
 
-    "Local electroneutrality switch"
+    "Local electroneutrality switch. Default: false"
     eneutral::Bool = false
 
     """
-    [Flux caculation scheme](@id fluxes)
+    Upwind flux caculation method for ionic species.
     This allows to choose between
-    - `:μex` (default): excess chemical potential (SEDAN) scheme, see [`sflux`](@ref)
-    - `:act` : scheme based on reciprocal activity coefficients, see [`aflux`](@ref)
-    - `:cent` : central scheme, see [`cflux`](@ref).
+    -  [`μex_flux!`](@ref) (default, strongly preferrable): excess chemical potential (SEDAN) scheme
+    -  [`act_flux!`](@ref): scheme based on reciprocal activity coefficients
+    -  [`cent_flux!`](@ref): central scheme
     """
-    scheme::Symbol = :μex
+    upwindflux!::Tflux = μex_flux!
 
     """
     Species weights for norms in solver control.
@@ -155,13 +140,63 @@ $(TYPEDFIELDS)
     """
     solvepressure::Bool = true
 
+    "Faraday constant (fixed)"
+    F::Float64 = ph"N_A" * ph"e"
+
+    "Dielectric permittivity of vacuum (fixed)"
+    ε_0::Float64 = ph"ε_0"
+
+    "Molar gas constant scaled with temperature (derived)"
+    RT::Float64 = ph"R" * T
+
+    "Solvated molar mass ratio (derived)"
+    Mrel::Vector{Float64} = M / M0 + κ
+
+    "Solvated molar volume (derived)"
+    barv::Vector{Float64} = v + κ * v0
+
+    "Pressure relevant volume (derived)"
+    tildev::Vector{Float64} = barv - Mrel * v0
+
+    "Activity coefficient of at bulk interface (derived)"
+    γ_bulk::Vector{Float64} = ones(nc)
+
+    "Cache for activity coefficient calculation (reserved)"
+    γk_cache::Tcache = DiffCache(zeros(nc), 10 * nc)
+
+    "Cache for activity coefficient calculation (reserved)"
+    γl_cache::Tcache = DiffCache(zeros(nc), 10 * nc)
 
     """
-    Edge velocity projection.
+    Working electrode voltage (reserved)
+    Used by sweep algorithms to pass boundary data.
+    """
+    ϕ_we::Float64 = 0.0 * ufac"V"
+
+    """
+    Edge velocity projection (reserved).
     """
     edgevelocity::Union{Float64, Vector{Float64}} = 0.0
+
+    """
+    Scheme parameter. Deprecated and disabled. 
+    Use `upwindflux!` instead to change the discretization scheme.
+    """
+    scheme::Symbol = :deprecated
 end
 
+function Base.setproperty!(this::ElectrolyteData, key::Symbol, value)
+    if key == :scheme
+        @warn """ Setting ElectrolyteData.scheme  is deprecated and has been disabled. 
+                Use `upwindflux!` instead to change the discretization scheme.
+            """
+        return nothing
+    elseif key == :edgevelocity
+        return Base.setfield!(this, key, value)
+    else
+        return Base.setfield!(this, key, convert(typeof(getfield(this,key)),value))
+    end
+end
 function Base.show(io::IOContext{Base.TTY}, this::ElectrolyteData)
     return showstruct(io, this)
 end
@@ -172,11 +207,12 @@ end
 Update derived electrolyte data.
 """
 function update_derived!(electrolyte::ElectrolyteData)
-    (; M, M0, κ, T, v, v0, T) = electrolyte
-    electrolyte.Mrel .=  M / M0 + κ
+    (; M, M0, κ, T, v, v0, T, c_bulk, p_bulk, actcoeff!) = electrolyte
+    electrolyte.Mrel .= M / M0 + κ
     electrolyte.barv .= v + κ * v0
     electrolyte.tildev .= electrolyte.barv - electrolyte.Mrel * v0
-    electrolyte.RT =  ph"R" * T
+    electrolyte.RT = ph"R" * T
+    actcoeff!(electrolyte.γ_bulk, c_bulk, p_bulk, electrolyte)
     return electrolyte
 end
 
@@ -386,7 +422,8 @@ Calculate chemical potential of species with concentration c
 ```
 """
 function chemical_potential(c, barc, p, barv, electrolyte)
-    return rlog(c / barc) * electrolyte.RT + barv * (electrolyte.pscale * p - electrolyte.p_bulk)
+    (; rlog, RT, pscale, p_bulk) = electrolyte
+    return rlog(c / barc) * RT + barv * (pscale * p - p_bulk)
 end
 
 """
@@ -464,12 +501,18 @@ end
 
 """
     rrate(R0,β,A)
+    rrate(R0,β,A, electrolyte)
 
 Reaction rate expression
 
     rrate(R0,β,A)=R0*(exp(-β*A) - exp((1-β)*A))
 """
 function rrate(R0, β, A)
+    return R0 * (exp(-β * A) - exp((1 - β) * A))
+end
+
+function rrate(R0, β, A, electrolyte)
+    (; rexp) = electrolyte
     return R0 * (rexp(-β * A) - rexp((1 - β) * A))
 end
 

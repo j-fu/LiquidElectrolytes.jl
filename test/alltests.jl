@@ -10,6 +10,7 @@ using ExplicitImports
 using ExtendableFEM
 using Markdown
 using Aqua
+using LiquidElectrolytes: act_flux!, cent_flux!, μex_flux!
 
 ExampleJuggler.verbose!(true)
 
@@ -44,19 +45,19 @@ end
 
     grid = simplexgrid(X)
     function xtest(κ)
-        acelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, scheme = :act, κ, c_bulk = fill(molarity, 2))
+        acelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, upwindflux! = act_flux!, κ, c_bulk = fill(molarity, 2))
         acell = PNPSystem(grid; bcondition, celldata = acelldata)
         aresult = dlcapsweep(acell; voltages, δ)
         avolts = aresult.voltages
         acaps = aresult.dlcaps
 
-        μcelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, scheme = :μex, κ, c_bulk = fill(molarity, 2))
+        μcelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, upwindflux! = μex_flux!, κ, c_bulk = fill(molarity, 2))
         μcell = PNPSystem(grid; bcondition, celldata = μcelldata)
         μresult = dlcapsweep(μcell; voltages, δ)
         μvolts = μresult.voltages
         μcaps = μresult.dlcaps
 
-        ccelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, scheme = :cent, κ, c_bulk = fill(molarity, 2))
+        ccelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, upwindflux! = cent_flux!, κ, c_bulk = fill(molarity, 2))
         ccell = PNPSystem(grid; bcondition, celldata = ccelldata)
         cresult = dlcapsweep(ccell; voltages, δ)
         cvolts = cresult.voltages
@@ -71,7 +72,7 @@ end
             boundary_dirichlet!(f, u, bnode, species = ip, region = Γ_bulk, value = data.p_bulk)
         end
 
-        pcelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, scheme = :cent, κ, c_bulk = fill(molarity, 2))
+        pcelldata = ElectrolyteData(; Γ_we = 1, Γ_bulk = 2, κ, c_bulk = fill(molarity, 2))
         pcell = PBSystem(grid; bcondition = pbbcondition, celldata = pcelldata)
         presult = dlcapsweep(pcell; voltages, δ)
         pvolts = presult.voltages
@@ -101,11 +102,11 @@ end
 examples = [
     "Example101_DLCap.jl",
     "Example110_Fe23Cell.jl",
-#    "Example111_SurfaceKinetics.jl",
+    #    "Example111_SurfaceKinetics.jl",
     "Example120_ORRCell.jl",
     "Example210_Leveque.jl",
     "Example211_Levich.jl",
-#    "Example220_SimpleCV.jl",
+    #    "Example220_SimpleCV.jl",
 ]
 
 @testset "Examples" begin

@@ -123,8 +123,6 @@ begin
 
     const nref = 0
 
-    const scheme = :μex
-
     const iaplus = 1
     const ibminus = 2
     const ia = 3
@@ -260,7 +258,6 @@ celldata = ElectrolyteData(;
     c_bulk = bulk.c_bulk,
     Γ_we = 1,
     Γ_bulk = 2,
-    scheme
 );
 
 # ╔═╡ 0824a2e2-0753-4891-b265-d919b694df31

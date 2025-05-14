@@ -11,19 +11,16 @@ LiquidElectrolytes.wnorm
 
 ## Poisson-Boltzmann
 ```@docs
-LiquidElectrolytes.pbreaction
-LiquidElectrolytes.pbflux
+LiquidElectrolytes.pbreaction!
+LiquidElectrolytes.pbflux!
 ```
 
 ## Poisson-Nernst-Planck
 ```@docs
-LiquidElectrolytes.pnpreaction
-LiquidElectrolytes.pnpflux
-LiquidElectrolytes.pnpstorage
-LiquidElectrolytes.pnpbstorage
-LiquidElectrolytes.sflux!
-LiquidElectrolytes.aflux!
-LiquidElectrolytes.cflux!
+LiquidElectrolytes.pnpreaction!
+LiquidElectrolytes.pnpflux!
+LiquidElectrolytes.pnpstorage!
+LiquidElectrolytes.pnpbstorage!
 LiquidElectrolytes.dμex
 ```
 

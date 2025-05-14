@@ -91,21 +91,41 @@ begin
 
 end;
 
-# ╔═╡ 41715397-020c-4505-a61a-4f2910318423
-begin
-	function  pbo_gamma(γ, c,p, electrolyte)
-     	for i=1:electrolyte.nc
-		   γ[i]=1
-    	end
-	    return nothing
-    end
-    pbo_electrolyte = ElectrolyteData(;γ! = pbo_gamma, c_bulk)
- end
+# ╔═╡ 7da889ce-9c6b-4abc-b19d-6311aacc32b1
+X = geomspace(0, L, hmin, hmax)
+
+# ╔═╡ a2a8132a-d54d-48a7-aa02-ff83593f0e16
+grid = simplexgrid(X)
+
+# ╔═╡ db023dac-5ce0-4126-bfd0-9036ccec11f4
+#=╠═╡
+gridplot(grid,size=(600,200))
+  ╠═╡ =#
 
 # ╔═╡ 834c81c8-9035-449f-b331-73bbee87756c
 md"""
 Check for bulk electroneutrality:
 """
+
+# ╔═╡ a4a4c6a4-ea90-4d23-b13a-2020790b2889
+md"""
+## Classical Poisson-Boltzmann
+
+```math
+  -\nabla \cdot εε_0 \nabla \phi = F\sum_{i=1}^n z_ic_0 \exp\left(z_i\phi \frac{F}{RT}\right)
+```
+"""
+
+# ╔═╡ 41715397-020c-4505-a61a-4f2910318423
+begin
+    function pbo_gamma!(γ, c, p, electrolyte)
+        for i in 1:electrolyte.nc
+            γ[i] = 1
+        end
+        return nothing
+    end
+    pbo_electrolyte = ElectrolyteData(; actcoeff! = pbo_gamma!, c_bulk)
+end
 
 # ╔═╡ 7f209979-0776-40ab-9b2b-3b2d0145fa2c
 iselectroneutral(c_bulk, pbo_electrolyte)
@@ -124,26 +144,6 @@ Debye length= $(debyelength(pbo_electrolyte) |> x->round(x,sigdigits=5) |>u"nm")
 md"""
 Double layer capacitance at zero voltage for symmetric binary electrolyte = 
 $(dlcap0(pbo_electrolyte) |> x->round(x,sigdigits=5) |>u"μF/cm^2")
-"""
-
-# ╔═╡ 7da889ce-9c6b-4abc-b19d-6311aacc32b1
-X = geomspace(0, L, hmin, hmax)
-
-# ╔═╡ a2a8132a-d54d-48a7-aa02-ff83593f0e16
-grid = simplexgrid(X)
-
-# ╔═╡ db023dac-5ce0-4126-bfd0-9036ccec11f4
-#=╠═╡
-gridplot(grid,size=(600,200))
-  ╠═╡ =#
-
-# ╔═╡ a4a4c6a4-ea90-4d23-b13a-2020790b2889
-md"""
-## Classical Poisson-Boltzmann
-
-```math
-  -\nabla \cdot εε_0 \nabla \phi = F\sum_{i=1}^n z_ic_0 \exp\left(z_i\phi \frac{F}{RT}\right)
-```
 """
 
 # ╔═╡ 66a988e0-9388-4bbe-8d92-9177dfca8ac4
@@ -186,22 +186,23 @@ md"""
 
 # ╔═╡ dbc500d6-99e8-40d8-9b60-dcccf1889ce8
 begin
-	function  pbi_gamma(γ, c,p, electrolyte)
-		sumc=zero(eltype(c))
-		for i=1:electrolyte.nc
-			sumc+=c[i]
-		end
-	    g= 1.0/(1.0 - sumc*electrolyte.v0)
-     	for i=1:electrolyte.nc
-		   γ[i]=g
-    	end
-	    return nothing
+    function pbi_gamma!(γ, c, p, electrolyte)
+        sumc = zero(eltype(c))
+        for i in 1:electrolyte.nc
+            sumc += c[i]
+        end
+        g = 1.0 / (1.0 - sumc * electrolyte.v0)
+        for i in 1:electrolyte.nc
+            γ[i] = g
+        end
+        return nothing
     end
-   
-    pbi_electrolyte = ElectrolyteData(c_bulk=pbo_electrolyte.c_bulk, 
-									  γ! =pbi_gamma
-									 )
-	pbi_electrolyte.v .= pbi_electrolyte.v0
+
+    pbi_electrolyte = ElectrolyteData(
+        c_bulk = pbo_electrolyte.c_bulk,
+        actcoeff! = pbi_gamma!
+    )
+    pbi_electrolyte.v .= pbi_electrolyte.v0
     pbi_electrolyte
 end
 
@@ -213,7 +214,7 @@ pbi_result = dlcapsweep(
     pbi_system; voltages = range(0, 1, length = 101),
     verbose = "",
     store_solutions = true,
-	damp_initial=0.1
+    damp_initial = 0.1
 )
 
 
@@ -236,11 +237,11 @@ md"""
 
 # ╔═╡ b31af4a2-716c-4c17-b283-0103630fdf38
 begin
-   
-    pbi2_electrolyte = ElectrolyteData(c_bulk=pbo_electrolyte.c_bulk)
-	pbi2_electrolyte.v .= pbi_electrolyte.v0
-	pbi2_electrolyte.κ .= 0
-	pbi2_electrolyte.M .= pbi_electrolyte.M0
+
+    pbi2_electrolyte = ElectrolyteData(c_bulk = pbo_electrolyte.c_bulk)
+    pbi2_electrolyte.v .= pbi_electrolyte.v0
+    pbi2_electrolyte.κ .= 0
+    pbi2_electrolyte.M .= pbi_electrolyte.M0
     update_derived!(pbi2_electrolyte)
 end
 
@@ -252,7 +253,7 @@ pbi2_result = dlcapsweep(
     pbi2_system; voltages = range(0, 1, length = 101),
     verbose = "",
     store_solutions = true,
-	damp_initial=0.1
+    damp_initial = 0.1
 )
 
 
@@ -505,16 +506,16 @@ end;
 # ╠═b6338637-1f3c-4410-8e82-3afdaf603656
 # ╟─371df98d-9f55-4244-8243-e6b597cc8d84
 # ╠═10be79ba-9ab9-4e6f-8568-2de93ea77964
-# ╠═41715397-020c-4505-a61a-4f2910318423
+# ╠═7da889ce-9c6b-4abc-b19d-6311aacc32b1
+# ╠═a2a8132a-d54d-48a7-aa02-ff83593f0e16
+# ╠═db023dac-5ce0-4126-bfd0-9036ccec11f4
 # ╟─834c81c8-9035-449f-b331-73bbee87756c
+# ╟─a4a4c6a4-ea90-4d23-b13a-2020790b2889
+# ╠═41715397-020c-4505-a61a-4f2910318423
 # ╠═7f209979-0776-40ab-9b2b-3b2d0145fa2c
 # ╟─80a42b07-d6b1-41d6-bf1d-66a01eeb5019
 # ╟─c57e82bb-79d8-4553-b31d-d1448c38c649
 # ╟─e2179a6c-cc1c-4850-89d4-d3f87fd5e6ee
-# ╠═7da889ce-9c6b-4abc-b19d-6311aacc32b1
-# ╠═a2a8132a-d54d-48a7-aa02-ff83593f0e16
-# ╠═db023dac-5ce0-4126-bfd0-9036ccec11f4
-# ╟─a4a4c6a4-ea90-4d23-b13a-2020790b2889
 # ╠═66a988e0-9388-4bbe-8d92-9177dfca8ac4
 # ╠═91a661ee-9c0c-496e-b6fb-4bb692cb7255
 # ╠═240b9017-bb20-4e0f-b372-3248a1cf0a9f

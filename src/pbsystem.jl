@@ -1,18 +1,16 @@
 """
-    pbreaction(f, u, node, electrolyte)
+    pbreaction!(f, u, node, electrolyte)
 
 Reaction expression for Poisson-Boltzmann
 """
-function pbreaction(f, u, node, electrolyte)
+function pbreaction!(f, u, node, electrolyte)
     (; ip, iϕ, v0, v, M0, z, M, κ, F, RT, nc, pscale, p_bulk, c_bulk,
-     γ!,γk_cache, γl_cache
+     actcoeff!, γk_cache, rexp, γ_bulk
      ) = electrolyte
     p = u[ip] * pscale - p_bulk
     ϕ = u[iϕ]
     γ=get_tmp(γk_cache, u)
-    γ_bulk=get_tmp(γl_cache, u)
-    γ!(γ_bulk, c_bulk, p_bulk, electrolyte)
-    γ!(γ, u, p, electrolyte)
+    actcoeff!(γ, u, p, electrolyte)
     q = zero(eltype(u))
     for ic in 1:nc
         f[ic] = u[ic] - c_bulk[ic] * rexp(-z[ic] * F * ϕ / RT)*γ_bulk[ic]/γ[ic]
@@ -25,11 +23,11 @@ end
 
 
 """
-    pbflux(f, u, edge, electrolyte)
+    pbflux!(f, u, edge, electrolyte)
 
 Flux expression for Poisson-Boltzmann
 """
-function pbflux(f, u, edge, electrolyte)
+function pbflux!(f, u, edge, electrolyte)
     (; ε_0, ε, iϕ, ip, nc, z, F, pscale) = electrolyte
     dϕ= u[iϕ, 1] - u[iϕ, 2]
 
@@ -57,16 +55,16 @@ Create VoronoiFVM system generalized Poisson-Boltzmann. Input:
 """
 function PBSystem(
         grid::ExtendableGrid;
-        celldata = ElectrolyteData(),
+        celldata::ElectrolyteData = ElectrolyteData(),
         bcondition = (f, u, n, e) -> nothing,
         kwargs...
     )
-
+    update_derived!(celldata)
     sys= VoronoiFVM.System(
         grid;
         data = celldata,
-        flux = pbflux,
-        reaction = pbreaction,
+        flux = pbflux!,
+        reaction = pbreaction!,
         bcondition,
         species = [1:(celldata.nc)..., celldata.iϕ, celldata.ip],
         kwargs...

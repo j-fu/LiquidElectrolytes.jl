@@ -273,8 +273,6 @@ begin
     const c_bulk = [molO, molR, molS, molX] * mol / dm^3
     @info c_bulk' * z
     @assert abs(c_bulk' * z < 1.0e-12)
-    scheme = :μex
-    #scheme = :act
     const κ = Float64(guidata.κ)
     const R0 = 1.0e-10 * mol / (cm^2 * s)
     const Δg = 0.0
@@ -289,7 +287,6 @@ begin
         κ = fill(κ, 4),
         Γ_we = 1,
         Γ_bulk = 2,
-        scheme
     )
 
 
