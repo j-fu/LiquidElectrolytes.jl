@@ -37,7 +37,7 @@ include("pnpsystem.jl")
 export PNPSystem
 export electrolytedata, bulkbcondition, unknowns
 
-VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public act_flux!, μex_flux!, cent_flux!"))
+VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public act_flux!, μex_flux!, cent_flux!, DGL_gamma!"))
 
 include("pbsystem.jl")
 export PBSystem

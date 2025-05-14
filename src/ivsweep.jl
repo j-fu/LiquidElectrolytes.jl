@@ -70,7 +70,7 @@ function ivsweep(
     vplus = zeros(0)
     sminus = []
     splus = []
-
+    
     electrolyte.ϕ_we = 0
     control = SolverControl(;
         verbose = true,

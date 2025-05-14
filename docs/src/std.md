@@ -25,6 +25,7 @@ period
 
 ## Supporting methods
 ```@docs
+voltages
 voltages_currents
 voltages_solutions
 currents

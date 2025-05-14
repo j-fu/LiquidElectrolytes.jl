@@ -14,11 +14,11 @@ abstract type AbstractElectrolyteData end
 
 
 """
-    gamma_DGL!(γ, c, p, electrolyte)
+    DGL_gamma!(γ, c, p, electrolyte)
 
 Activity coefficients according to Dreyer, Guhlke, Landstorfer.
 """
-function gamma_DGL!(γ, c, p, electrolyte)
+function DGL_gamma!(γ, c, p, electrolyte)
     (; Mrel, tildev, v0, RT, v0, nc, rexp) = electrolyte
     c0, barc = c0_barc(c, electrolyte)
     for ic in 1:nc
@@ -35,7 +35,7 @@ Data for electrolyte. It is defined using `Base.@kwdef`
 allowing for keyword constructors like
 ```julia
     ElectrolyteData(nc=3,z=[-1,2,1])
-``
+```
 
 To see default values, just create an instance as `ElectrolyteData()`.
 Fields (reserved fields are modified by some algorithms):
@@ -83,9 +83,9 @@ $(TYPEDFIELDS)
         actcoeff!(γ, c, p, ::ElectrolyteData)
     Activity coefficient function. Write activity
     coefficients into `γ`.
-    Default: [`gamma_DGL!`](@ref).
+    Default: [`DGL_gamma!`](@ref).
     """
-    actcoeff!::Tγ = gamma_DGL!
+    actcoeff!::Tγ = DGL_gamma!
 
     "Bulk voltage"
     ϕ_bulk::Float64 = 0.0 * ufac"V"
@@ -105,14 +105,10 @@ $(TYPEDFIELDS)
     "Dielectric permittivity of solvent"
     ε::Float64 = 78.49
 
-    """
-    Regularized exponential, default: exp (unregularized)
-    """
+    "Regularized exponential, default: exp (unregularized)"
     rexp::Texp = exp
 
-    """
-    Regularized logarithm, default: log (unregularized)
-    """
+    "Regularized logarithm, default: log (unregularized)"
     rlog::Tlog = log
 
     "Pressure scaling factor. Default: 1.0e9"
@@ -122,7 +118,7 @@ $(TYPEDFIELDS)
     eneutral::Bool = false
 
     """
-    [Upwind flux](@id fluxes)  caculation method for ionic species.
+    Upwind flux caculation method for ionic species.
     This allows to choose between
     -  [`μex_flux!`](@ref) (default, strongly preferrable): excess chemical potential (SEDAN) scheme
     -  [`act_flux!`](@ref): scheme based on reciprocal activity coefficients

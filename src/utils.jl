@@ -119,9 +119,9 @@ function _splitz(range::AbstractRange)
 end
 
 """
-    splitz(range::Vector)
+    _splitz(range::Vector)
 
-Version of [`splitz(range::AbstractRange)`](@ref) for vectors.
+Version of [`_splitz(range::AbstractRange)`](@ref) for vectors.
 """
 function _splitz(range::Vector)
     if range[1] >= 0
