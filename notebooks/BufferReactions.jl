@@ -88,7 +88,6 @@ begin
     const T = (273.15 + 25) * K
     const C_gap = 20 * μF / cm^2
     const ϕ_pzc = 0.16 * V
-    const scheme = :μex
     const vmin = -1.5 * V
     const vmax = 0.0 * V
     const vdelta = 0.1 * V
@@ -263,7 +262,6 @@ celldata = ElectrolyteData(;
     c_bulk = bulk.c_bulk,
     Γ_we = 1,
     Γ_bulk = 2,
-    scheme
 );
 
 # ╔═╡ eff87b3e-0bc4-440f-93c9-9bd06e285a2e

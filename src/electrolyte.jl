@@ -14,7 +14,7 @@ abstract type AbstractElectrolyteData end
 
 
 function γ_DGL!(γ, c, p, electrolyte)
-    (; Mrel, tildev, v0, RT, v0, nc)  = electrolyte
+    (; Mrel, tildev, v0, RT, v0, nc, rexp)  = electrolyte
     c0, barc = c0_barc(c,electrolyte)
     for ic=1:nc
         γ[ic]=rexp(tildev[ic] * p / RT)* (barc / c0)^Mrel[ic] * (1 / (v0 * barc))
@@ -37,7 +37,7 @@ Fields (reserved fields are modified by some algorithms):
 
 $(TYPEDFIELDS)
 """
-@kwdef mutable struct ElectrolyteData{Tγ, Tcache} <: AbstractElectrolyteData
+@kwdef mutable struct ElectrolyteData{Tγ, Tcache, Texp, Tlog, Tflux} <: AbstractElectrolyteData
     "Number of ionic species."
     nc::Int = 2
 
@@ -77,7 +77,6 @@ $(TYPEDFIELDS)
     "Activity coefficient function"
     γ!::Tγ = γ_DGL!
 
-
     "Bulk voltage"
     ϕ_bulk::Float64 = 0.0 * ufac"V"
 
@@ -96,14 +95,54 @@ $(TYPEDFIELDS)
     "Dielectric permittivity of solvent"
     ε::Float64 = 78.49
 
-    "Molar gas constant scaled with temperature (derived)"
-    RT::Float64 = ph"R" * T
+    """
+    Regularized exponential, default: exp (unregularized)
+    """
+    rexp::Texp=exp
+
+    """
+    Regularized logarithm, default: log (unregularized)
+    """
+    rlog::Tlog=log
+
+
+    "Pressure scaling factor. Default: 1.0e9"
+    pscale::Float64 = 1.0e9
+
+    "Local electroneutrality switch. Default: false"
+    eneutral::Bool = false
+
+    """
+    [Flux caculation function](@id fluxes)
+    This allows to choose between
+    -  [`sflux!`](@ref) (default): excess chemical potential (SEDAN) scheme
+    -  [`aflux!`](@ref): scheme based on reciprocal activity coefficients
+    -  [`cflux!`](@ref): central scheme, see
+    """
+    flux::Tflux = sflux!
+
+    """
+    Species weights for norms in solver control.
+    """
+    weights::Vector{Float64} = [v..., zeros(na)..., 1.0, 0.0]
+
+    """
+    Solve for pressure. 
+
+    This is `true` by default. Setting this to `false` can serve two purposes:
+    - Use the pressure from the solution of a flow equation
+    - Ignore the pressure contribution to the excess chemical potential
+    """
+    solvepressure::Bool = true
 
     "Faraday constant (fixed)"
     F::Float64 = ph"N_A" * ph"e"
 
     "Dielectric permittivity of vacuum (fixed)"
     ε_0::Float64 = ph"ε_0"
+
+    "Molar gas constant scaled with temperature (derived)"
+    RT::Float64 = ph"R" * T
 
     "Solvated molar mass ratio (derived)"
     Mrel::Vector{Float64} = M / M0 + κ
@@ -126,38 +165,8 @@ $(TYPEDFIELDS)
     """
     ϕ_we::Float64 = 0.0 * ufac"V"
 
-    "Pressure scaling factor"
-    pscale::Float64 = 1.0e9
-
-    "Local electroneutrality switch"
-    eneutral::Bool = false
-
     """
-    [Flux caculation scheme](@id fluxes)
-    This allows to choose between
-    - `:μex` (default): excess chemical potential (SEDAN) scheme, see [`sflux`](@ref)
-    - `:act` : scheme based on reciprocal activity coefficients, see [`aflux`](@ref)
-    - `:cent` : central scheme, see [`cflux`](@ref).
-    """
-    scheme::Symbol = :μex
-
-    """
-    Species weights for norms in solver control.
-    """
-    weights::Vector{Float64} = [v..., zeros(na)..., 1.0, 0.0]
-
-    """
-    Solve for pressure. 
-
-    This is `true` by default. Setting this to `false` can serve two purposes:
-    - Use the pressure from the solution of a flow equation
-    - Ignore the pressure contribution to the excess chemical potential
-    """
-    solvepressure::Bool = true
-
-
-    """
-    Edge velocity projection.
+    Edge velocity projection (reserved).
     """
     edgevelocity::Union{Float64, Vector{Float64}} = 0.0
 end
@@ -386,7 +395,8 @@ Calculate chemical potential of species with concentration c
 ```
 """
 function chemical_potential(c, barc, p, barv, electrolyte)
-    return rlog(c / barc) * electrolyte.RT + barv * (electrolyte.pscale * p - electrolyte.p_bulk)
+    (; rlog, RT, pscale, p_bulk) = electrolyte
+    return rlog(c / barc) * RT + barv * (pscale * p - p_bulk)
 end
 
 """
@@ -464,12 +474,18 @@ end
 
 """
     rrate(R0,β,A)
+    rrate(R0,β,A, electrolyte)
 
 Reaction rate expression
 
     rrate(R0,β,A)=R0*(exp(-β*A) - exp((1-β)*A))
 """
 function rrate(R0, β, A)
+    return R0 * (exp(-β * A) - exp((1 - β) * A))
+end
+
+function rrate(R0, β, A, electrolyte)
+    (; rexp) =electrolyte
     return R0 * (rexp(-β * A) - rexp((1 - β) * A))
 end
 

@@ -70,7 +70,6 @@ begin
     const molarity = 0.1
     const nref = 0
     const κ = 10.0
-    const scheme = :μex
     const R0 = 4.0e-15mol / (cm^2 * s)
     const epsreg = 1.0e-20
 
@@ -163,7 +162,6 @@ begin
         Γ_we = 1,
         Γ_bulk = 2,
         eneutral = false,
-        scheme,
         epsreg,
     )
 
@@ -418,7 +416,6 @@ begin
         Γ_we = 1,
         Γ_bulk = 2,
         eneutral = false,
-        scheme,
         epsreg,
     )
 

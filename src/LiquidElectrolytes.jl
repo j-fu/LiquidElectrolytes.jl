@@ -26,7 +26,6 @@ end
 
 include("utils.jl")
 export RExp, RLog
-VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public rexp, rlog"))
 
 include("electrolyte.jl")
 export AbstractElectrochemicalSystem, ElectrolyteData, AbstractElectrolyteData, update_derived!

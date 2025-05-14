@@ -51,7 +51,8 @@ end
 Calculate differences of excess chemical potentials from activity coefficients
 """
 @inline function dμex(γk, γl, electrolyte)
-    f=(rlog(γk) - rlog(γl)) * (electrolyte.RT)
+    (;RT, rlog) = electrolyte
+    f=(rlog(γk) - rlog(γl)) * RT
     return f
 end
 
@@ -115,7 +116,7 @@ ck/cl= bp/betaK  / bm/betal
 Flux expression based on central differences, see Gaudeul/Fuhrmann 2022
 """
 function cflux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
-    (; D, z, F, RT, nc) = electrolyte
+    (; D, z, F, RT, nc, rlog) = electrolyte
     for ic=1:nc
         μk = rlog(ck[ic]) * RT
         μl = rlog(cl[ic]) * RT
@@ -135,7 +136,7 @@ Finite volume flux. It calls either [`sflux!`](@ref), [`cflux!`](@ref) or [`aflu
 function pnpflux(f, u, edge, electrolyte)
     (;
      ip, iϕ, v0, v, M0, M, κ, ε_0, ε, D,F,z,RT, nc,
-     eneutral, pscale, p_bulk, scheme,
+     eneutral, pscale, p_bulk, flux,
      γ!, γk_cache, γl_cache
      ) = electrolyte
 
@@ -159,15 +160,7 @@ function pnpflux(f, u, edge, electrolyte)
         f[ip] = u[ip, 1] - u[ip, 2] + (qk + ql) * dϕ / (2 * pscale)
     end
     
-    if scheme == :μex
-        sflux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo)
-    elseif electrolyte.scheme == :act
-        aflux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo)
-    elseif electrolyte.scheme == :cent
-        cflux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo)
-    else
-        error("no such scheme: $(scheme)")
-    end
+    flux(f, dϕ, ck, cl, γk, γl, electrolyte; evelo)
     return
 end
 

@@ -66,18 +66,6 @@ Return RExp(Float64)
 RExp() = RExp(Float64)
 
 """
-    rexp(x::Any)
-
-Exponential function used in LiquidElectrolytes.jl.
-Calls `Base.exp` by default.
-
-This can be overwritten  by defining e.g, `LiquidElectrolytes.rexp(x::Number)=myexp(x)`
-where `myexp=RExp()`.
-"""
-rexp(x::Any)=Base.exp(x)
-
-
-"""
     RLog(eps)
 
 Callable struct for regularized  logarithm. Smooth linear continuation for `x<eps`.
@@ -113,22 +101,9 @@ Return RLog(Float64)
 """
 RLog() = RLog(Float64)
 
-"""
-    rlog(x::Any)
-
-Logarithm function used in LiquidElectrolytes.jl.
-Calls `Base.log` by default.
-
-This can be overwritten  by defining e.g, `LiquidElectrolytes.rlog(x::Number)=mylog(x)`
-where `mylog=RLog()`.
-"""
-rlog(x::Any)=Base.log(x)
-
-
-
 
 """
-    splitz(range::AbstractRange)
+    _splitz(range::AbstractRange)
 
 If range contains zero, split it into two parts, one with values <=0 and one with values >=0.
 Otherwise, return the range or its reverse, such that first value always is the one with the smallest absolute value.

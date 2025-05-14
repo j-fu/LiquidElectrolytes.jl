@@ -6,8 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ### Breaking
 - `aflux`, `sflux` and `cflux` replaced with  `aflux!`, `sflux!` and `cflux!` 
+- `scheme` paramter of ElectrolyteData replaced by `flux` parameter which should be one of `aflux!`, `sflux!` and `cflux!` 
 - PNPSystem and PBSystem are now distinct types in order to be able to implement more specific methods
-- pnpunkonowns has been removed in favor of extension of VoronoiFVM.unknowns
+- pnpunkonowns has been removed in favor of method of VoronoiFVM.unknowns
+- rexp, rlog are now part of ElectrolyteData
 
 ### Features
 - ElectrolyteData now has a function entry `γ!` for user definable function which calculates activity coefficients

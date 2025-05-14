@@ -5,7 +5,7 @@ Reaction expression for Poisson-Boltzmann
 """
 function pbreaction(f, u, node, electrolyte)
     (; ip, iϕ, v0, v, M0, z, M, κ, F, RT, nc, pscale, p_bulk, c_bulk,
-     γ!,γk_cache, γl_cache
+     γ!,γk_cache, γl_cache, rexp
      ) = electrolyte
     p = u[ip] * pscale - p_bulk
     ϕ = u[iϕ]
