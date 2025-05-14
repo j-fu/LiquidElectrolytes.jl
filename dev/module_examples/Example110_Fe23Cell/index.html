@@ -8,9 +8,6 @@ using Colors
 using StaticArrays
 using DoubleFloats
 
-const mylog = RLog(eps(Double64))
-LiquidElectrolytes.rlog(x::Number) = mylog(x)
-
 function main(;
         nref = 0,
         compare = false,
@@ -19,7 +16,7 @@ function main(;
         dlcap = false,
         R0 = 1.0e-10,
         molarities = [0.001, 0.01, 0.1, 1],
-        scheme = :μex,
+        upwindflux! = LiquidElectrolytes.μex_flux!,
         xmax = 1,
         κ = 10.0,
         Plotter = nothing,
@@ -59,15 +56,15 @@ function main(;
     iso4 = 4
 
     function halfcellbc(f, u, bnode, data)
-        (; nc, Γ_we, Γ_bulk, ϕ_we, ip, iϕ, v, v0, RT) = data
+        (; nc, Γ_we, Γ_bulk, ϕ_we, ip, iϕ, v, v0, RT, barv) = data
         bulkbcondition(f, u, bnode, data; region = Γ_bulk)
         if bnode.region == Γ_we
             if !data.eneutral
                 boundary_dirichlet!(f, u, bnode; species = iϕ, region = Γ_we, value = ϕ_we)
             end
             c0, barc = c0_barc(u, data)
-            μfe2 = chemical_potential(u[ife2], barc, u[ip], v[ife2] + κ * v0, data)
-            μfe3 = chemical_potential(u[ife3], barc, u[ip], v[ife2] + κ * v0, data)
+            μfe2 = chemical_potential(u[ife2], barc, u[ip], barv[ife2], data)
+            μfe3 = chemical_potential(u[ife3], barc, u[ip], barv[ife2], data)
             A = (μfe2 - μfe3 + Δg - data.eneutral * F * (u[iϕ] - ϕ_we)) / RT
             r = rrate(R0, β, A)
             f[ife2] -= r
@@ -84,7 +81,8 @@ function main(;
         κ = fill(κ, 4),
         Γ_we = 1,
         Γ_bulk = 2,
-        scheme,
+        upwindflux!,
+        rlog = RLog(eps(valuetype))
     )
 
     (; iϕ::Int, ip::Int) = celldata
@@ -251,4 +249,4 @@ end
 
         p = main(; compare = true, Plotter, voltages = -0.2:0.025:0.2) # hide
 
-end</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Example101_DLCap/">« Double Layer Capacitance</a><a class="docs-footer-nextpage" href="../Example120_ORRCell/">ORR Half cell »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.1 on <span class="colophon-date" title="Tuesday 13 May 2025 22:46">Tuesday 13 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Example101_DLCap/">« Double Layer Capacitance</a><a class="docs-footer-nextpage" href="../Example120_ORRCell/">ORR Half cell »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.2 on <span class="colophon-date" title="Wednesday 14 May 2025 20:13">Wednesday 14 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

@@ -8,9 +8,6 @@ using StaticArrays
 using LessUnitful
 using DoubleFloats
 
-const mylog = RLog(eps(Double64))
-LiquidElectrolytes.rlog(x::Number) = mylog(x)
-
 function main(;
         voltages = -1:0.01:1,
         compare = false,
@@ -19,7 +16,7 @@ function main(;
         κ = 10.0,
         vfac = 1.0,
         eneutral = false,
-        scheme = :μex,
+        upwindflux! = LiquidElectrolytes.μex_flux!,   ## Flux calculation scheme
         Plotter = nothing,
         R0::Float64 = 4.0e-15,
         valuetype = Double64,
@@ -35,8 +32,8 @@ function main(;
         max_round = 3,
         tol_round = 1.0e-10,
         reltol = 1.0e-7,
-                tol_mono = 1.0e-7,
-                verbose = &quot;&quot;
+        tol_mono = 1.0e-7,
+        verbose = &quot;&quot;,
     )
     kwargs = merge(defaults, kwargs)
 
@@ -89,7 +86,9 @@ function main(;
     celldata = ElectrolyteData(;
         nc = 3,
         z, κ, Γ_we = 1, Γ_bulk = 2,
-        eneutral, scheme
+        eneutral, upwindflux!,
+        rlog = RLog(eps(valuetype))
+
     )
 
     celldata.v *= vfac
@@ -232,8 +231,8 @@ function main(;
 end
 
 function runtests()
-    main() ≈ 1.7980444243915981e5
+    return main() ≈ 1.7980444243915981e5
 end
 
 
-end</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Example110_Fe23Cell/">« Fe redox half cell</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.1 on <span class="colophon-date" title="Tuesday 13 May 2025 22:46">Tuesday 13 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Example110_Fe23Cell/">« Fe redox half cell</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.2 on <span class="colophon-date" title="Wednesday 14 May 2025 20:13">Wednesday 14 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

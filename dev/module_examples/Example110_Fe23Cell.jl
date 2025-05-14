@@ -26,9 +26,6 @@ using Colors
 using StaticArrays
 using DoubleFloats
 
-const mylog = RLog(eps(Double64))
-LiquidElectrolytes.rlog(x::Number) = mylog(x)
-
 function main(;
         nref = 0,
         compare = false,
@@ -37,7 +34,7 @@ function main(;
         dlcap = false,
         R0 = 1.0e-10,
         molarities = [0.001, 0.01, 0.1, 1],
-        scheme = :μex,
+        upwindflux! = LiquidElectrolytes.μex_flux!,
         xmax = 1,
         κ = 10.0,
         Plotter = nothing,
@@ -77,15 +74,15 @@ function main(;
     iso4 = 4
 
     function halfcellbc(f, u, bnode, data)
-        (; nc, Γ_we, Γ_bulk, ϕ_we, ip, iϕ, v, v0, RT) = data
+        (; nc, Γ_we, Γ_bulk, ϕ_we, ip, iϕ, v, v0, RT, barv) = data
         bulkbcondition(f, u, bnode, data; region = Γ_bulk)
         if bnode.region == Γ_we
             if !data.eneutral
                 boundary_dirichlet!(f, u, bnode; species = iϕ, region = Γ_we, value = ϕ_we)
             end
             c0, barc = c0_barc(u, data)
-            μfe2 = chemical_potential(u[ife2], barc, u[ip], v[ife2] + κ * v0, data)
-            μfe3 = chemical_potential(u[ife3], barc, u[ip], v[ife2] + κ * v0, data)
+            μfe2 = chemical_potential(u[ife2], barc, u[ip], barv[ife2], data)
+            μfe3 = chemical_potential(u[ife3], barc, u[ip], barv[ife2], data)
             A = (μfe2 - μfe3 + Δg - data.eneutral * F * (u[iϕ] - ϕ_we)) / RT
             r = rrate(R0, β, A)
             f[ife2] -= r
@@ -102,7 +99,8 @@ function main(;
         κ = fill(κ, 4),
         Γ_we = 1,
         Γ_bulk = 2,
-        scheme,
+        upwindflux!,
+        rlog = RLog(eps(valuetype))                        
     )
 
     (; iϕ::Int, ip::Int) = celldata

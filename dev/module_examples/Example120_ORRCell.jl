@@ -27,9 +27,6 @@ using StaticArrays
 using LessUnitful
 using DoubleFloats
 
-const mylog = RLog(eps(Double64))
-LiquidElectrolytes.rlog(x::Number) = mylog(x)
-
 function main(;
         voltages = -1:0.01:1,
         compare = false,
@@ -38,7 +35,7 @@ function main(;
         κ = 10.0,
         vfac = 1.0,
         eneutral = false,
-        scheme = :μex,
+        upwindflux! = LiquidElectrolytes.μex_flux!,   ## Flux calculation scheme
         Plotter = nothing,
         R0::Float64 = 4.0e-15,
         valuetype = Double64,
@@ -54,8 +51,8 @@ function main(;
         max_round = 3,
         tol_round = 1.0e-10,
         reltol = 1.0e-7,
-                tol_mono = 1.0e-7,
-                verbose = ""
+        tol_mono = 1.0e-7,
+        verbose = "",
     )
     kwargs = merge(defaults, kwargs)
 
@@ -108,7 +105,9 @@ function main(;
     celldata = ElectrolyteData(;
         nc = 3,
         z, κ, Γ_we = 1, Γ_bulk = 2,
-        eneutral, scheme
+        eneutral, upwindflux!,
+        rlog = RLog(eps(valuetype))
+
     )
 
     celldata.v *= vfac
@@ -175,7 +174,7 @@ function main(;
     currs = LiquidElectrolytes.currents(result, io2)
 
     testresult = sum(currs)
-    
+
     sol = LiquidElectrolytes.voltages_solutions(result)
     volts = result.voltages
 
@@ -251,7 +250,7 @@ function main(;
 end
 
 function runtests()
-    main() ≈ 1.7980444243915981e5
+    return main() ≈ 1.7980444243915981e5
 end
 
 function generateplots(dir; Plotter = nothing, kwargs...)    #hide
