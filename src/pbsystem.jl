@@ -4,20 +4,22 @@
 Reaction expression for Poisson-Boltzmann
 """
 function pbreaction!(f, u, node, electrolyte)
-    (; ip, iϕ, v0, v, M0, z, M, κ, F, RT, nc, pscale, p_bulk, c_bulk,
-     actcoeff!, γk_cache, rexp, γ_bulk
-     ) = electrolyte
+    (;
+        ip, iϕ,
+        z, F, RT, nc, pscale,
+        c_bulk, ϕ_bulk, p_bulk,
+        actcoeff!, γk_cache, rexp, γ_bulk,
+    ) = electrolyte
     p = u[ip] * pscale - p_bulk
     ϕ = u[iϕ]
-    γ=get_tmp(γk_cache, u)
+    γ = get_tmp(γk_cache, u)
     actcoeff!(γ, u, p, electrolyte)
     q = zero(eltype(u))
     for ic in 1:nc
-        f[ic] = u[ic] - c_bulk[ic] * rexp(-z[ic] * F * ϕ / RT)*γ_bulk[ic]/γ[ic]
+        f[ic] = u[ic] * γ[ic] - c_bulk[ic] * rexp(z[ic] * F * (ϕ_bulk - ϕ) / RT) * γ_bulk[ic]
         q += z[ic] * u[ic]
     end
     f[iϕ] = -F * q
-    f[ip] = 0
     return
 end
 
@@ -28,9 +30,8 @@ end
 Flux expression for Poisson-Boltzmann
 """
 function pbflux!(f, u, edge, electrolyte)
-    (; ε_0, ε, iϕ, ip, nc, z, F, pscale) = electrolyte
-    dϕ= u[iϕ, 1] - u[iϕ, 2]
-
+    (; ε_0, ε, iϕ, ip, pscale) = electrolyte
+    dϕ = u[iϕ, 1] - u[iϕ, 2]
     f[iϕ] = ε * ε_0 * dϕ
     @views qk, ql = chargedensity(u[:, 1], electrolyte), chargedensity(u[:, 2], electrolyte)
     f[ip] = u[ip, 1] - u[ip, 2] + (qk + ql) * dϕ / (2 * pscale)
@@ -60,7 +61,7 @@ function PBSystem(
         kwargs...
     )
     update_derived!(celldata)
-    sys= VoronoiFVM.System(
+    sys = VoronoiFVM.System(
         grid;
         data = celldata,
         flux = pbflux!,

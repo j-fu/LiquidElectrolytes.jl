@@ -28,7 +28,7 @@ voltages(r::AbstractSimulationResult) = r.voltages
 Voltage- working electrode current curve for species as [`DiffEqArray`](https://docs.sciml.ai/RecursiveArrayTools/stable/array_types/#RecursiveArrayTools.DiffEqArray)
 """
 function voltages_currents(r::AbstractSimulationResult, ispec; electrode = :we)
-    RecursiveArrayTools.DiffEqArray(currents(r, ispec; electrode), r.voltages)
+    return RecursiveArrayTools.DiffEqArray(currents(r, ispec; electrode), r.voltages)
 end
 
 

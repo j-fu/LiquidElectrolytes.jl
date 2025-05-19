@@ -1,11 +1,9 @@
 """
-    LiquidElectrolytes
-
-$(read(joinpath(@__DIR__, "..", "README.md"), String))
+$(README)
 """
 module LiquidElectrolytes
 using Base: @kwdef
-using DocStringExtensions: DocStringExtensions,  TYPEDEF, TYPEDFIELDS
+using DocStringExtensions: DocStringExtensions, TYPEDEF, TYPEDFIELDS, README
 using ExtendableGrids: ExtendableGrids, ExtendableGrid, num_nodes
 using LessUnitful: LessUnitful, @local_phconstants, @local_unitfactors, @ph_str, @ufac_str
 using InteractiveUtils: InteractiveUtils
@@ -37,7 +35,7 @@ include("pnpsystem.jl")
 export PNPSystem
 export electrolytedata, bulkbcondition, unknowns
 
-VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public act_flux!, μex_flux!, cent_flux!, DGL_gamma!"))
+VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public act_flux!, μex_flux!, cent_flux!, DGML_gamma!"))
 
 include("pbsystem.jl")
 export PBSystem
@@ -46,7 +44,7 @@ export PBSystem
 include("results.jl")
 export AbstractSimulationResult, voltages, currents, voltages_solutions, voltages_dlcaps, voltages_currents
 include("dlcapsweep.jl")
-export dlcapsweep,  DLCapSweepResult
+export dlcapsweep, DLCapSweepResult
 include("ivsweep.jl")
 export ivsweep, IVSweepResult
 include("cvsweep.jl")

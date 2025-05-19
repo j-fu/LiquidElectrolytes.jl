@@ -53,10 +53,10 @@ function ivsweep(
         voltages = (-0.5:0.1:0.5) * ufac"V",
         store_solutions = false,
         solver_kwargs...
-)
+    )
     update_derived!(electrolyte)
-    sys=esys.vfvmsys
-    ranges = _splitz(voltages)
+    sys = esys.vfvmsys
+    ranges = splitz(voltages)
     F = ph"N_A" * ph"e"
     factory = VoronoiFVM.TestFunctionFactory(sys)
     tf_bulk = testfunction(factory, [electrolyte.Γ_we], [electrolyte.Γ_bulk])
@@ -70,7 +70,7 @@ function ivsweep(
     vplus = zeros(0)
     sminus = []
     splus = []
-    
+
     electrolyte.ϕ_we = 0
     control = SolverControl(;
         verbose = true,
@@ -158,4 +158,3 @@ function ivsweep(
         solutions = vcat(reverse(result_minus.solutions), result_plus.solutions)
     )
 end
-

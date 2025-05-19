@@ -1,12 +1,12 @@
 module RotatingElectrodes
 using DocStringExtensions: DocStringExtensions, SIGNATURES
 using ExtendableGrids: ExtendableGrids, YCoordinates, bfacemask!, geomspace,
-glue, linspace
+    glue, linspace
 using LessUnitful: LessUnitful, @local_phconstants, @local_unitfactors, @ph_str
-using Printf:  @printf, @sprintf
+using Printf: @printf, @sprintf
 using ProgressMeter: ProgressMeter, ProgressUnknown
 using VoronoiFVM: VoronoiFVM, bfacevelocities, circular_symmetric!, coordinates,
-edgevelocities, enable_boundary_species!, enable_species!,
+    edgevelocities, enable_boundary_species!, enable_species!,
     solve, testfunction, unknowns, update_grid!
 
 

@@ -1,15 +1,15 @@
 module LiquidElectrolytesExtendableFEMExt
 import LiquidElectrolytes
 using ExtendableFEM: ExtendableFEM, BilinearOperator, FESpace, FEVector, H1BR,
-H1P1, H1P2B, HDIVBDM2, HDIVRT0, L2P0, L2P1,
-LinearOperator, ProblemDescription, Unknown,
-assign_operator!, assign_unknown!, grad, id,
-lazy_interpolate!, nodevalues, reveal
+    H1P1, H1P2B, HDIVBDM2, HDIVRT0, L2P0, L2P1,
+    LinearOperator, ProblemDescription, Unknown,
+    assign_operator!, assign_unknown!, grad, id,
+    lazy_interpolate!, nodevalues, reveal
 using ExtendableGrids: ExtendableGrids, ExtendableGrid, num_nodes
 using SciMLBase: SciMLBase
 using VoronoiFVM: VoronoiFVM, solve!
 
-    
+
 function kernel_stokes_cartesian!(result, u_ops, qpinfo)
     μ = qpinfo.params[1]
     ∇u, p = view(u_ops, 1:4), view(u_ops, 5)
@@ -67,7 +67,7 @@ function LiquidElectrolytes.flowsolver(grid::ExtendableGrid; μ = 1, velospace =
     p = Unknown("p"; name = "pressure")
     φ = Unknown("ϕ"; name = "voltage")
     q = Unknown("q"; name = "charge")
-    
+
     problem = ProblemDescription("incompressible Stokes problem")
     assign_unknown!(problem, u)
     assign_unknown!(problem, p)
@@ -78,7 +78,7 @@ function LiquidElectrolytes.flowsolver(grid::ExtendableGrid; μ = 1, velospace =
         bonus_quadorder = 2, store = false,
         params = [μ]
     )
-    
+
     lorentz_op = LinearOperator(
         kernel_lorentz!,
         # [apply(1, Reconstruct{HDIVRT0{2}, Identity})],
@@ -86,7 +86,7 @@ function LiquidElectrolytes.flowsolver(grid::ExtendableGrid; μ = 1, velospace =
         [grad(3), id(4)];
         bonus_quadorder = 3
     )
-    
+
     assign_operator!(problem, stokes_op)
     assign_operator!(problem, lorentz_op)
     if velospace == H1P2B
@@ -102,7 +102,7 @@ function LiquidElectrolytes.flowsolver(grid::ExtendableGrid; μ = 1, velospace =
     end
     FE_φ = FESpace{H1P1{1}}(grid)
     FE_q = FESpace{H1P1{1}}(grid)
-    
+
     return FlowSolver(
         grid,
         problem,
@@ -114,10 +114,9 @@ function LiquidElectrolytes.flowsolver(grid::ExtendableGrid; μ = 1, velospace =
 end
 
 
-
 ExtendableFEM.assign_operator!(fs::FlowSolver, op) = assign_operator!(fs.problem, op)
 
-function  LiquidElectrolytes.extended_unknowns(fs::FlowSolver)
+function LiquidElectrolytes.extended_unknowns(fs::FlowSolver)
     return FEVector(
         [
             fs.FE_u,
@@ -131,10 +130,10 @@ end
 
 LiquidElectrolytes.velocity_unknown(fs::FlowSolver) = fs.u
 
-function  LiquidElectrolytes.voltage!(sol::FEVector, fs::FlowSolver, voltage)
+function LiquidElectrolytes.voltage!(sol::FEVector, fs::FlowSolver, voltage)
     return view(sol[fs.iφ]) .= voltage
 end
-function  LiquidElectrolytes.chargedensity!(sol::FEVector, fs::FlowSolver, charge)
+function LiquidElectrolytes.chargedensity!(sol::FEVector, fs::FlowSolver, charge)
     return view(sol[fs.iq]) .= charge
 end
 
@@ -187,7 +186,7 @@ function LiquidElectrolytes.fvm_velocities(
     return evelo, bfvelo
 end
 
-LiquidElectrolytes.node_pressure(flowsol, flowsolver) = view(nodevalues(flowsol[flowsolver.p]), 1,:)
+LiquidElectrolytes.node_pressure(flowsol, flowsolver) = view(nodevalues(flowsol[flowsolver.p]), 1, :)
 LiquidElectrolytes.node_velocity(flowsol, flowsolver) = nodevalues(flowsol[flowsolver.u])
 
 function LiquidElectrolytes.flowplot(sol::FEVector, fs::FlowSolver; kwargs...)

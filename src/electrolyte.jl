@@ -12,13 +12,24 @@ Abstract super type for electrolytes.
 """
 abstract type AbstractElectrolyteData end
 
-
 """
-    DGL_gamma!(γ, c, p, electrolyte)
+    DGML_gamma!(γ, c, p, electrolyte)
 
-Activity coefficients according to Dreyer, Guhlke, Landstorfer.
+Activity coefficients according to Dreyer, Guhlke, Müller, Landstorfer.
+
+```math
+γ_i = \\exp\\left(\\frac{\\tilde v_i p}{RT}\\right) \\left(\\frac{\\bar c}{c_0}\\right)^{m_i} \\frac{1}{v_0\\bar c}
+```
+
+Input:
+- c: vector of concentrations
+- p: pressure
+- electrolyte: instance of [`ElectrolyteData`](@ref)
+
+Output: 
+- γ (mutated) activity coefficients
 """
-function DGL_gamma!(γ, c, p, electrolyte)
+function DGML_gamma!(γ, c, p, electrolyte)
     (; Mrel, tildev, v0, RT, v0, nc, rexp) = electrolyte
     c0, barc = c0_barc(c, electrolyte)
     for ic in 1:nc
@@ -31,84 +42,87 @@ end
 """
 $(TYPEDEF)
 
-Data for electrolyte. It is defined using `Base.@kwdef`
+Data for electrolyte. It is defined using [`Base.@kwdef`](https://docs.julialang.org/en/v1/base/base/#Base.@kwdef)
 allowing for keyword constructors like
 ```julia
     ElectrolyteData(nc=3,z=[-1,2,1])
 ```
+The struct has three groups of fields:
+- Problem parameters: these are meant to be set by user in order to provide simulation parameters.
+- Derived values: these are derived from problem parameters by default, or via [`update_derived!`](@ref) after setting some of the problems pararmeters
+- Fixed values: these are mostly physical constants and values derived from them, they should not be changed.
+- Reserved fields: they are used to pass information during simulations and should not be set by the user.
 
-To see default values, just create an instance as `ElectrolyteData()`.
 Fields (reserved fields are modified by some algorithms):
-
 $(TYPEDFIELDS)
 """
 @kwdef mutable struct ElectrolyteData{Tγ, Tcache, Texp, Tlog, Tflux} <: AbstractElectrolyteData
-    "Number of ionic species."
+    "Number of charged species ``N``."
     nc::Int = 2
 
     "Number of surface species"
     na::Int = 0
 
-    "Potential index in species list."
+    "Index of electrostatic potential ``ϕ`` in species list."
     iϕ::Int = nc + na + 1
 
-    "Pressure index in species list"
+    "Index of pressure `p` in species list"
     ip::Int = nc + na + 2
 
-    "Mobility coefficient"
+    "Mobility coefficients ``D_i\\; (i=1…N)``"
     D::Vector{Float64} = fill(2.0e-9 * ufac"m^2/s", nc)
 
-    "Charge numbers of ions"
+    "Charge numbers of ions ``z_i\\; (i=1…N)``"
     z::Vector{Int} = [(-1)^(i - 1) for i in 1:nc]
 
-    "Molar weight of solvent"
+    "Molar weight of solvent ``M_0``"
     M0::Float64 = 18.0153 * ufac"g/mol"
 
-    "Molar weights of ions"
+    "Molar weights of ions ``M_i\\; (i=1…N)``"
     M::Vector{Float64} = fill(M0, nc)
 
-    "Molar volume of solvent"
+    "Molar volume of solvent ``v_0``"
     v0::Float64 = 1 / (55.4 * ufac"M")
 
-    "Molar volumes of ions"
+    "Molar volumes of ions ``v_i\\; (i=1…N)``"
     v::Vector{Float64} = fill(v0, nc)
 
-    "Solvation numbers of ions"
+    "Solvation numbers of ions ``κ_i\\; (i=1…N)``"
     κ::Vector{Float64} = fill(10.0, nc)
-
-    "Bulk ion concentrations"
-    c_bulk::Vector{Float64} = fill(0.1 * ufac"M", nc)
 
     """
         actcoeff!(γ, c, p, ::ElectrolyteData)
-    Activity coefficient function. Write activity
-    coefficients into `γ`.
-    Default: [`DGL_gamma!`](@ref).
+
+    Activity coefficient function. Write activity coefficients  ``γ_i\\; (i=1…N)`` into vector `γ`.
+    Default: [`DGML_gamma!`](@ref). 
     """
-    actcoeff!::Tγ = DGL_gamma!
+    actcoeff!::Tγ = DGML_gamma!
 
-    "Bulk voltage"
-    ϕ_bulk::Float64 = 0.0 * ufac"V"
-
-    "Bulk pressure"
-    p_bulk::Float64 = 0.0 * ufac"Pa"
-
-    "Bulk boundary number"
-    Γ_bulk::Int = 2
+    "Bulk ion concentrations ``c_i^b\\; (i=1…N)`` "
+    c_bulk::Vector{Float64} = fill(0.1 * ufac"M", nc)
 
     "Working electrode boundary number"
     Γ_we::Int = 1
 
-    "Temperature"
+    "Bulk boundary number"
+    Γ_bulk::Int = 2
+
+    "Bulk voltage ``ϕ^b``"
+    ϕ_bulk::Float64 = 0.0 * ufac"V"
+
+    "Bulk pressure ``p^b``"
+    p_bulk::Float64 = 0.0 * ufac"Pa"
+
+    "Temperature ``T``"
     T::Float64 = (273.15 + 25) * ufac"K"
 
-    "Dielectric permittivity of solvent"
+    "Dielectric permittivity of solvent ``ε``"
     ε::Float64 = 78.49
 
-    "Regularized exponential, default: exp (unregularized)"
+    "Regularized exponential, default: `exp` (unregularized)"
     rexp::Texp = exp
 
-    "Regularized logarithm, default: log (unregularized)"
+    "Regularized logarithm, default: `log` (unregularized)"
     rlog::Tlog = log
 
     "Pressure scaling factor. Default: 1.0e9"
@@ -140,25 +154,28 @@ $(TYPEDFIELDS)
     """
     solvepressure::Bool = true
 
-    "Faraday constant (fixed)"
+    "Faraday constant ``F`` (fixed)"
     F::Float64 = ph"N_A" * ph"e"
 
-    "Dielectric permittivity of vacuum (fixed)"
+    "Dielectric permittivity of vacuum ``ε_0`` (fixed)"
     ε_0::Float64 = ph"ε_0"
 
-    "Molar gas constant scaled with temperature (derived)"
+    "Molar gas constant scaled with temperature ``RT`` (derived)"
     RT::Float64 = ph"R" * T
 
-    "Solvated molar mass ratio (derived)"
+    "Solvated molar mass ratio ``m_i = \\frac{M_i}{M_0} + κ_i \\; (i=1… N)`` (derived)"
     Mrel::Vector{Float64} = M / M0 + κ
 
-    "Solvated molar volume (derived)"
+    "Solvated molar volume ratio ``\\hat v_i =  \\frac{v_i}{v_0} + κ_i \\; (i=1… N)`` (derived)"
+    vrel::Vector{Float64} = v / v0 + κ
+
+    "Solvated molar volume ``\\bar v_i = v_i + κ_i v_0 \\; (i=1… N)`` (derived)"
     barv::Vector{Float64} = v + κ * v0
 
-    "Pressure relevant volume (derived)"
+    "Pressure relevant volume ``\\tilde v_i = \\bar v_i + m_i v_0 \\; (i=1… N)``  (derived)"
     tildev::Vector{Float64} = barv - Mrel * v0
 
-    "Activity coefficient of at bulk interface (derived)"
+    "Activity coefficients at bulk interface ``γ_i^b= γ_i(c_1^b … c_N^b, p^b) \\; (i=1… N)`` (derived)"
     γ_bulk::Vector{Float64} = ones(nc)
 
     "Cache for activity coefficient calculation (reserved)"
@@ -168,7 +185,7 @@ $(TYPEDFIELDS)
     γl_cache::Tcache = DiffCache(zeros(nc), 10 * nc)
 
     """
-    Working electrode voltage (reserved)
+    Working electrode voltage ``ϕ_{we}`` (reserved)
     Used by sweep algorithms to pass boundary data.
     """
     ϕ_we::Float64 = 0.0 * ufac"V"
@@ -188,27 +205,37 @@ end
 function Base.setproperty!(this::ElectrolyteData, key::Symbol, value)
     if key == :scheme
         @warn """ Setting ElectrolyteData.scheme  is deprecated and has been disabled. 
-                Use `upwindflux!` instead to change the discretization scheme.
-            """
+            Use `upwindflux!` instead to change the discretization scheme.
+        """
         return nothing
     elseif key == :edgevelocity
         return Base.setfield!(this, key, value)
     else
-        return Base.setfield!(this, key, convert(typeof(getfield(this,key)),value))
+        return Base.setfield!(this, key, convert(typeof(getfield(this, key)), value))
     end
 end
+
 function Base.show(io::IOContext{Base.TTY}, this::ElectrolyteData)
+    return showstruct(io, this)
+end
+
+function Base.show(io::IOContext{Base.IOBuffer}, this::ElectrolyteData)
     return showstruct(io, this)
 end
 
 """
     update_derived!(electrolyte::ElectrolyteData)
 
-Update derived electrolyte data.
+Update derived electrolyte data. This needs to be called in order to update fields
+`Mrel`, `vrel`, `barv`, `tildev`, `RT`, `γ_bulk` of `ElectrolyteData` after changing some
+of the other parameters.
+
+Called on the passed electrolyte data by [`PNPSystem`](@ref),  [`PBSystem`](@ref),  [`dlcapsweep`](@ref),  [`ivsweep`](@ref),  [`cvsweep`](@ref).
 """
 function update_derived!(electrolyte::ElectrolyteData)
     (; M, M0, κ, T, v, v0, T, c_bulk, p_bulk, actcoeff!) = electrolyte
     electrolyte.Mrel .= M / M0 + κ
+    electrolyte.vrel .= v / v0 + κ
     electrolyte.barv .= v + κ * v0
     electrolyte.tildev .= electrolyte.barv - electrolyte.Mrel * v0
     electrolyte.RT = ph"R" * T
@@ -218,48 +245,20 @@ end
 
 
 """
-    set_model!(electrolyte, model)
-
-Force the electrolyte data to be consistent to given model. The following
-models are supported:
-  - `:default`, `:DGL`: Dreyer/Guhlke/Landstorfer model (varying solvation, molar volumes, molar mass, solve for pressure)
-  - `:BAO`:  Borukhov/Andelman/Orland (``κ_i=0``, ``M_i=M_0``, `solvepressure=false`)
-  - `:DGM`:  Dreyer/Guhlke/Müller (``κ_i=0``, ``v_i=v_0``)
-  - `:ρconst`: Constant density (``M_i=M_0v_i/v_0``) (for consistent coupling with stokes)
-"""
-function set_model!(electrolyte, model)
-    if model == :BAO
-        electrolyte.κ .= 0
-        electrolyte.M .= electrolyte.M0
-        electrolyte.solvepressure = false
-        electrolyte.model = :BAO
-    elseif model == :default || model == :DGL
-        electrolyte.model = :DGL
-    elseif model == :DGM
-        electrolyte.κ .= 0
-        electrolyte.v .= electrolyte.v0
-        electrolyte.model = :DGM
-    elseif model == :ρconst
-        electrolyte.M .= electrolyte.v .* electrolyte.M / electrolyte.v0
-        electrolyte.model = :DGM
-    else
-        error("Unknown electrolyte model: $(model)")
-    end
-    return nothing
-end
-
-"""
     solvepressure(electrolyte)
 
-Check if pressure is to be solved for using the pressure Laplace equation derived
-from the Navier-Stokes equation in mechanical equilibrium or if the pressure is
+Check if pressure is to be solved for using the momentum balance equation, or if the pressure is 
 obtained from the (Navier)-Stokes solver.
 """
 solvepressure(electrolyte) = electrolyte.solvepressure
 
+"""
+    value_or_getindex(v,i)
 
-_evelo(v::Number, i) = v
-_evelo(v::Vector, i) = v[i]
+Return number or i-th component of `Union{Number, Vector}`.
+"""
+value_or_getindex(v::Number, i) = v
+value_or_getindex(v::Vector, i) = v[i]
 
 """
     edgevelocity(electrolyte, iedge)
@@ -267,14 +266,18 @@ _evelo(v::Vector, i) = v[i]
 Obtain the velocity projection onto a simplex edge of index i (normals to Voronoi cell boundaries).
 """
 function edgevelocity(electrolyte, i)
-    return _evelo(electrolyte.edgevelocity, i)
+    return value_or_getindex(electrolyte.edgevelocity, i)
 end
 
 
 """
     dlcap0(electrolyte)
 
-Double layer capacitance at zero voltage for symmetric binary electrolyte.
+Return double layer capacitance at zero voltage for symmetric binary electrolyte.
+The molarity is defined by the bulk concentration value ``c_1^b``.
+```math
+    c_{dl}=2 \\frac{εε_0F^2c_1^b}{RT}
+```
 
 ### Example
 ```jldoctest
@@ -293,7 +296,11 @@ end
 """
     debyelength(electrolyte)
 
-Debye length.
+Return debye length for symmetric binary electrolyte. The molarity is defined
+by the bulk concentration value ``c_1^b``.
+```math
+    l_{debye}=\\sqrt{RT\\frac{εε_0}{F^2c_1^b}}
+```
 
 ```jldoctest
 using LessUnitful
@@ -322,8 +329,7 @@ end
 """
     chargedensity!(q, sol,electrolyte)
 
-Calculate charge density from solution (on the whole grid), putting the resulti
-into `q` and returning this vector.
+Calculate charge density from solution (on the whole grid), writing the result into `q` and returning this vector.
 """
 function chargedensity!(q::AbstractVector, u::AbstractMatrix, electrolyte::AbstractElectrolyteData)
     nnodes = size(u, 2)
@@ -346,7 +352,8 @@ end
 """
     chargedensity(tsol,electrolyte)
 
-Calculate charge densities from  from time/voltage dependent solution solution (on whole grid)
+Calculate time dependent charge densities from  from time/voltage dependent solution solution (on whole grid).
+Returns a [`VoronoiFVM.TransientSolution`](https://wias-pdelib.github.io/VoronoiFVM.jl/stable/solutions/#VoronoiFVM.TransientSolution).
 """
 function chargedensity(tsol::TransientSolution, electrolyte)
     nv = length(tsol.t)
@@ -355,12 +362,6 @@ function chargedensity(tsol::TransientSolution, electrolyte)
     return TransientSolution(charges, tsol.t)
 end
 
-@doc raw"""
-	vrel(ic,electrolyte)
-
-Calculate relative (wrt. solvent) molar volume of i-th species ``v_{i,rel}=κ_i+\frac{v_i}{v_0}``.
-"""
-vrel(ic, electrolyte) = electrolyte.v[ic] / electrolyte.v0 + electrolyte.κ[ic]
 
 """
 	c0_barc(u,electrolyte)
@@ -387,11 +388,13 @@ Then we can calculate
 ```
 """
 function c0_barc(c, electrolyte)
-    c0 = one(eltype(c)) / electrolyte.v0
-    barc = zero(eltype(c))
-    for ic in 1:(electrolyte.nc)
+    (; v0, vrel, nc) = electrolyte
+    T = eltype(c)
+    c0 = one(T) / v0
+    barc = zero(T)
+    for ic in 1:(nc)
         barc += c[ic]
-        c0 -= c[ic] * vrel(ic, electrolyte)
+        c0 -= c[ic] * vrel[ic]
     end
     barc += c0
     return c0, barc
@@ -404,10 +407,11 @@ end
 Calculate vector of solvent concentrations from solution array.
 """
 function solventconcentration(U::Array, electrolyte)
+    (; v0, vrel, nc) = electrolyte
     @views c0 = similar(U[1, :])
-    c0 .= 1.0 / electrolyte.v0
-    for ic in 1:(electrolyte.nc)
-        @views  c0 .-= U[ic, :] .* vrel(ic, electrolyte)
+    c0 .= 1.0 / v0
+    for ic in 1:(nc)
+        @views  c0 .-= U[ic, :] .* vrel[ic]
     end
     return c0
 end
@@ -452,12 +456,12 @@ round(μ0, sigdigits = 5), round.(μ, sigdigits = 5)
     volume ``v`` instead of the effective molar volume ``\\bar v = v + κv_0``
     to calculate the ion chemical potentials. Examples with κ=0 are not affected.
 """
-function chemical_potentials!(μ, u::AbstractVector, data::AbstractElectrolyteData)
-    (; ip, v0, v, nc) = data
-    c0, barc = c0_barc(u, data)
-    μ0 = chemical_potential(c0, barc, u[ip], data.v0, data)
+function chemical_potentials!(μ, u::AbstractVector, electrolyte::AbstractElectrolyteData)
+    (; ip, v0, v, nc, v, v0, barv) = electrolyte
+    c0, barc = c0_barc(u, electrolyte)
+    μ0 = chemical_potential(c0, barc, u[ip], v0, electrolyte)
     for i in 1:nc
-        μ[i] = chemical_potential(u[i], barc, u[ip], data.v[i] + data.κ[i] * data.v0, data)
+        μ[i] = chemical_potential(u[i], barc, u[ip], barv[i], electrolyte)
     end
     return μ0, μ
 end
@@ -529,48 +533,46 @@ end
 
 
 """
-    isincompressible(cx::Vector,celldata)
+    isincompressible(cx::Vector,electrolyte)
 
 Check if the concentration vector fulfills incompressibility constraint, including
 the fact that the solvent concentration is nonnegative
 """
-function isincompressible(cx::Vector, celldata)
-    c0, barc = c0_barc(cx, celldata)
-    v0 = celldata.v0
-    v = celldata.v
-    κx = celldata.κ
+function isincompressible(cx::Vector, electrolyte)
+    (; v0, v, κ) = electrolyte
+    c0, barc = c0_barc(cx, electrolyte)
     cv = c0 * v0
-    for i in 1:(celldata.nc)
-        cv += cx[i] * (v[i] + κx[i] * v0)
+    for i in 1:(electrolyte.nc)
+        cv += cx[i] * (v[i] + κ[i] * v0)
     end
     return c0 ≥ 0 && cv ≈ 1.0
 end
 
 """
-    isincompressible(tsol::TransientSolution,celldata)
+    isincompressible(tsol::TransientSolution,electrolyte)
 
 Check for incompressibility of transient solution
 """
-function isincompressible(tsol::TransientSolution, celldata)
-    return all(cx -> isincompressible(cx, celldata), [u[:, i] for u in tsol.u, i in size(tsol, 2)])
+function isincompressible(tsol::TransientSolution, electrolyte)
+    return all(cx -> isincompressible(cx, electrolyte), [u[:, i] for u in tsol.u, i in size(tsol, 2)])
 end
 
 """
-    iselectroneutral(cx::Vector,celldata)
+    iselectroneutral(cx::Vector,electrolyte)
 
 Check for electroneutrality of concentration vector
 """
-function iselectroneutral(cx, celldata)
-    return isapprox(cx[1:(celldata.nc)]' * celldata.z, 0; atol = 1.0e-12)
+function iselectroneutral(cx, electrolyte)
+    return isapprox(cx[1:(electrolyte.nc)]' * electrolyte.z, 0; atol = 1.0e-12)
 end
 
 """
-    iselectroneutral(tsol::TransientSolution,celldata)
+    iselectroneutral(tsol::TransientSolution,electrolyte)
 
 Check for electroneutrality of transient solution
 """
-function iselectroneutral(tsol::TransientSolution, celldata)
-    return all(cx -> iselectroneutral(cx, celldata), [u[:, i] for u in tsol.u, i in size(tsol, 2)])
+function iselectroneutral(tsol::TransientSolution, electrolyte)
+    return all(cx -> iselectroneutral(cx, electrolyte), [u[:, i] for u in tsol.u, i in size(tsol, 2)])
 end
 
 
