@@ -12,7 +12,7 @@ function make(; with_notebooks = true, with_examples = true)
         "notations.md",
         "api.md",
         "std.md",
-        "internal.md"
+        "internal.md",
     ]
 
     cleanexamples()
@@ -63,10 +63,10 @@ function make(; with_notebooks = true, with_examples = true)
     if !isinteractive()
         deploydocs(repo = "github.com/j-fu/LiquidElectrolytes.jl.git", devbranch = "main")
     end
-    return 
+    return
 end
 
-if isinteractive() || ENV["DOCSONLY"]=="true"
+if isinteractive() || (haskey(ENV, "DOCSONLY") && ENV["DOCSONLY"] == "true")
     make(; with_notebooks = false, with_examples = false)
 else
     make()
