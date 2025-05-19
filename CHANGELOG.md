@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.2 - 2025-05-18 
+- Documentation update
+
 ## 2.0.1 - 2025-05-14 
 - Bugfixes + additions wrt. 2.0.0. 2.0.0 wasn't fully working
 
