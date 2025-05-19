@@ -9,8 +9,9 @@ thisdir = pwd()
 function make(; with_notebooks = true, with_examples = true)
     pages = Any[
         "Home" => "index.md",
-        "Electrolyte models" => "api.md",
+        "Electrolyte models" => "models.md",
         "Notations" => "notations.md",
+        "Model implementations" => "api.md",
         "Standard calculations" => "std.md",
         "Internal API" => "internal.md",
     ]
@@ -60,13 +61,13 @@ function make(; with_notebooks = true, with_examples = true)
     )
 
     cleanexamples()
-    return if !isinteractive()
+    if !isinteractive()
         deploydocs(repo = "github.com/j-fu/LiquidElectrolytes.jl.git", devbranch = "main")
     end
-
+    return 
 end
 
-if true #isinteractive()
+if isinteractive()
     make(; with_notebooks = false, with_examples = false)
 else
     make()
