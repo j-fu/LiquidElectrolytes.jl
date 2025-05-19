@@ -791,7 +791,7 @@ end
 # ╔═╡ 595715e5-f108-4167-b104-ac7c6f652e48
 elydata = ElectrolyteData(
     c_bulk = fill(0.01 * ufac"mol / dm^3", 2),
-    κ = [5,10.0]
+    κ = [5, 10.0]
 )
 
 # ╔═╡ 00464966-2b1e-455c-a3a1-2af61c6649b7
@@ -841,11 +841,11 @@ function capscalc(sys, molarities)
     result = []
     for imol in 1:length(molarities)
         if !isa(sys, AbstractElectrochemicalSystem)
-            data=sys.physics.data
+            data = sys.physics.data
             set_molarity!(data, molarities[imol])
             t = @elapsed volts, caps = dlcapsweep_equi(sys, vmax = 1V, nsteps = 101)
         else
-            data=sys.vfvmsys.physics.data
+            data = sys.vfvmsys.physics.data
             data.c_bulk .= molarities[imol] * ufac"mol/dm^3"
             t = @elapsed r = dlcapsweep(
                 sys,

@@ -120,9 +120,9 @@ function cvsweep(
         nperiods = 1,
         store_solutions = false,
         solver_kwargs...
-)
+    )
     update_derived!(electrolyte)
-    sys=esys.vfvmsys
+    sys = esys.vfvmsys
     F = ph"N_A" * ph"e"
     factory = VoronoiFVM.TestFunctionFactory(sys)
     tf_we = testfunction(factory, [electrolyte.Γ_bulk], [electrolyte.Γ_we])
@@ -142,7 +142,7 @@ function cvsweep(
         rnorm = u -> wnorm(u, electrolyte.weights, 1),
         solver_kwargs...
     )
-    times = [i * period(voltages) for i = 0:nperiods]
+    times = [i * period(voltages) for i in 0:nperiods]
     iϕ = electrolyte.iϕ
     @info "Solving for $(voltages(0))V..."
     inival = solve(sys; inival = unknowns(esys), control = deepcopy(control), damp_initial = 0.1)
@@ -171,7 +171,7 @@ function cvsweep(
         function delta(sys, u, v, t, Δt)
             n = wnorm(u - v, electrolyte.weights, Inf)
         end
-        
+
         tsol = solve(
             sys;
             inival,

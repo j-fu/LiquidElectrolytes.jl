@@ -21,11 +21,11 @@ myround(c::DiffCache; kwargs...) = typeof(c)
 Print struct with field names and field values.
 """
 function showstruct(io::IO, this)
-    print(io,"$(typeof(this))(")
+    println(io, "$(typeof(this))(")
     for name in fieldnames(typeof(this))
-        print(io, "$name = $(myround(getfield(this, name), sigdigits = 5)), ")
+        println(io, "$name = $(myround(getfield(this, name), sigdigits = 5)), ")
     end
-    println(io,")")
+    println(io, ")")
     return nothing
 end
 
@@ -37,12 +37,12 @@ Callable struct for regularized exponential. Linear continuation for `x>trunc`,
 returns 1/rexp(-x) for `x<-trunc`. Objects `myexp::RExp`  of this type are meant to replace
 the exponential function and allow to invoke `myexp(x)`.
 """
-struct RExp{T<:AbstractFloat}
+struct RExp{T <: AbstractFloat}
     trunc::T
 end
 
 function (myexp::RExp)(x)
-    (;trunc) = myexp
+    (; trunc) = myexp
     if x < -trunc
         return 1.0 / rexp(-x)
     elseif x <= trunc
@@ -57,7 +57,7 @@ end
 
 Return `RExp(log(sqrt(floatmax(T))))`
 """
-RExp(::Type{T}) where T=RExp{T}(log(sqrt(floatmax(T))))
+RExp(::Type{T}) where {T} = RExp{T}(log(sqrt(floatmax(T))))
 
 """
     RExp()
@@ -73,12 +73,12 @@ This means we can calculate a "logarithm"  of a small negative number.
 Objects `mylog::RLog`  of this type are meant to replace
 the logarithm function and allow to invoke `mylog(x)`.
 """
-struct RLog{T<:AbstractFloat}
+struct RLog{T <: AbstractFloat}
     eps::T
 end
 
 function (mylog::RLog)(x)
-    (;eps)=mylog
+    (; eps) = mylog
     if x < eps
         return log(eps) + (x - eps) / eps
     else
@@ -87,13 +87,12 @@ function (mylog::RLog)(x)
 end
 
 
-
 """
     RLog(T::type)
 
 Return `RLog(eps(T)^4)`
 """
-RLog(::Type{T}) where T=RLog{T}(eps(T)^4)
+RLog(::Type{T}) where {T} = RLog{T}(eps(T)^4)
 
 """
     RLog()
@@ -138,5 +137,3 @@ function _splitz(range::Vector)
         end
     end
 end
-
-

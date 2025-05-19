@@ -4,9 +4,8 @@
 Finite volume storage term
 """
 function pnpstorage!(f, u, node, electrolyte)
-    f[electrolyte.iϕ] = zero(eltype(u))
-    f[electrolyte.ip] = zero(eltype(u))
-    for ic in 1:(electrolyte.nc)
+    (; nc) = electrolyte
+    for ic in 1:nc
         f[ic] = u[ic]
     end
     return
@@ -18,7 +17,8 @@ end
 Finite volume boundary storage term
 """
 function pnpbstorage!(f, u, node, electrolyte)
-    for ia in (electrolyte.nc + 1):(electrolyte.nc + electrolyte.na)
+    (; nc, na) = electrolyte
+    for ia in (nc + 1):(nc + na)
         f[ia] = u[ia]
     end
     return
@@ -30,16 +30,12 @@ end
 Finite volume reaction term
 """
 function pnpreaction!(f, u, node, electrolyte)
-    ## Charge density
-    f[electrolyte.iϕ] = -chargedensity(u, electrolyte)
+    (; iϕ, ip) = electrolyte
+    f[iϕ] = -chargedensity(u, electrolyte)
     if solvepressure(electrolyte)
-        f[electrolyte.ip] = 0
+        f[ip] = 0
     else
-        f[electrolyte.ip] = u[electrolyte.ip]
-    end
-
-    for ic in 1:(electrolyte.nc)
-        f[ic] = 0
+        f[ip] = u[ip]
     end
     return
 end
@@ -51,9 +47,8 @@ end
 Calculate differences of excess chemical potentials from activity coefficients
 """
 @inline function dμex(γk, γl, electrolyte)
-    (;RT, rlog) = electrolyte
-    f=(rlog(γk) - rlog(γl)) * RT
-    return f
+    (; RT, rlog) = electrolyte
+    return (rlog(γk) - rlog(γl)) * RT
 end
 
 """
@@ -71,9 +66,9 @@ Verification calculation is in the paper.
 """
 function μex_flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
     (; D, z, F, RT, nc) = electrolyte
-    for ic=1:nc
-       bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(γk[ic], γl[ic], electrolyte) / RT - evelo / D[ic])
-       f[ic]= D[ic] * (bm * ck[ic] - bp * cl[ic])
+    for ic in 1:nc
+        bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(γk[ic], γl[ic], electrolyte) / RT - evelo / D[ic])
+        f[ic] = D[ic] * (bm * ck[ic] - bp * cl[ic])
     end
     return nothing
 end
@@ -88,10 +83,10 @@ consistent to thermodynamic equilibrium but shows inferior convergence behavior.
 """
 function act_flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
     (; D, z, F, RT, nc) = electrolyte
-    for ic=1:nc
+    for ic in 1:nc
         Dx = D[ic] * (1 / γk[ic] + 1 / γl[ic]) / 2
         bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT - evelo / D[ic])
-        f[ic]=Dx * (bm * ck[ic] * γk[ic] - bp * cl[ic] * γl[ic])
+        f[ic] = Dx * (bm * ck[ic] * γk[ic] - bp * cl[ic] * γl[ic])
     end
     return nothing
 end
@@ -106,7 +101,7 @@ inferior convergence behavior.
 """
 function cent_flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
     (; D, z, F, RT, nc, rlog) = electrolyte
-    for ic=1:nc
+    for ic in 1:nc
         μk = rlog(ck[ic]) * RT
         μl = rlog(cl[ic]) * RT
         f[ic] = D[ic] * 0.5 * (ck[ic] + cl[ic]) * ((μk - μl + dμex(γk[ic], γl[ic], electrolyte) + z[ic] * F * dϕ) / RT - evelo / D[ic])
@@ -121,32 +116,31 @@ Finite volume flux. It calls either [`μex_flux!`](@ref), [`cent_flux!`](@ref) o
 """
 function pnpflux!(f, u, edge, electrolyte)
     (;
-     ip, iϕ, v0, v, M0, M, κ, ε_0, ε, D,F,z,RT, nc,
-     eneutral, pscale, p_bulk, upwindflux!,
-     actcoeff!, γk_cache, γl_cache
-     ) = electrolyte
+        nc, ip, iϕ,
+        ε_0, ε,
+        eneutral, pscale, p_bulk,
+        upwindflux!, actcoeff!,
+        γk_cache, γl_cache,
+    ) = electrolyte
 
     evelo = edgevelocity(electrolyte, edge.index)
 
     pk, pl = u[ip, 1] * pscale - p_bulk, u[ip, 2] * pscale - p_bulk
     ϕk, ϕl = u[iϕ, 1], u[iϕ, 2]
     ck, cl = view(u, :, 1), view(u, :, 2)
-
-    γk, γl=get_tmp(γk_cache, u), get_tmp(γl_cache, u)
+    qk, ql = chargedensity(ck, electrolyte), chargedensity(cl, electrolyte)
+    γk, γl = get_tmp(γk_cache, u), get_tmp(γl_cache, u)
     actcoeff!(γk, ck, pk, electrolyte)
     actcoeff!(γl, cl, pl, electrolyte)
 
-    qk, ql = chargedensity(ck, electrolyte), chargedensity(cl, electrolyte)
-
     dϕ = ϕk - ϕl
-
     f[iϕ] = ε * ε_0 * dϕ * !eneutral
-
     if solvepressure(electrolyte)
         f[ip] = u[ip, 1] - u[ip, 2] + (qk + ql) * dϕ / (2 * pscale)
     end
-    
+
     upwindflux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo)
+
     return
 end
 
@@ -211,7 +205,7 @@ electrolytedata(sys::AbstractElectrochemicalSystem) = sys.vfvmsys.physics.data
 Return vector of unknowns initialized with bulk data.
 """
 function VoronoiFVM.unknowns(esys::AbstractElectrochemicalSystem)
-    sys=esys.vfvmsys
+    sys = esys.vfvmsys
     (; iϕ, ip, nc, na, c_bulk, Γ_we) = electrolytedata(esys)
     u = unknowns(sys)
     @views u[iϕ, :] .= 0

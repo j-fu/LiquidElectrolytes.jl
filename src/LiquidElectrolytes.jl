@@ -5,7 +5,7 @@ $(read(joinpath(@__DIR__, "..", "README.md"), String))
 """
 module LiquidElectrolytes
 using Base: @kwdef
-using DocStringExtensions: DocStringExtensions,  TYPEDEF, TYPEDFIELDS
+using DocStringExtensions: DocStringExtensions, TYPEDEF, TYPEDFIELDS
 using ExtendableGrids: ExtendableGrids, ExtendableGrid, num_nodes
 using LessUnitful: LessUnitful, @local_phconstants, @local_unitfactors, @ph_str, @ufac_str
 using InteractiveUtils: InteractiveUtils
@@ -46,7 +46,7 @@ export PBSystem
 include("results.jl")
 export AbstractSimulationResult, voltages, currents, voltages_solutions, voltages_dlcaps, voltages_currents
 include("dlcapsweep.jl")
-export dlcapsweep,  DLCapSweepResult
+export dlcapsweep, DLCapSweepResult
 include("ivsweep.jl")
 export ivsweep, IVSweepResult
 include("cvsweep.jl")

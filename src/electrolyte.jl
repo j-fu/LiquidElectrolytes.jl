@@ -43,72 +43,72 @@ Fields (reserved fields are modified by some algorithms):
 $(TYPEDFIELDS)
 """
 @kwdef mutable struct ElectrolyteData{Tγ, Tcache, Texp, Tlog, Tflux} <: AbstractElectrolyteData
-    "Number of ionic species."
+    "Number of charged species ``N``."
     nc::Int = 2
 
     "Number of surface species"
     na::Int = 0
 
-    "Potential index in species list."
+    "Index of electrostatic potential ``ϕ`` in species list."
     iϕ::Int = nc + na + 1
 
-    "Pressure index in species list"
+    "Index of pressure `p` in species list"
     ip::Int = nc + na + 2
 
-    "Mobility coefficient"
+    "Mobility coefficients ``D_i\\; (i=1…N)``"
     D::Vector{Float64} = fill(2.0e-9 * ufac"m^2/s", nc)
 
-    "Charge numbers of ions"
+    "Charge numbers of ions ``z_i\\; (i=1…N)``"
     z::Vector{Int} = [(-1)^(i - 1) for i in 1:nc]
 
-    "Molar weight of solvent"
+    "Molar weight of solvent ``M_0``"
     M0::Float64 = 18.0153 * ufac"g/mol"
 
-    "Molar weights of ions"
+    "Molar weights of ions ``M_i\\; (i=1…N)``"
     M::Vector{Float64} = fill(M0, nc)
 
-    "Molar volume of solvent"
+    "Molar volume of solvent ``v_0``"
     v0::Float64 = 1 / (55.4 * ufac"M")
 
-    "Molar volumes of ions"
+    "Molar volumes of ions ``v_i\\; (i=1…N)``"
     v::Vector{Float64} = fill(v0, nc)
 
-    "Solvation numbers of ions"
+    "Solvation numbers of ions ``κ_i\\; (i=1…N)``"
     κ::Vector{Float64} = fill(10.0, nc)
-
-    "Bulk ion concentrations"
-    c_bulk::Vector{Float64} = fill(0.1 * ufac"M", nc)
 
     """
         actcoeff!(γ, c, p, ::ElectrolyteData)
-    Activity coefficient function. Write activity
-    coefficients into `γ`.
+
+    Activity coefficient function. Write activity coefficients  ``γ_i\\; (i=1…N)`` into buffer `γ`.
     Default: [`DGL_gamma!`](@ref).
     """
     actcoeff!::Tγ = DGL_gamma!
 
-    "Bulk voltage"
-    ϕ_bulk::Float64 = 0.0 * ufac"V"
-
-    "Bulk pressure"
-    p_bulk::Float64 = 0.0 * ufac"Pa"
-
-    "Bulk boundary number"
-    Γ_bulk::Int = 2
+    "Bulk ion concentrations ``c_i^b\\; (i=1…N)`` "
+    c_bulk::Vector{Float64} = fill(0.1 * ufac"M", nc)
 
     "Working electrode boundary number"
     Γ_we::Int = 1
 
-    "Temperature"
+    "Bulk boundary number"
+    Γ_bulk::Int = 2
+
+    "Bulk voltage ``ϕ^b``"
+    ϕ_bulk::Float64 = 0.0 * ufac"V"
+
+    "Bulk pressure ``p^b``"
+    p_bulk::Float64 = 0.0 * ufac"Pa"
+
+    "Temperature ``T``"
     T::Float64 = (273.15 + 25) * ufac"K"
 
-    "Dielectric permittivity of solvent"
+    "Dielectric permittivity of solvent ``ε``"
     ε::Float64 = 78.49
 
-    "Regularized exponential, default: exp (unregularized)"
+    "Regularized exponential, default: `exp` (unregularized)"
     rexp::Texp = exp
 
-    "Regularized logarithm, default: log (unregularized)"
+    "Regularized logarithm, default: `log` (unregularized)"
     rlog::Tlog = log
 
     "Pressure scaling factor. Default: 1.0e9"
@@ -140,25 +140,25 @@ $(TYPEDFIELDS)
     """
     solvepressure::Bool = true
 
-    "Faraday constant (fixed)"
+    "Faraday constant ``F`` (fixed)"
     F::Float64 = ph"N_A" * ph"e"
 
-    "Dielectric permittivity of vacuum (fixed)"
+    "Dielectric permittivity of vacuum ``ε_0`` (fixed)"
     ε_0::Float64 = ph"ε_0"
 
-    "Molar gas constant scaled with temperature (derived)"
+    "Molar gas constant scaled with temperature ``RT`` (derived)"
     RT::Float64 = ph"R" * T
 
-    "Solvated molar mass ratio (derived)"
+    "Solvated molar mass ratio ``m_i = \\frac{M_i}{M_0} + κ_i \\; (i=1… N)`` (derived)"
     Mrel::Vector{Float64} = M / M0 + κ
 
-    "Solvated molar volume (derived)"
+    "Solvated molar volume ``\\bar v_i = v_i + κ_i v_0 \\; (i=1… N)`` (derived)"
     barv::Vector{Float64} = v + κ * v0
 
-    "Pressure relevant volume (derived)"
+    "Pressure relevant volume ``\\tilde v_i = \\bar v_i + m_i v_0 \\; (i=1… N)``  (derived)"
     tildev::Vector{Float64} = barv - Mrel * v0
 
-    "Activity coefficient of at bulk interface (derived)"
+    "Activity coefficients at bulk interface ``γ_i^b= γ_i(c_1^b … c_N^b, p^b) \\; (i=1… N)`` (derived)"
     γ_bulk::Vector{Float64} = ones(nc)
 
     "Cache for activity coefficient calculation (reserved)"
@@ -168,7 +168,7 @@ $(TYPEDFIELDS)
     γl_cache::Tcache = DiffCache(zeros(nc), 10 * nc)
 
     """
-    Working electrode voltage (reserved)
+    Working electrode voltage ``ϕ_{we}`` (reserved)
     Used by sweep algorithms to pass boundary data.
     """
     ϕ_we::Float64 = 0.0 * ufac"V"
@@ -188,16 +188,21 @@ end
 function Base.setproperty!(this::ElectrolyteData, key::Symbol, value)
     if key == :scheme
         @warn """ Setting ElectrolyteData.scheme  is deprecated and has been disabled. 
-                Use `upwindflux!` instead to change the discretization scheme.
-            """
+            Use `upwindflux!` instead to change the discretization scheme.
+        """
         return nothing
     elseif key == :edgevelocity
         return Base.setfield!(this, key, value)
     else
-        return Base.setfield!(this, key, convert(typeof(getfield(this,key)),value))
+        return Base.setfield!(this, key, convert(typeof(getfield(this, key)), value))
     end
 end
+
 function Base.show(io::IOContext{Base.TTY}, this::ElectrolyteData)
+    return showstruct(io, this)
+end
+
+function Base.show(io::IOContext{Base.IOBuffer}, this::ElectrolyteData)
     return showstruct(io, this)
 end
 
