@@ -1,15 +1,50 @@
-## General remarks
-All physical quantities are assumed to be consistently represented through their values expressed in basic SI units
-(m, kg, s, A, K, mol, cd), supported by the [LessUnitful.jl](https://j-fu.github.io/LessUnitful.jl/) package
-built on top of [Unitful.jl](https://github.com/PainterQubits/Unitful.jl). 
+# Electrolyte Models
+
+For notations, see the correspponding section on [Notations](@ref).
+## Poisson-Nernst-Planck (PNP) system
+The package is devoted to the numerical solution of the generalized Poisson-Nernst-Planck (PNP) system in the
+following formulation:
+
+Poisson equation:
+```math
+-\nabla \varepsilon\varepsilon_0 \nabla \phi = q = F\sum_{i=1}^N z_i c_i
+```
+Momentum balance:
+```math
+    -\Delta p + q\nabla \phi = 0
+```
+Continuity equation:
+```math
+\partial_t c_i  + \nabla \cdot \mathbf N_i  = 0  \qquad (i=1\dots N)
+```
+Generalized Nernst-Planck flux:
+```math
+ N_i=-D_i c_i \left( \nabla\log \left(\gamma_i\frac{c_i}{c^\circ}\right) + z_i\frac{F}{RT}\nabla\phi\right)  \qquad  (i=1\dots N)
+```
+The activity coefficients ``\gamma_i = \gamma_i(c_1\dots c_N, p)`` encode a particular electrolyte model. In general,
+    the fluxes ``N_i`` are coupled due to the dependency of ``\gamma_i`` on all concentrations and the pressure.
+E.g. ``\gamma_i=1`` describes the classical Guoy-Chapman model. The default implements the model of
+Dreyer, Guhlke, Müller, Landstorfer. See the section on [Activity coefficients](@ref) 
+for more.
+
+## Poisson-Boltzmann (PB) system
+In thermodynamic equilibrium, the fluxes ``N_i`` of the PNP system are zero, which allows to replace the continuity
+and flux equations by the algebraic condition
+```math
+c_i=c_i^b \frac{\gamma_i(c_1^b\dots c_N^b, p^b)}{\gamma_i(c_1\dots c_N,p)}\exp\left(z_i\frac{F}{RT}(\phi^b-\phi)\right),
+
+```
+where ``\phi^b, p^b, c_1^b\dots c_N^b`` are reference values usually imposed as boundary conditions at the interface
+to the bulk of the electrolyte. Poisson equation and momentum balance are kept.
+In general, this algebraic condition for given ``\phi, p`` comprises a nonlinear system of
+equations due to the dependency of ``\gamma_i`` on all concentrations and the pressure.
+
 
 ## Electrolyte data
 ```@docs
 AbstractElectrolyteData
 ElectrolyteData
-update_derived!
 ```
-
 The default values for electrolyte data are those of an symmetric 0.1M aqueous binary electrolyte at 
 298.5K with solvation number κ=10, ion molar volumes and masses similar to those of water molecules and
 diffusion coefficients 2.0e-9 ``m^2/s``. All values given in SI base units:
@@ -19,6 +54,7 @@ ElectrolyteData()
 ```
 
 ```@docs
+update_derived!
 dlcap0(::ElectrolyteData)
 debyelength(::ElectrolyteData)
 chargedensity
@@ -30,7 +66,7 @@ isincompressible
 c0_barc
 ``` 
 
-## Poisson-Nernst-Planck system
+## PNP API
 
 ```@docs
 AbstractElectrochemicalSystem
