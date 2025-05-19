@@ -10,7 +10,9 @@ struct PNPStokesSolver{Tflow, Tpnp}
 end
 
 """
-   flowsolver(grid; μ = 1, velospace = H1P2B)         
+   flowsolver(grid; μ = 1, velospace = H1P2B)
+
+Internal constructor for flow solver implemented in extension module.         
 """
 function flowsolver end
 

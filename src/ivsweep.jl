@@ -56,7 +56,7 @@ function ivsweep(
     )
     update_derived!(electrolyte)
     sys = esys.vfvmsys
-    ranges = _splitz(voltages)
+    ranges = splitz(voltages)
     F = ph"N_A" * ph"e"
     factory = VoronoiFVM.TestFunctionFactory(sys)
     tf_bulk = testfunction(factory, [electrolyte.Γ_we], [electrolyte.Γ_bulk])

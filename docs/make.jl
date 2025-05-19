@@ -1,19 +1,18 @@
 push!(LOAD_PATH, joinpath(@__DIR__, ".."))
 push!(LOAD_PATH, joinpath(@__DIR__, "..", "examples"))
 
-using Documenter, ExampleJuggler, CairoMakie, LiquidElectrolytes, PlutoStaticHTML
+using Documenter, ExampleJuggler, CairoMakie, LiquidElectrolytes, PlutoStaticHTML, VoronoiFVM
 
 ExampleJuggler.verbose!(true)
 thisdir = pwd()
 
 function make(; with_notebooks = true, with_examples = true)
     pages = Any[
-        "Home" => "index.md",
-        "Electrolyte models" => "models.md",
-        "Notations" => "notations.md",
-        "Model implementations" => "api.md",
-        "Standard calculations" => "std.md",
-        "Internal API" => "internal.md",
+        "index.md",
+        "notations.md",
+        "api.md",
+        "std.md",
+        "internal.md"
     ]
 
     cleanexamples()
@@ -67,7 +66,7 @@ function make(; with_notebooks = true, with_examples = true)
     return 
 end
 
-if isinteractive()
+if isinteractive() || ENV["DOCSONLY"]=="true"
     make(; with_notebooks = false, with_examples = false)
 else
     make()

@@ -102,12 +102,12 @@ RLog() = RLog(Float64)
 
 
 """
-    _splitz(range::AbstractRange)
+    splitz(range::AbstractRange)
 
 If range contains zero, split it into two parts, one with values <=0 and one with values >=0.
 Otherwise, return the range or its reverse, such that first value always is the one with the smallest absolute value.
 """
-function _splitz(range::AbstractRange)
+function splitz(range::AbstractRange)
     if range[1] >= 0
         return [range]
     elseif range[end] <= 0
@@ -118,11 +118,11 @@ function _splitz(range::AbstractRange)
 end
 
 """
-    _splitz(range::Vector)
+    splitz(range::Vector)
 
-Version of [`_splitz(range::AbstractRange)`](@ref) for vectors.
+Version of [`splitz(range::AbstractRange)`](@ref) for vectors.
 """
-function _splitz(range::Vector)
+function splitz(range::Vector)
     if range[1] >= 0
         return [vcat([0.0], range)]
     elseif range[end] <= 0

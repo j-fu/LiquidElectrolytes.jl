@@ -1,11 +1,9 @@
 """
-    LiquidElectrolytes
-
-$(read(joinpath(@__DIR__, "..", "README.md"), String))
+$(README)
 """
 module LiquidElectrolytes
 using Base: @kwdef
-using DocStringExtensions: DocStringExtensions, TYPEDEF, TYPEDFIELDS
+using DocStringExtensions: DocStringExtensions, TYPEDEF, TYPEDFIELDS, README
 using ExtendableGrids: ExtendableGrids, ExtendableGrid, num_nodes
 using LessUnitful: LessUnitful, @local_phconstants, @local_unitfactors, @ph_str, @ufac_str
 using InteractiveUtils: InteractiveUtils

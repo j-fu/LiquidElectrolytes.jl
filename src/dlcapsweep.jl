@@ -58,7 +58,7 @@ function dlcapsweep(
         error("The molarity kwarg of dlcapsweep has been removed. Pass the molarity information with electrolyte.c_bulk.")
     end
 
-    ranges = _splitz(voltages)
+    ranges = splitz(voltages)
 
     electrolyte.ϕ_we = 0.0
 

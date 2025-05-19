@@ -12,13 +12,24 @@ Abstract super type for electrolytes.
 """
 abstract type AbstractElectrolyteData end
 
-
 """
-    DGL_gamma!(γ, c, p, electrolyte)
+    DGML_gamma!(γ, c, p, electrolyte)
 
-Activity coefficients according to Dreyer, Guhlke, Landstorfer.
+Activity coefficients according to Dreyer, Guhlke, Müller, Landstorfer.
+
+```math
+γ_i = \\exp\\left(\\frac{\\tilde v_i p}{RT}\\right) \\left(\\frac{\\bar c}{c_0}\\right)^{m_i} \\frac{1}{v_0\\bar c}
+```
+
+Input:
+- c: vector of concentrations
+- p: pressure
+- electrolyte: instance of [`ElectrolyteData`](@ref)
+
+Output: 
+- γ (mutated) activity coefficients
 """
-function DGL_gamma!(γ, c, p, electrolyte)
+function DGML_gamma!(γ, c, p, electrolyte)
     (; Mrel, tildev, v0, RT, v0, nc, rexp) = electrolyte
     c0, barc = c0_barc(c, electrolyte)
     for ic in 1:nc
@@ -82,10 +93,10 @@ $(TYPEDFIELDS)
     """
         actcoeff!(γ, c, p, ::ElectrolyteData)
 
-    Activity coefficient function. Write activity coefficients  ``γ_i\\; (i=1…N)`` into buffer `γ`.
-    Default: [`DGL_gamma!`](@ref).
+    Activity coefficient function. Write activity coefficients  ``γ_i\\; (i=1…N)`` into vector `γ`.
+    Default: [`DGML_gamma!`](@ref). 
     """
-    actcoeff!::Tγ = DGL_gamma!
+    actcoeff!::Tγ = DGML_gamma!
 
     "Bulk ion concentrations ``c_i^b\\; (i=1…N)`` "
     c_bulk::Vector{Float64} = fill(0.1 * ufac"M", nc)
@@ -156,11 +167,11 @@ $(TYPEDFIELDS)
     Mrel::Vector{Float64} = M / M0 + κ
 
     "Solvated molar volume ratio ``\\hat v_i =  \\frac{v_i}{v_0} + κ_i \\; (i=1… N)`` (derived)"
-    vrel::Vector{Float64} = v/v0 + κ
-    
+    vrel::Vector{Float64} = v / v0 + κ
+
     "Solvated molar volume ``\\bar v_i = v_i + κ_i v_0 \\; (i=1… N)`` (derived)"
     barv::Vector{Float64} = v + κ * v0
-    
+
     "Pressure relevant volume ``\\tilde v_i = \\bar v_i + m_i v_0 \\; (i=1… N)``  (derived)"
     tildev::Vector{Float64} = barv - Mrel * v0
 
@@ -233,7 +244,6 @@ function update_derived!(electrolyte::ElectrolyteData)
 end
 
 
-
 """
     solvepressure(electrolyte)
 
@@ -243,10 +253,12 @@ obtained from the (Navier)-Stokes solver.
 solvepressure(electrolyte) = electrolyte.solvepressure
 
 """
-    _evelo(v,i)
+    value_or_getindex(v,i)
+
+Return number or i-th component of `Union{Number, Vector}`.
 """
-_evelo(v::Number, i) = v
-_evelo(v::Vector, i) = v[i]
+value_or_getindex(v::Number, i) = v
+value_or_getindex(v::Vector, i) = v[i]
 
 """
     edgevelocity(electrolyte, iedge)
@@ -254,7 +266,7 @@ _evelo(v::Vector, i) = v[i]
 Obtain the velocity projection onto a simplex edge of index i (normals to Voronoi cell boundaries).
 """
 function edgevelocity(electrolyte, i)
-    return _evelo(electrolyte.edgevelocity, i)
+    return value_or_getindex(electrolyte.edgevelocity, i)
 end
 
 
@@ -377,7 +389,7 @@ Then we can calculate
 """
 function c0_barc(c, electrolyte)
     (; v0, vrel, nc) = electrolyte
-    T=eltype(c)
+    T = eltype(c)
     c0 = one(T) / v0
     barc = zero(T)
     for ic in 1:(nc)
@@ -527,7 +539,7 @@ Check if the concentration vector fulfills incompressibility constraint, includi
 the fact that the solvent concentration is nonnegative
 """
 function isincompressible(cx::Vector, electrolyte)
-    (; v0, v, κ)  = electrolyte
+    (; v0, v, κ) = electrolyte
     c0, barc = c0_barc(cx, electrolyte)
     cv = c0 * v0
     for i in 1:(electrolyte.nc)
