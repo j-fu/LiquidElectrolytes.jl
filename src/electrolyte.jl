@@ -30,9 +30,9 @@ Output:
 - γ (mutated) activity coefficients
 """
 function DGML_gamma!(γ, c, p, electrolyte)
-    (; Mrel, tildev, v0, RT, v0, nc, rexp) = electrolyte
+    (; Mrel, tildev, v0, RT, v0, cspecies, rexp) = electrolyte
     c0, barc = c0_barc(c, electrolyte)
-    for ic in 1:nc
+    for ic in cspecies
         γ[ic] = rexp(tildev[ic] * p / RT) * (barc / c0)^Mrel[ic] * (1 / (v0 * barc))
     end
     return nothing
@@ -60,8 +60,18 @@ $(TYPEDFIELDS)
     "Number of charged species ``N``."
     nc::Int = 2
 
+    """
+    Charged species list. Default: [1...nc]
+    """
+    cspecies::Vector{Int}=collect(1:nc)
+    
     "Number of surface species"
     na::Int = 0
+
+    """
+    Surface species list. Default: [(nc + 1)...(nc + na)]
+    """
+    sspecies::Vector{Int}=collect((nc + 1):(nc + na))
 
     "Index of electrostatic potential ``ϕ`` in species list."
     iϕ::Int = nc + na + 1
@@ -243,6 +253,9 @@ function update_derived!(electrolyte::ElectrolyteData)
     return electrolyte
 end
 
+function update_derived!(electrolytes::Vector{Td}) where {Td <: AbstractElectrolyteData}
+    map(update_derived!, electrolytes)
+end
 
 """
     solvepressure(electrolyte)
@@ -457,10 +470,10 @@ round(μ0, sigdigits = 5), round.(μ, sigdigits = 5)
     to calculate the ion chemical potentials. Examples with κ=0 are not affected.
 """
 function chemical_potentials!(μ, u::AbstractVector, electrolyte::AbstractElectrolyteData)
-    (; ip, v0, v, nc, v, v0, barv) = electrolyte
+    (; ip, v0, v, cspecies, v, v0, barv) = electrolyte
     c0, barc = c0_barc(u, electrolyte)
     μ0 = chemical_potential(c0, barc, u[ip], v0, electrolyte)
-    for i in 1:nc
+    for i in cspecies
         μ[i] = chemical_potential(u[i], barc, u[ip], barv[i], electrolyte)
     end
     return μ0, μ
@@ -491,10 +504,10 @@ and return `nc×nnodes` matrix of solute electrochemical potentials measured in 
 """
 function electrochemical_potentials(u::AbstractMatrix, data::AbstractElectrolyteData)
     μ0, μ = chemical_potentials(u, data)
-    (; iϕ, nc, z, F, RT, M, M0) = data
+    (; iϕ, cspecies, z, F, RT, M, M0) = data
     nn = size(u, 2)
     for i in 1:nn
-        for ic in 1:nc
+        for ic in cspecies
             μ[ic, i] /= F
             μ[ic, i] += z[ic] * u[iϕ, i] - μ0[i] * M[ic] / (M0 * F)
         end
@@ -582,11 +595,11 @@ end
 Bulk boundary condition for electrolyte: set potential, pressure and concentrations to bulk values.
 """
 function bulkbcondition(f, u, bnode, electrolyte; region = electrolyte.Γ_bulk)
-    (; iϕ, ip, nc, ϕ_bulk, p_bulk, c_bulk) = electrolyte
+    (; iϕ, ip, cspecies, ϕ_bulk, p_bulk, c_bulk) = electrolyte
     if bnode.region == region
         boundary_dirichlet!(f, u, bnode; species = iϕ, region, value = ϕ_bulk)
         boundary_dirichlet!(f, u, bnode; species = ip, region, value = p_bulk)
-        for ic in 1:nc
+        for ic in cspecies
             boundary_dirichlet!(f, u, bnode; species = ic, region, value = c_bulk[ic])
         end
     end

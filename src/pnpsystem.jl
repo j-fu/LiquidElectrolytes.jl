@@ -3,11 +3,16 @@
 
 Finite volume storage term
 """
-function pnpstorage!(f, u, node, electrolyte)
-    (; nc) = electrolyte
-    for ic in 1:nc
+function pnpstorage!(f, u, node, electrolyte::AbstractElectrolyteData)
+    (; cspecies) = electrolyte
+    for ic in cspecies
         f[ic] = u[ic]
     end
+    return
+end
+
+function pnpstorage!(f, u, node, electrolytes::Vector)
+    pnpstorage!(f, u, node, electrolytes[node.region])
     return
 end
 
@@ -40,6 +45,10 @@ function pnpreaction!(f, u, node, electrolyte)
     return
 end
 
+function pnpreaction!(f, u, node, electrolytes::Vector)
+    pnpreaction!(f, u, node, electrolytes[node.region])
+    return
+end
 
 """
      dμex(γk, γl, electrolyte)
@@ -65,8 +74,8 @@ https://web.archive.org/web/20210518233152/http://www-tcad.stanford.edu/tcad/pro
 Verification calculation is in the paper.
 """
 function μex_flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
-    (; D, z, F, RT, nc) = electrolyte
-    for ic in 1:nc
+    (; D, z, F, RT, cspecies) = electrolyte
+    for ic in cspecies
         bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(γk[ic], γl[ic], electrolyte) / RT - evelo / D[ic])
         f[ic] = D[ic] * (bm * ck[ic] - bp * cl[ic])
     end
@@ -82,8 +91,8 @@ As shown in Chainais-Hilliaret, Cances, Fuhrmann, Gaudeul, 2019, this is
 consistent to thermodynamic equilibrium but shows inferior convergence behavior.
 """
 function act_flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
-    (; D, z, F, RT, nc) = electrolyte
-    for ic in 1:nc
+    (; D, z, F, RT, cspecies) = electrolyte
+    for ic in cspecies
         Dx = D[ic] * (1 / γk[ic] + 1 / γl[ic]) / 2
         bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT - evelo / D[ic])
         f[ic] = Dx * (bm * ck[ic] * γk[ic] - bp * cl[ic] * γl[ic])
@@ -100,8 +109,8 @@ covergent,  consistent to thermodynamic equilibrium but may show
 inferior convergence behavior.
 """
 function cent_flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
-    (; D, z, F, RT, nc, rlog) = electrolyte
-    for ic in 1:nc
+    (; D, z, F, RT, cspecies, rlog) = electrolyte
+    for ic in cspecies
         μk = rlog(ck[ic]) * RT
         μl = rlog(cl[ic]) * RT
         f[ic] = D[ic] * 0.5 * (ck[ic] + cl[ic]) * ((μk - μl + dμex(γk[ic], γl[ic], electrolyte) + z[ic] * F * dϕ) / RT - evelo / D[ic])
@@ -144,6 +153,12 @@ function pnpflux!(f, u, edge, electrolyte)
     return
 end
 
+function pnpflux!(f, u, edge, electrolytes::Vector)
+    pnpflux!(f, u, edge, electrolytes[edge.region])
+    return
+end
+
+
 struct PNPSystem <: AbstractElectrochemicalSystem
     vfvmsys::VoronoiFVM.System
 end
@@ -165,13 +180,21 @@ Create VoronoiFVM system for generalized Poisson-Nernst-Planck. Input:
 function PNPSystem(
         grid::ExtendableGrid;
         celldata = ElectrolyteData(),
+        kwargs...
+)
+    return PNPSystem(grid, celldata; kwargs...)
+end
+
+function PNPSystem(
+        grid::ExtendableGrid,
+        celldata::AbstractElectrolyteData;
         bcondition = (f, u, n, e) -> nothing,
         reaction = (f, u, n, e) -> nothing,
         kwargs...
     )
     update_derived!(celldata)
 
-    function _pnpreaction!(f, u, node, electrolyte)
+    function _pnpreaction!(f, u, node, electrolyte::AbstractElectrolyteData)
         pnpreaction!(f, u, node, electrolyte)
         reaction(f, u, node, electrolyte)
         return nothing
@@ -184,14 +207,59 @@ function PNPSystem(
         reaction = _pnpreaction!,
         storage = pnpstorage!,
         bcondition,
-        species = [1:(celldata.nc)..., celldata.iϕ, celldata.ip],
+        species = union(celldata.cspecies, [celldata.ip, celldata.iϕ]),
         kwargs...
     )
-    for ia in (celldata.nc + 1):(celldata.nc + celldata.na)
+
+    for ia in celldata.sspecies
         enable_boundary_species!(sys, ia, [celldata.Γ_we])
     end
     return PNPSystem(sys)
 end
+
+function PNPSystem(
+        grid::ExtendableGrid,
+        celldata::Vector;
+        bcondition = (f, u, n, e) -> nothing,
+        reaction = (f, u, n, e) -> nothing,
+        kwargs...
+    )
+    update_derived!(celldata)
+
+    function _pnpreactionv!(f, u, node, electrolyte::AbstractElectrolyteData)
+        pnpreaction!(f, u, node, electrolyte)
+        reaction(f, u, node, electrolyte)
+        return nothing
+    end
+
+    function _pnpreactionv!(f, u, node, electrolytes::Vector)
+        return _pnpreactionv!(f, u, node, electrolytes[node.region])
+    end
+
+    cd1 = celldata[1]
+    for cd in celldata[2:end]
+        @assert cd.ip == cd1.ip
+        @assert cd.iϕ == cd1.iϕ
+    end
+    @assert(length(celldata) >= num_cellregions(grid))
+
+    sys = VoronoiFVM.System(
+        grid;
+        data = celldata,
+        flux = pnpflux!,
+        reaction = _pnpreactionv!,
+        storage = pnpstorage!,
+        bcondition,
+        kwargs...
+    )
+    enable_species!(sys; species=cd1.iϕ)
+    enable_species!(sys; species=cd1.ip)
+    for region in 1:num_cellregions(grid)
+        enable_species!(sys; species=celldata[region].cspecies, regions=[region])
+    end
+    return PNPSystem(sys)
+end
+
 
 """
     electrolytedata(sys)
@@ -206,15 +274,18 @@ Return vector of unknowns initialized with bulk data.
 """
 function VoronoiFVM.unknowns(esys::AbstractElectrochemicalSystem)
     sys = esys.vfvmsys
-    (; iϕ, ip, nc, na, c_bulk, Γ_we) = electrolytedata(esys)
+    edata = electrolytedata(esys)
     u = unknowns(sys)
-    @views u[iϕ, :] .= 0
-    @views u[ip, :] .= 0
-    for ic in 1:nc
-        @views u[ic, :] .= c_bulk[ic]
-    end
-    for ia in (nc + 1):(nc + na)
-        @views u[ia, :] .= 0
+    if !isa(edata, Vector)
+        (; iϕ, ip, cspecies, sspecies, c_bulk, Γ_we) = edata
+        @views u[iϕ, :] .= 0
+        @views u[ip, :] .= 0
+        for ic in cspecies
+            @views u[ic, :] .= c_bulk[ic]
+        end
+        for ia in sspecies
+            @views u[ia, :] .= 0
+        end
     end
     return u
 end
