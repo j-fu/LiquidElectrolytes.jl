@@ -65,6 +65,7 @@ begin
     pnpX = geomspace(0, W, 2 * W / nr, 0.25 * W / nr)
     pnpgrid = simplexgrid(pnpX, Y)
 	cellmask!(pnpgrid, [0,0], [W,L/2], 2)
+	bfacemask!(pnpgrid,[0,L/2], [W, L/2], 5 )
 end
 
 # ╔═╡ f49f1197-257b-4fdb-ad80-5236c3aa1ee7
@@ -108,9 +109,11 @@ function pnpbcond(y, u, bnode, data)
     (; iϕ, ip, cspecies) = data
 	λ=bnode.embedparam
     boundary_neumann!(y, u, bnode, species = iϕ, region = 2, value = σ*λ)
-    boundary_dirichlet!(y, u, bnode, species = iϕ, region = 1, value = -Δϕ / 2)
+   boundary_dirichlet!(y, u, bnode, species = iϕ, region = 1, value = -Δϕ / 2)
     boundary_dirichlet!(y, u, bnode, species = iϕ, region = 3, value = Δϕ / 2)
-    boundary_dirichlet!(y, u, bnode, species = ip, region = 3, value = 0)
+
+    boundary_dirichlet!(y, u, bnode, species = ip, region = 1, value = 0)
+	boundary_dirichlet!(y, u, bnode, species = ip, region = 3, value = 0)
     for i in cspecies
         boundary_dirichlet!(y, u, bnode, species = i, region = 1, value = cbulk)
         boundary_dirichlet!(y, u, bnode, species = i, region = 3, value = cbulk)
@@ -135,13 +138,37 @@ dglpnpsol=esol[end]
 
 # ╔═╡ 0e558929-d8b2-4c22-9596-322f0e6f335d
 #=╠═╡
-function plotsol(grid,sol)
+function plotsol(grid,sol)		
+	    ip=4
+	    iϕ=3
+	    nrow=2
+	    c1=sol[1, :] 
+	    c2=sol[2, :]
+	    grid1=grid
+		if size(sol,1)>4
+		    grid1=subgrid(grid,[1])
+		    c1=view(sol[1, :],grid1) 
+		    c2=view(sol[2, :],grid1) 
 	
-        vis = GridVisualizer(; layout = (2, 2), size = (650, 600))
-        scalarplot!(vis[1, 1], grid, sol[1, :] / cbulk)
-        scalarplot!(vis[1, 2], grid, sol[2, :] / cbulk)
-        scalarplot!(vis[2, 1], grid, sol[3, :], colormap = :bwr, limits = (-1, 1))
-        scalarplot!(vis[2, 2], grid, sol[4, :])
+			grid2=subgrid(grid,[2])
+		    c3=view(sol[3, :],grid2) 
+		    c4=view(sol[4, :],grid2) 
+
+			
+			iϕ=5
+			ip=6
+			nrow=3
+		end
+		climits=(0,5)
+        vis = GridVisualizer(; layout = (nrow, 2), size = (650, 600))
+        scalarplot!(vis[1, 1], grid1, c1/ cbulk; limits=climits)
+        scalarplot!(vis[1, 2], grid1, c2 / cbulk; limits=climits)
+	    if size(sol,1)>4
+	        scalarplot!(vis[2, 1], grid2, c3 / cbulk; limits=climits)
+	        scalarplot!(vis[2, 2], grid2, c4 / cbulk; limits=climits)
+		end
+        scalarplot!(vis[nrow, 1], grid, sol[iϕ, :], colormap = :bwr, limits = (-1, 1))
+        scalarplot!(vis[nrow, 2], grid, sol[ip, :])
         reveal(vis)
     end
 
@@ -166,6 +193,7 @@ function pnpbcond2(y, u, bnode, data)
     boundary_neumann!(y, u, bnode, species = iϕ, region = 2, value = σ*λ)
     boundary_dirichlet!(y, u, bnode, species = iϕ, region = 1, value = -Δϕ / 2)
     boundary_dirichlet!(y, u, bnode, species = iϕ, region = 3, value = Δϕ / 2)
+    boundary_dirichlet!(y, u, bnode, species = ip, region = 1, value = 0)
     boundary_dirichlet!(y, u, bnode, species = ip, region = 3, value = 0)
     for i in cspecies
         boundary_dirichlet!(y, u, bnode, species = i, region = 1, value = cbulk)
@@ -201,6 +229,71 @@ end
 md"""
 ## Two electrolytes with interface reaction
 """
+
+# ╔═╡ 2d7242e7-4814-4192-af57-8ec3a2df18d9
+edata1=ElectrolyteData(iϕ=5, ip=6, cspecies=[1,2], nc=4)
+
+# ╔═╡ ec12834e-dad9-48fb-b6e7-7b99d2a75d49
+edata2=ElectrolyteData(iϕ=5, ip=6, cspecies=[3,4], nc=4)
+
+# ╔═╡ 65e04003-6e2b-4cdc-b09a-ad41195f21d6
+function pnpbcond3(y, u, bnode, data)
+    (; iϕ, ip, cspecies) = data[1]
+	k=1.0e8
+	if bnode.region==5
+		r13= k*(u[1] - u[3])
+		y[1]+=r13
+		y[3]-=r13
+		r24= k*(u[2] - u[4])
+		y[2]+=r24
+		y[4]-=r24
+	end
+
+	
+	λ=bnode.embedparam
+    boundary_neumann!(y, u, bnode, species = iϕ, region = 2, value = σ*λ)
+    boundary_dirichlet!(y, u, bnode, species = iϕ, region = 1, value = -λ*Δϕ / 2)
+    boundary_dirichlet!(y, u, bnode, species = iϕ, region = 3, value = λ*Δϕ / 2)
+
+	boundary_dirichlet!(y, u, bnode, species = ip, region = 1, value = 0)
+    boundary_dirichlet!(y, u, bnode, species = ip, region = 3, value = 0)
+    for i in (1,2)
+        boundary_dirichlet!(y, u, bnode, species = i, region = 1, value = cbulk)
+    end
+	for i in (3,4)
+        boundary_dirichlet!(y, u, bnode, species = i, region = 3, value = cbulk)
+    end
+    return
+end
+
+# ╔═╡ 85029a95-f297-4c53-b3b1-13b168d1b59a
+
+
+# ╔═╡ c3acdde2-7f4c-415f-b8d7-d6f2b27edf92
+sys3=PNPSystem(pnpgrid, celldata=[edata2, edata1], bcondition=pnpbcond3,
+			  unknown_storage=:dense)
+
+# ╔═╡ 60ce3f69-4d31-448b-9623-741947ea40ce
+begin
+		uini=unknowns(sys3.vfvmsys, inival=0)
+		uini[1,:].= edata1.c_bulk[1]
+		uini[2,:].= edata1.c_bulk[2]
+		uini[3,:].= edata2.c_bulk[3]
+		uini[5,:].= edata2.c_bulk[4]
+end
+
+# ╔═╡ 0bb425f7-f135-489c-81bc-9128fb87cd67
+esol3=solve(sys3.vfvmsys; inival=uini, embed=[0,1], Δp=2.0e-1, Δp_min=1.0e-2 , 
+			Δu_opt=1.0e4, verbose="ne", 
+			damp_initial=1, force_first_step=true, 
+			max_round=3, tol_round=1.0e-7, maxiters=100)
+
+# ╔═╡ dca04b49-3d52-43b4-ad30-c90bcc26f74e
+#=╠═╡
+if isdefined(Main,:PlutoRunner)
+	plotsol(pnpgrid, esol3[end])
+end
+  ╠═╡ =#
 
 # ╔═╡ 8af12f1c-d35b-4cc9-8185-1bb5adbb69e8
 html"""<hr>"""
@@ -283,6 +376,14 @@ end;
 # ╠═d5f33923-57f7-4e08-88fb-78c84c147a98
 # ╠═2ccdf56a-6906-49af-81a3-00f32ba4e40f
 # ╟─19e2ff08-5347-41e1-bef8-808e415eb3ed
+# ╠═2d7242e7-4814-4192-af57-8ec3a2df18d9
+# ╠═ec12834e-dad9-48fb-b6e7-7b99d2a75d49
+# ╠═65e04003-6e2b-4cdc-b09a-ad41195f21d6
+# ╠═85029a95-f297-4c53-b3b1-13b168d1b59a
+# ╠═c3acdde2-7f4c-415f-b8d7-d6f2b27edf92
+# ╠═60ce3f69-4d31-448b-9623-741947ea40ce
+# ╠═0bb425f7-f135-489c-81bc-9128fb87cd67
+# ╠═dca04b49-3d52-43b4-ad30-c90bcc26f74e
 # ╟─8af12f1c-d35b-4cc9-8185-1bb5adbb69e8
 # ╟─baa3e08e-5d64-4c8f-9f6d-5fdb40e97bc5
 # ╟─784b4c3e-bb2a-4940-a83a-ed5e5898dfd4

@@ -74,31 +74,31 @@ $(TYPEDFIELDS)
     sspecies::Vector{Int}=collect((nc + 1):(nc + na))
 
     "Index of electrostatic potential ``ϕ`` in species list."
-    iϕ::Int = nc + na + 1
+    iϕ::Int = maximum(cspecies) + na + 1
 
     "Index of pressure `p` in species list"
-    ip::Int = nc + na + 2
+    ip::Int = maximum(cspecies) + na + 2
 
     "Mobility coefficients ``D_i\\; (i=1…N)``"
-    D::Vector{Float64} = fill(2.0e-9 * ufac"m^2/s", nc)
+    D::Vector{Float64} = fill(2.0e-9 * ufac"m^2/s", maximum(cspecies))
 
     "Charge numbers of ions ``z_i\\; (i=1…N)``"
-    z::Vector{Int} = [(-1)^(i - 1) for i in 1:nc]
+    z::Vector{Int} = [(-1)^(i - 1) for i in 1:maximum(cspecies)]
 
     "Molar weight of solvent ``M_0``"
     M0::Float64 = 18.0153 * ufac"g/mol"
 
     "Molar weights of ions ``M_i\\; (i=1…N)``"
-    M::Vector{Float64} = fill(M0, nc)
+    M::Vector{Float64} = fill(M0, maximum(cspecies))
 
     "Molar volume of solvent ``v_0``"
     v0::Float64 = 1 / (55.4 * ufac"M")
 
     "Molar volumes of ions ``v_i\\; (i=1…N)``"
-    v::Vector{Float64} = fill(v0, nc)
+    v::Vector{Float64} = fill(v0, maximum(cspecies))
 
     "Solvation numbers of ions ``κ_i\\; (i=1…N)``"
-    κ::Vector{Float64} = fill(10.0, nc)
+    κ::Vector{Float64} = fill(10.0, maximum(cspecies))
 
     """
         actcoeff!(γ, c, p, ::ElectrolyteData)
@@ -109,7 +109,7 @@ $(TYPEDFIELDS)
     actcoeff!::Tγ = DGML_gamma!
 
     "Bulk ion concentrations ``c_i^b\\; (i=1…N)`` "
-    c_bulk::Vector{Float64} = fill(0.1 * ufac"M", nc)
+    c_bulk::Vector{Float64} = fill(0.1 * ufac"M", maximum(cspecies))
 
     "Working electrode boundary number"
     Γ_we::Int = 1
@@ -186,13 +186,13 @@ $(TYPEDFIELDS)
     tildev::Vector{Float64} = barv - Mrel * v0
 
     "Activity coefficients at bulk interface ``γ_i^b= γ_i(c_1^b … c_N^b, p^b) \\; (i=1… N)`` (derived)"
-    γ_bulk::Vector{Float64} = ones(nc)
+    γ_bulk::Vector{Float64} = ones(maximum(cspecies))
 
     "Cache for activity coefficient calculation (reserved)"
-    γk_cache::Tcache = DiffCache(zeros(nc), 10 * nc)
+    γk_cache::Tcache = DiffCache(zeros(maximum(cspecies)), 10 * maximum(cspecies))
 
     "Cache for activity coefficient calculation (reserved)"
-    γl_cache::Tcache = DiffCache(zeros(nc), 10 * nc)
+    γl_cache::Tcache = DiffCache(zeros(maximum(cspecies)), 10 * maximum(cspecies))
 
     """
     Working electrode voltage ``ϕ_{we}`` (reserved)
@@ -333,7 +333,7 @@ Calculate charge density from vector of concentrations  (in one grid point).
 """
 function chargedensity(u::AbstractVector, electrolyte::AbstractElectrolyteData)
     q = zero(eltype(u))
-    for ic in 1:(electrolyte.nc)
+    for ic in electrolyte.cspecies
         q += u[ic] * electrolyte.z[ic]
     end
     return q * electrolyte.F
@@ -401,11 +401,11 @@ Then we can calculate
 ```
 """
 function c0_barc(c, electrolyte)
-    (; v0, vrel, nc) = electrolyte
+    (; v0, vrel, cspecies) = electrolyte
     T = eltype(c)
     c0 = one(T) / v0
     barc = zero(T)
-    for ic in 1:(nc)
+    for ic in cspecies
         barc += c[ic]
         c0 -= c[ic] * vrel[ic]
     end
@@ -488,7 +488,7 @@ and `μ` is the `nc×nnodes` matrix of solute chemical potentials.
 """
 function chemical_potentials(u::AbstractMatrix, data::AbstractElectrolyteData)
     nn = size(u, 2)
-    μ = zeros(data.nc, nn)
+    μ = zeros(maximum(data.cspecies), nn)
     μ0 = zeros(nn)
     for i in 1:nn
         μ0[i], _ = chemical_potentials!(view(μ, :, i), u[:, i], data)
@@ -555,7 +555,7 @@ function isincompressible(cx::Vector, electrolyte)
     (; v0, v, κ) = electrolyte
     c0, barc = c0_barc(cx, electrolyte)
     cv = c0 * v0
-    for i in 1:(electrolyte.nc)
+    for i in electrolyte.cspecies
         cv += cx[i] * (v[i] + κ[i] * v0)
     end
     return c0 ≥ 0 && cv ≈ 1.0
@@ -576,7 +576,7 @@ end
 Check for electroneutrality of concentration vector
 """
 function iselectroneutral(cx, electrolyte)
-    return isapprox(cx[1:(electrolyte.nc)]' * electrolyte.z, 0; atol = 1.0e-12)
+    return isapprox(cx[electrolyte.cspecies]' * electrolyte.z[electrolyte.cspecies], 0; atol = 1.0e-12)
 end
 
 """
