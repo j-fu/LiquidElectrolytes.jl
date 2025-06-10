@@ -57,7 +57,12 @@ Fields (reserved fields are modified by some algorithms):
 $(TYPEDFIELDS)
 """
 @kwdef mutable struct ElectrolyteData{Tγ, Tcache, Texp, Tlog, Tflux} <: AbstractElectrolyteData
-    "Number of charged species ``N``."
+    """
+    Number of charged species ``N``.
+
+    While in the default constructor, this value is primary to the value of cspecies, 
+    [`update_derived!`](@ref) treats it as a derived datum. 
+    """
     nc::Int = 2
 
     """
@@ -240,15 +245,18 @@ Update derived electrolyte data. This needs to be called in order to update fiel
 `Mrel`, `vrel`, `barv`, `tildev`, `RT`, `γ_bulk` of `ElectrolyteData` after changing some
 of the other parameters.
 
+It also correctes `electrolyte.nc` in order to be consistent with `electrolyte.cspecies`.
+
 Called on the passed electrolyte data by [`PNPSystem`](@ref),  [`PBSystem`](@ref),  [`dlcapsweep`](@ref),  [`ivsweep`](@ref),  [`cvsweep`](@ref).
 """
 function update_derived!(electrolyte::ElectrolyteData)
-    (; M, M0, κ, T, v, v0, T, c_bulk, p_bulk, actcoeff!) = electrolyte
+    (; M, M0, κ, T, v, v0, T, c_bulk, p_bulk, actcoeff!, cspecies) = electrolyte
     electrolyte.Mrel .= M / M0 + κ
     electrolyte.vrel .= v / v0 + κ
     electrolyte.barv .= v + κ * v0
     electrolyte.tildev .= electrolyte.barv - electrolyte.Mrel * v0
     electrolyte.RT = ph"R" * T
+    electrolyte.nc =  length(cspecies)
     actcoeff!(electrolyte.γ_bulk, c_bulk, p_bulk, electrolyte)
     return electrolyte
 end
