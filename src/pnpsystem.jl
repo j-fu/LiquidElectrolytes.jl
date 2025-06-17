@@ -11,8 +11,9 @@ function pnpstorage!(f, u, node, electrolyte::AbstractElectrolyteData)
     return
 end
 
-function pnpstorage!(f, u, node, electrolytes::Vector)
-    pnpstorage!(f, u, node, electrolytes[node.region])
+function pnpstorage!(f, u, node, celldata::AbstractCellData)
+    elys=electrolytes(celldata)
+    pnpstorage!(f, u, node, elys[node.region])
     return
 end
 
@@ -23,7 +24,7 @@ Finite volume boundary storage term
 """
 function pnpbstorage!(f, u, node, electrolyte)
     (; nc, na) = electrolyte
-    for ia in (nc + 1):(nc + na)
+    for ia = (nc + 1):(nc + na)
         f[ia] = u[ia]
     end
     return
@@ -45,8 +46,9 @@ function pnpreaction!(f, u, node, electrolyte)
     return
 end
 
-function pnpreaction!(f, u, node, electrolytes::Vector)
-    pnpreaction!(f, u, node, electrolytes[node.region])
+function pnpreaction!(f, u, node, celldata::AbstractCellData)
+    elys=electrolytes(celldata)
+    pnpreaction!(f, u, node, elys[node.region])
     return
 end
 
@@ -82,7 +84,6 @@ function μex_flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
     return nothing
 end
 
-
 """
     act_flux!(ic,dϕ,ck,cl,γk,γl,electrolyte; evelo=0)
 
@@ -113,7 +114,8 @@ function cent_flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
     for ic in cspecies
         μk = rlog(ck[ic]) * RT
         μl = rlog(cl[ic]) * RT
-        f[ic] = D[ic] * 0.5 * (ck[ic] + cl[ic]) * ((μk - μl + dμex(γk[ic], γl[ic], electrolyte) + z[ic] * F * dϕ) / RT - evelo / D[ic])
+        f[ic] = D[ic] * 0.5 * (ck[ic] + cl[ic]) *
+                ((μk - μl + dμex(γk[ic], γl[ic], electrolyte) + z[ic] * F * dϕ) / RT - evelo / D[ic])
     end
     return nothing
 end
@@ -129,7 +131,7 @@ function pnpflux!(f, u, edge, electrolyte)
         ε_0, ε,
         eneutral, pscale, p_bulk,
         upwindflux!, actcoeff!,
-        γk_cache, γl_cache,
+        γk_cache, γl_cache
     ) = electrolyte
 
     evelo = edgevelocity(electrolyte, edge.index)
@@ -153,15 +155,16 @@ function pnpflux!(f, u, edge, electrolyte)
     return
 end
 
-function pnpflux!(f, u, edge, electrolytes::Vector)
-    pnpflux!(f, u, edge, electrolytes[edge.region])
+function pnpflux!(f, u, edge, celldata::AbstractCellData)
+    elys=electrolytes(celldata)
+    pnpflux!(f, u, edge, elys[edge.region])
     return
 end
-
 
 struct PNPSystem <: AbstractElectrochemicalSystem
     vfvmsys::VoronoiFVM.System
 end
+
 
 """
     PNPSystem(grid;
@@ -172,14 +175,14 @@ end
 
 Create VoronoiFVM system for generalized Poisson-Nernst-Planck. Input:
 - `grid`: discretization grid
-- `celldata`: composite struct containing electrolyte data
+- `celldata`: instance of ElectrolyteData or of subtype of AbstractCellData
 - `bcondition`: boundary condition
 - `reaction` : reactions of the bulk species
 - `kwargs`: Keyword arguments of VoronoiFVM.System
 """
 function PNPSystem(
         grid::ExtendableGrid;
-        celldata = ElectrolyteData(),
+        celldata::Union{ElectrolyteData, AbstractCellData} = ElectrolyteData(),
         kwargs...
 )
     return PNPSystem(grid, celldata; kwargs...)
@@ -191,7 +194,7 @@ function PNPSystem(
         bcondition = (f, u, n, e) -> nothing,
         reaction = (f, u, n, e) -> nothing,
         kwargs...
-    )
+)
     update_derived!(celldata)
 
     function _pnpreaction!(f, u, node, electrolyte::AbstractElectrolyteData)
@@ -219,11 +222,11 @@ end
 
 function PNPSystem(
         grid::ExtendableGrid,
-        celldata::Vector;
+        celldata::AbstractCellData;
         bcondition = (f, u, n, e) -> nothing,
         reaction = (f, u, n, e) -> nothing,
         kwargs...
-    )
+)
     update_derived!(celldata)
 
     function _pnpreactionv!(f, u, node, electrolyte::AbstractElectrolyteData)
@@ -232,16 +235,17 @@ function PNPSystem(
         return nothing
     end
 
-    function _pnpreactionv!(f, u, node, electrolytes::Vector)
-        return _pnpreactionv!(f, u, node, electrolytes[node.region])
+    function _pnpreactionv!(f, u, node, celldata::AbstractCellData)
+        elys=electrolytes(celldata)
+        return _pnpreactionv!(f, u, node, elys[node.region])
     end
-
-    cd1 = celldata[1]
-    for cd in celldata[2:end]
-        @assert cd.ip == cd1.ip
-        @assert cd.iϕ == cd1.iϕ
+    elys=electrolytes(celldata)
+    ely1 = elys[1]
+    for ely in elys[2:end]
+        @assert ely.ip == ely1.ip
+        @assert ely.iϕ == ely1.iϕ
     end
-    @assert(length(celldata) >= num_cellregions(grid))
+    @assert(length(elys) >= num_cellregions(grid))
 
     sys = VoronoiFVM.System(
         grid;
@@ -252,20 +256,28 @@ function PNPSystem(
         bcondition,
         kwargs...
     )
-    enable_species!(sys; species=cd1.iϕ)
-    enable_species!(sys; species=cd1.ip)
-    for region in 1:num_cellregions(grid)
-        enable_species!(sys; species=celldata[region].cspecies, regions=[region])
+    enable_species!(sys; species = ely1.iϕ)
+    enable_species!(sys; species = ely1.ip)
+    for region = 1:num_cellregions(grid)
+        enable_species!(sys; species = elys[region].cspecies, regions = [region])
     end
     return PNPSystem(sys)
 end
-
 
 """
     electrolytedata(sys)
 Extract electrolyte data from system.
 """
 electrolytedata(sys::AbstractElectrochemicalSystem) = sys.vfvmsys.physics.data
+
+"""
+    celldata(sys)
+Extract celldata from system.
+"""
+celldata(sys::AbstractElectrochemicalSystem) = sys.vfvmsys.physics.data
+
+Base.@deprecate electrolytedata(sys) celldata(sys)
+
 
 """
     unknowns(sys)
@@ -276,7 +288,7 @@ function VoronoiFVM.unknowns(esys::AbstractElectrochemicalSystem)
     sys = esys.vfvmsys
     edata = electrolytedata(esys)
     u = unknowns(sys)
-    if !isa(edata, Vector)
+    if isa(edata, ElectrolyteData)
         (; iϕ, ip, cspecies, sspecies, c_bulk, Γ_we) = edata
         @views u[iϕ, :] .= 0
         @views u[ip, :] .= 0

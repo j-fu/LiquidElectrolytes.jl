@@ -31,6 +31,9 @@ export dlcap0, chargedensity, chemical_potentials!, rrate, debyelength, chemical
 export isincompressible, iselectroneutral
 export chemical_potentials, electrochemical_potentials
 
+include("celldata.jl")
+export AbstractCellData, electrolytes
+
 include("pnpsystem.jl")
 export PNPSystem
 export electrolytedata, bulkbcondition, unknowns

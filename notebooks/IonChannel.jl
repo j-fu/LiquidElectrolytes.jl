@@ -186,9 +186,41 @@ md"""
 ## Two electrolyte case
 """
 
+# ╔═╡ 79a297c3-931e-4f4d-b0b0-27cde5f69dee
+begin
+	dgldata1=PNPData()
+	dgldata2=PNPData()
+	dgldata2.D*=0.1
+end
+
+# ╔═╡ f087896b-652f-48bc-ad78-9d66fa339f89
+struct MyCellData{TE} <: AbstractCellData
+	electrolytes::TE
+end
+
+# ╔═╡ faff62ea-e2df-4fd1-8872-fb0e98bf431f
+LiquidElectrolytes.electrolytes(data::MyCellData)= data.electrolytes
+
+# ╔═╡ e892d2f7-1f58-4d94-9719-bec80588ec97
+mycelldata=MyCellData([dgldata1, dgldata2])
+
+# ╔═╡ 19e2ff08-5347-41e1-bef8-808e415eb3ed
+md"""
+## Two electrolytes with interface reaction
+"""
+
+# ╔═╡ 57d2d467-6e2e-4501-be9e-7b2e643c8c16
+Base.@kwdef struct MyCellData2{TE} <: AbstractCellData
+	electrolytes::TE
+	k::Float64=1.0e1
+end
+
+# ╔═╡ 771bf8d8-0e68-4ea5-b926-9fa945d239ba
+LiquidElectrolytes.electrolytes(data::MyCellData2)= data.electrolytes
+
 # ╔═╡ 20d53525-cbb3-44a4-bce2-d18fb395c66a
 function pnpbcond2(y, u, bnode, data)
-    (; iϕ, ip, cspecies) = data[1]
+    (; iϕ, ip, cspecies) = electrolytes(data)[1]
 	λ=bnode.embedparam
     boundary_neumann!(y, u, bnode, species = iϕ, region = 2, value = σ*λ)
     boundary_dirichlet!(y, u, bnode, species = iϕ, region = 1, value = -Δϕ / 2)
@@ -202,15 +234,8 @@ function pnpbcond2(y, u, bnode, data)
     return
 end
 
-# ╔═╡ 79a297c3-931e-4f4d-b0b0-27cde5f69dee
-begin
-	dgldata1=PNPData()
-	dgldata2=PNPData()
-	dgldata2.D*=0.1
-end
-
 # ╔═╡ d466c44b-48e4-4b17-bcfc-44f01cca90c5
-sys2=PNPSystem(pnpgrid, celldata=[dgldata1, dgldata2], bcondition=pnpbcond2)
+sys2=PNPSystem(pnpgrid, celldata=mycelldata, bcondition=pnpbcond2)
 
 # ╔═╡ fff71cb0-c109-4686-8411-74528a98714c
 inival2=unknowns(sys2)
@@ -225,21 +250,20 @@ if isdefined(Main,:PlutoRunner)
 end
   ╠═╡ =#
 
-# ╔═╡ 19e2ff08-5347-41e1-bef8-808e415eb3ed
-md"""
-## Two electrolytes with interface reaction
-"""
-
 # ╔═╡ 2d7242e7-4814-4192-af57-8ec3a2df18d9
 edata1=ElectrolyteData(iϕ=5, ip=6, cspecies=[1,2], nc=4)
 
 # ╔═╡ ec12834e-dad9-48fb-b6e7-7b99d2a75d49
 edata2=ElectrolyteData(iϕ=5, ip=6, cspecies=[3,4], nc=4)
 
+# ╔═╡ 51257300-35c3-4fc4-bbf0-0bae0ab2fc37
+mycelldata2=MyCellData2(electrolytes=[edata1, edata2])
+
 # ╔═╡ 65e04003-6e2b-4cdc-b09a-ad41195f21d6
 function pnpbcond3(y, u, bnode, data)
-    (; iϕ, ip, cspecies) = data[1]
-	k=1.0e8
+	elytes=electrolytes(data)
+	k=data.k
+    (; iϕ, ip) = elytes[1]
 	if bnode.region==5
 		r13= k*(u[1] - u[3])
 		y[1]+=r13
@@ -257,11 +281,11 @@ function pnpbcond3(y, u, bnode, data)
 
 	boundary_dirichlet!(y, u, bnode, species = ip, region = 1, value = 0)
     boundary_dirichlet!(y, u, bnode, species = ip, region = 3, value = 0)
-    for i in (1,2)
-        boundary_dirichlet!(y, u, bnode, species = i, region = 1, value = cbulk)
-    end
-	for i in (3,4)
+    for i in elytes[1].cspecies
         boundary_dirichlet!(y, u, bnode, species = i, region = 3, value = cbulk)
+    end
+	for i in elytes[2].cspecies
+        boundary_dirichlet!(y, u, bnode, species = i, region = 1, value = cbulk)
     end
     return
 end
@@ -270,16 +294,17 @@ end
 
 
 # ╔═╡ c3acdde2-7f4c-415f-b8d7-d6f2b27edf92
-sys3=PNPSystem(pnpgrid, celldata=[edata2, edata1], bcondition=pnpbcond3,
+sys3=PNPSystem(pnpgrid, celldata=mycelldata2, bcondition=pnpbcond3,
 			  unknown_storage=:dense)
 
 # ╔═╡ 60ce3f69-4d31-448b-9623-741947ea40ce
 begin
 		uini=unknowns(sys3.vfvmsys, inival=0)
-		uini[1,:].= edata1.c_bulk[1]
-		uini[2,:].= edata1.c_bulk[2]
-		uini[3,:].= edata2.c_bulk[3]
-		uini[5,:].= edata2.c_bulk[4]
+	    elytes=electrolytes(mycelldata2)
+		uini[1,:].= elytes[1].c_bulk[1]
+		uini[2,:].= elytes[1].c_bulk[2]
+		uini[3,:].= elytes[2].c_bulk[3]
+		uini[4,:].= elytes[2].c_bulk[4]
 end
 
 # ╔═╡ 0bb425f7-f135-489c-81bc-9128fb87cd67
@@ -371,13 +396,19 @@ end;
 # ╟─e0834845-b18f-4fbb-8780-6d8e09b31408
 # ╠═20d53525-cbb3-44a4-bce2-d18fb395c66a
 # ╠═79a297c3-931e-4f4d-b0b0-27cde5f69dee
+# ╠═f087896b-652f-48bc-ad78-9d66fa339f89
+# ╠═faff62ea-e2df-4fd1-8872-fb0e98bf431f
+# ╠═e892d2f7-1f58-4d94-9719-bec80588ec97
 # ╠═d466c44b-48e4-4b17-bcfc-44f01cca90c5
 # ╠═fff71cb0-c109-4686-8411-74528a98714c
 # ╠═d5f33923-57f7-4e08-88fb-78c84c147a98
 # ╠═2ccdf56a-6906-49af-81a3-00f32ba4e40f
 # ╟─19e2ff08-5347-41e1-bef8-808e415eb3ed
+# ╠═57d2d467-6e2e-4501-be9e-7b2e643c8c16
+# ╠═771bf8d8-0e68-4ea5-b926-9fa945d239ba
 # ╠═2d7242e7-4814-4192-af57-8ec3a2df18d9
 # ╠═ec12834e-dad9-48fb-b6e7-7b99d2a75d49
+# ╠═51257300-35c3-4fc4-bbf0-0bae0ab2fc37
 # ╠═65e04003-6e2b-4cdc-b09a-ad41195f21d6
 # ╠═85029a95-f297-4c53-b3b1-13b168d1b59a
 # ╠═c3acdde2-7f4c-415f-b8d7-d6f2b27edf92

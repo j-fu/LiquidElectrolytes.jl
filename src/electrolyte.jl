@@ -217,6 +217,15 @@ $(TYPEDFIELDS)
     scheme::Symbol = :deprecated
 end
 
+working_electrode(electrolyte::ElectrolyteData)= electrolyte.Γ_we
+bulk_electrode(electrolyte::ElectrolyteData)= electrolyte.Γ_bulk
+norm_weights(electrolyte::ElectrolyteData) = electrolyte.weights
+working_electrode_voltage(electrolyte::ElectrolyteData) = electrolyte.ϕ_we
+working_electrode_voltage!(electrolyte::ElectrolyteData, v) = electrolyte.ϕ_we=v
+pressure_index(electrolyte::ElectrolyteData)= electrolyte.ip
+voltage_index(electrolyte::ElectrolyteData)= electrolyte.iϕ
+
+
 function Base.setproperty!(this::ElectrolyteData, key::Symbol, value)
     if key == :scheme
         @warn """ Setting ElectrolyteData.scheme  is deprecated and has been disabled. 
@@ -259,10 +268,6 @@ function update_derived!(electrolyte::ElectrolyteData)
     electrolyte.nc =  length(cspecies)
     actcoeff!(electrolyte.γ_bulk, c_bulk, p_bulk, electrolyte)
     return electrolyte
-end
-
-function update_derived!(electrolytes::Vector{Td}) where {Td <: AbstractElectrolyteData}
-    map(update_derived!, electrolytes)
 end
 
 """
@@ -613,3 +618,4 @@ function bulkbcondition(f, u, bnode, electrolyte; region = electrolyte.Γ_bulk)
     end
     return nothing
 end
+

@@ -1,6 +1,8 @@
 # API
 
-## Electrolyte data
+## Electrolyte and cell data
+
+### One electrolyte domain
 ```@docs
 AbstractElectrolyteData
 ElectrolyteData
@@ -25,6 +27,21 @@ iselectroneutral
 isincompressible
 c0_barc
 ``` 
+
+### Multielectrolyte data
+Handling multiple electrolytes 
+(e.g. for certain ion channel  models) 
+is facilitated by this newer alternative API which at once
+allowd to pass additional user dependent data e.g. to reaction
+problems.
+
+```@docs
+AbstractCellData
+electrolytes
+```
+
+
+
 ## Activity coefficients
 ```@docs
 LiquidElectrolytes.DGML_gamma!

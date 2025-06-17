@@ -45,22 +45,22 @@ end
 Steady state voltammetry.
 
 Calculate molar reaction rates and bulk flux rates for each voltage in `voltages`.
-Returns a [`IVSweepResult`](@ref).
+Returns a [`IVSweResult`](@ref).
 """
 function ivsweep(
         esys::AbstractElectrochemicalSystem;
-        electrolyte = electrolytedata(esys),
+        cdata = celldata(esys),
         voltages = (-0.5:0.1:0.5) * ufac"V",
         store_solutions = false,
         solver_kwargs...
     )
-    update_derived!(electrolyte)
+    update_derived!(cdata)
     sys = esys.vfvmsys
     ranges = splitz(voltages)
     F = ph"N_A" * ph"e"
     factory = VoronoiFVM.TestFunctionFactory(sys)
-    tf_bulk = testfunction(factory, [electrolyte.Γ_we], [electrolyte.Γ_bulk])
-    tf_we = testfunction(factory, [electrolyte.Γ_bulk], [electrolyte.Γ_we])
+    tf_bulk = testfunction(factory, [working_electrode(cdata)], [bulk_electrode(cdata)])
+    tf_we = testfunction(factory, [bulk_electrode(cdata)], [working_electrode(cdata)])
 
     iplus = []
     iminus = []
@@ -71,7 +71,7 @@ function ivsweep(
     sminus = []
     splus = []
 
-    electrolyte.ϕ_we = 0
+    working_electrode_voltage!(cdata, 0)
     control = SolverControl(;
         verbose = true,
         handle_exceptions = true,
@@ -79,12 +79,11 @@ function ivsweep(
         Δp = 1.0e-2,
         Δp_grow = 1.2,
         #          Δu_opt = 1.0e-2,
-        unorm = u -> wnorm(u, electrolyte.weights, Inf),
-        rnorm = u -> wnorm(u, electrolyte.weights, 1),
+        unorm = u -> wnorm(u, norm_weights(cdata), Inf),
+        rnorm = u -> wnorm(u, norm_weights(cdata), 1),
         solver_kwargs...
     )
 
-    iϕ = electrolyte.iϕ
     @info "Solving for 0V..."
     inival = solve(sys; inival = unknowns(esys), control)
 
@@ -105,15 +104,15 @@ function ivsweep(
         psol = nothing
         @withprogress begin
             function pre(sol, ϕ)
-                electrolyte.ϕ_we = dir * ϕ
+                working_electrode_voltage!(cdata,dir * ϕ)
             end
 
             function post(sol, oldsol, ϕ, Δϕ)
                 I = -VoronoiFVM.integrate(sys, sys.physics.breaction, sol; boundary = true)
-                I_react = I[:, electrolyte.Γ_we]
+                I_react = I[:, working_electrode(cdata)]
                 I_bulk = -VoronoiFVM.integrate(sys, tf_bulk, sol)
                 I_we = -VoronoiFVM.integrate(sys, tf_we, sol)
-                push!(result.voltages, electrolyte.ϕ_we)
+                push!(result.voltages, working_electrode_voltage(cdata))
                 push!(result.j_we, I_we)
                 push!(result.j_bulk, I_bulk)
                 push!(result.j_reaction, I_react)
@@ -122,7 +121,7 @@ function ivsweep(
             end
 
             function delta(sys, u, v, t, Δt)
-                n = wnorm(u - v, electrolyte.weights, Inf) * electrolyte.v0
+                n = wnorm(u - v, norm_weights(cdata), Inf)
             end
 
             psol = solve(
