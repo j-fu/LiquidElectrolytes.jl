@@ -52,7 +52,7 @@ function dlcapsweep(
         solver_kwargs...
     )
     update_derived!(cdata)
-    iϕ=voltage_index(cdata)
+    iϕ = voltage_index(cdata)
     sys = esys.vfvmsys
     if !isnothing(molarity)
         error("The molarity kwarg of dlcapsweep has been removed. Pass the molarity information with electrolyte.c_bulk.")

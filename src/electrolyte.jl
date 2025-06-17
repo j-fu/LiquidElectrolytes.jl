@@ -68,15 +68,15 @@ $(TYPEDFIELDS)
     """
     Charged species list. Default: [1...nc]
     """
-    cspecies::Vector{Int}=collect(1:nc)
-    
+    cspecies::Vector{Int} = collect(1:nc)
+
     "Number of surface species"
     na::Int = 0
 
     """
     Surface species list. Default: [(nc + 1)...(nc + na)]
     """
-    sspecies::Vector{Int}=collect((nc + 1):(nc + na))
+    sspecies::Vector{Int} = collect((nc + 1):(nc + na))
 
     "Index of electrostatic potential ``ϕ`` in species list."
     iϕ::Int = maximum(cspecies) + na + 1
@@ -217,13 +217,13 @@ $(TYPEDFIELDS)
     scheme::Symbol = :deprecated
 end
 
-working_electrode(electrolyte::ElectrolyteData)= electrolyte.Γ_we
-bulk_electrode(electrolyte::ElectrolyteData)= electrolyte.Γ_bulk
+working_electrode(electrolyte::ElectrolyteData) = electrolyte.Γ_we
+bulk_electrode(electrolyte::ElectrolyteData) = electrolyte.Γ_bulk
 norm_weights(electrolyte::ElectrolyteData) = electrolyte.weights
 working_electrode_voltage(electrolyte::ElectrolyteData) = electrolyte.ϕ_we
-working_electrode_voltage!(electrolyte::ElectrolyteData, v) = electrolyte.ϕ_we=v
-pressure_index(electrolyte::ElectrolyteData)= electrolyte.ip
-voltage_index(electrolyte::ElectrolyteData)= electrolyte.iϕ
+working_electrode_voltage!(electrolyte::ElectrolyteData, v) = electrolyte.ϕ_we = v
+pressure_index(electrolyte::ElectrolyteData) = electrolyte.ip
+voltage_index(electrolyte::ElectrolyteData) = electrolyte.iϕ
 
 
 function Base.setproperty!(this::ElectrolyteData, key::Symbol, value)
@@ -265,7 +265,7 @@ function update_derived!(electrolyte::ElectrolyteData)
     electrolyte.barv .= v + κ * v0
     electrolyte.tildev .= electrolyte.barv - electrolyte.Mrel * v0
     electrolyte.RT = ph"R" * T
-    electrolyte.nc =  length(cspecies)
+    electrolyte.nc = length(cspecies)
     actcoeff!(electrolyte.γ_bulk, c_bulk, p_bulk, electrolyte)
     return electrolyte
 end
@@ -618,4 +618,3 @@ function bulkbcondition(f, u, bnode, electrolyte; region = electrolyte.Γ_bulk)
     end
     return nothing
 end
-

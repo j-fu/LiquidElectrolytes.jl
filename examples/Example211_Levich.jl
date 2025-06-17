@@ -238,49 +238,61 @@ function main(;
 
     end
 
-if plot_results
-    vis=GridVisualizer(;Plotter, size=(600,600), layout=(2,2))
-    scalarplot!(vis[1,1],
-                sqrt.(freqs), res_idisk_sim ./ mA, label = "FVM", color=:red,
-                markershape=:circle,
-                markevery=1,
-                markersize=10,
-                title="Disk limiting Current ($(disktype))",
-                xlabel="sqrt(f/Hz)",
-                ylabel="I/mA", legend=:lt)
-                
-    scalarplot!(vis[1,1],
-                markershape=:none,
-                sqrt.(freqs), res_idisk_levich ./ mA, color=:green, label = "Levich", clear=false)
+    if plot_results
+        vis = GridVisualizer(; Plotter, size = (600, 600), layout = (2, 2))
+        scalarplot!(
+            vis[1, 1],
+            sqrt.(freqs), res_idisk_sim ./ mA, label = "FVM", color = :red,
+            markershape = :circle,
+            markevery = 1,
+            markersize = 10,
+            title = "Disk limiting Current ($(disktype))",
+            xlabel = "sqrt(f/Hz)",
+            ylabel = "I/mA", legend = :lt
+        )
 
-    scalarplot!(vis[1,2],
-                sqrt.(freqs), res_iring_sim ./ mA, label = "FVM", color=:red,
-                markershape=:circle,
-                markevery=1,
-                markersize=10,
-                title="Ring limiting Current ($(disktype))",
-                xlabel="sqrt(f/Hz)",
-                ylabel="I/mA", legend=:lt)
-                
-    scalarplot!(vis[1,2],
-                markershape=:none,
-                sqrt.(freqs), res_iring_levich ./ mA, color=:green, label = "Levich", clear=false)
+        scalarplot!(
+            vis[1, 1],
+            markershape = :none,
+            sqrt.(freqs), res_idisk_levich ./ mA, color = :green, label = "Levich", clear = false
+        )
 
-    scalarplot!(vis[2,1],
-                sqrt.(freqs), res_coleff_sim, label = "FVM", color=:red,
-                markershape=:circle,
-                markevery=1,
-                markersize=10,
-                title="Collection Efficiency ($(disktype))",
-                xlabel="sqrt(f/Hz)",
-                ylabel="c", legend=:rt, flimits=(0.2,0.3))
+        scalarplot!(
+            vis[1, 2],
+            sqrt.(freqs), res_iring_sim ./ mA, label = "FVM", color = :red,
+            markershape = :circle,
+            markevery = 1,
+            markersize = 10,
+            title = "Ring limiting Current ($(disktype))",
+            xlabel = "sqrt(f/Hz)",
+            ylabel = "I/mA", legend = :lt
+        )
 
-    scalarplot!(vis[2,1],
-                 markershape=:none,
-                 sqrt.(freqs), res_coleff_albery, color=:green, label = "Albery", clear=false)
+        scalarplot!(
+            vis[1, 2],
+            markershape = :none,
+            sqrt.(freqs), res_iring_levich ./ mA, color = :green, label = "Levich", clear = false
+        )
 
-    reveal(vis)
-end
+        scalarplot!(
+            vis[2, 1],
+            sqrt.(freqs), res_coleff_sim, label = "FVM", color = :red,
+            markershape = :circle,
+            markevery = 1,
+            markersize = 10,
+            title = "Collection Efficiency ($(disktype))",
+            xlabel = "sqrt(f/Hz)",
+            ylabel = "c", legend = :rt, flimits = (0.2, 0.3)
+        )
+
+        scalarplot!(
+            vis[2, 1],
+            markershape = :none,
+            sqrt.(freqs), res_coleff_albery, color = :green, label = "Albery", clear = false
+        )
+
+        reveal(vis)
+    end
 
     if ispyplot(Plotter)
         PyPlot = Plotter

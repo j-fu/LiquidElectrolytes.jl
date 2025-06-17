@@ -12,7 +12,7 @@ function pnpstorage!(f, u, node, electrolyte::AbstractElectrolyteData)
 end
 
 function pnpstorage!(f, u, node, celldata::AbstractCellData)
-    elys=electrolytes(celldata)
+    elys = electrolytes(celldata)
     pnpstorage!(f, u, node, elys[node.region])
     return
 end
@@ -24,7 +24,7 @@ Finite volume boundary storage term
 """
 function pnpbstorage!(f, u, node, electrolyte)
     (; nc, na) = electrolyte
-    for ia = (nc + 1):(nc + na)
+    for ia in (nc + 1):(nc + na)
         f[ia] = u[ia]
     end
     return
@@ -47,7 +47,7 @@ function pnpreaction!(f, u, node, electrolyte)
 end
 
 function pnpreaction!(f, u, node, celldata::AbstractCellData)
-    elys=electrolytes(celldata)
+    elys = electrolytes(celldata)
     pnpreaction!(f, u, node, elys[node.region])
     return
 end
@@ -115,7 +115,7 @@ function cent_flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
         μk = rlog(ck[ic]) * RT
         μl = rlog(cl[ic]) * RT
         f[ic] = D[ic] * 0.5 * (ck[ic] + cl[ic]) *
-                ((μk - μl + dμex(γk[ic], γl[ic], electrolyte) + z[ic] * F * dϕ) / RT - evelo / D[ic])
+            ((μk - μl + dμex(γk[ic], γl[ic], electrolyte) + z[ic] * F * dϕ) / RT - evelo / D[ic])
     end
     return nothing
 end
@@ -131,7 +131,7 @@ function pnpflux!(f, u, edge, electrolyte)
         ε_0, ε,
         eneutral, pscale, p_bulk,
         upwindflux!, actcoeff!,
-        γk_cache, γl_cache
+        γk_cache, γl_cache,
     ) = electrolyte
 
     evelo = edgevelocity(electrolyte, edge.index)
@@ -156,7 +156,7 @@ function pnpflux!(f, u, edge, electrolyte)
 end
 
 function pnpflux!(f, u, edge, celldata::AbstractCellData)
-    elys=electrolytes(celldata)
+    elys = electrolytes(celldata)
     pnpflux!(f, u, edge, elys[edge.region])
     return
 end
@@ -184,7 +184,7 @@ function PNPSystem(
         grid::ExtendableGrid;
         celldata::Union{ElectrolyteData, AbstractCellData} = ElectrolyteData(),
         kwargs...
-)
+    )
     return PNPSystem(grid, celldata; kwargs...)
 end
 
@@ -194,7 +194,7 @@ function PNPSystem(
         bcondition = (f, u, n, e) -> nothing,
         reaction = (f, u, n, e) -> nothing,
         kwargs...
-)
+    )
     update_derived!(celldata)
 
     function _pnpreaction!(f, u, node, electrolyte::AbstractElectrolyteData)
@@ -226,7 +226,7 @@ function PNPSystem(
         bcondition = (f, u, n, e) -> nothing,
         reaction = (f, u, n, e) -> nothing,
         kwargs...
-)
+    )
     update_derived!(celldata)
 
     function _pnpreactionv!(f, u, node, electrolyte::AbstractElectrolyteData)
@@ -236,10 +236,10 @@ function PNPSystem(
     end
 
     function _pnpreactionv!(f, u, node, celldata::AbstractCellData)
-        elys=electrolytes(celldata)
+        elys = electrolytes(celldata)
         return _pnpreactionv!(f, u, node, elys[node.region])
     end
-    elys=electrolytes(celldata)
+    elys = electrolytes(celldata)
     ely1 = elys[1]
     for ely in elys[2:end]
         @assert ely.ip == ely1.ip
@@ -258,7 +258,7 @@ function PNPSystem(
     )
     enable_species!(sys; species = ely1.iϕ)
     enable_species!(sys; species = ely1.ip)
-    for region = 1:num_cellregions(grid)
+    for region in 1:num_cellregions(grid)
         enable_species!(sys; species = elys[region].cspecies, regions = [region])
     end
     return PNPSystem(sys)

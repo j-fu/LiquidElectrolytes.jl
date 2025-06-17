@@ -16,21 +16,20 @@ using ForwardDiff
 
 
 function main(;
-    nref = 0,
-    voltages = (-3.0:0.1:3.0) * ufac"V",
-    molarities = [0.001, 0.01, 0.1, 1],
-    scheme = :μex,
-    κ = 10.0,
-    Plotter = nothing,
-    new = false,
-    kwargs...,
-)
+        nref = 0,
+        voltages = (-3.0:0.1:3.0) * ufac"V",
+        molarities = [0.001, 0.01, 0.1, 1],
+        scheme = :μex,
+        κ = 10.0,
+        Plotter = nothing,
+        new = false,
+        kwargs...,
+    )
 
     @local_phconstants N_A e R ε_0 k_B
     F = N_A * e
     c_0 = 2.99792458e8
     @local_unitfactors cm μF mol dm s mA A nm bar eV μA
-
 
 
     defaults = (;
@@ -72,11 +71,11 @@ function main(;
 
 
     function halfcellbc(
-        f,
-        u::VoronoiFVM.BNodeUnknowns{Tval,Tv,Tc,Tp,Ti},
-        bnode,
-        data,
-    ) where {Tval,Tv,Tc,Tp,Ti}
+            f,
+            u::VoronoiFVM.BNodeUnknowns{Tval, Tv, Tc, Tp, Ti},
+            bnode,
+            data,
+        ) where {Tval, Tv, Tc, Tp, Ti}
         (; nc, na, Γ_we, Γ_bulk, ϕ_we, ip, iϕ, v, v0, T, RT, ε) = data
 
         bulkbcondition(f, u, bnode, data; region = Γ_bulk)
@@ -102,7 +101,7 @@ function main(;
             kf[1] = 1.0e13 * exp(-max(ΔG_ads_aplus, 0.0) / (k_B * T))
             kr[1] = 1.0e13 * exp(-max(-ΔG_ads_aplus, 0.0) / (k_B * T))
 
-            ## A+_ads + e- <-> A_ads,                ##2          
+            ## A+_ads + e- <-> A_ads,                ##2
             ΔG_rxn = 1.0 * eV + 1.5e+1 * sigma * eV
 
             kf[2] = 1.0e13 * exp(-max(ΔG_rxn, 0.0) / (k_B * T))
@@ -138,7 +137,7 @@ function main(;
             f[ia_ads] += rates[2] - rates[3]
 
         end
-        nothing
+        return nothing
     end
 
 
@@ -170,11 +169,11 @@ function main(;
     @views un[ia_ads, :] .= 0.1
 
 
-    result = ivsweep(cell; voltages, store_solutions=true, kwargs...)
+    result = ivsweep(cell; voltages, store_solutions = true, kwargs...)
     tsol = voltages_solutions(result)
     currs = currents(result, ia)
     volts = result.voltages
-    
+
     vis = GridVisualizer(Plotter = Plotter, layout = (1, 1))
 
     scalarplot!(

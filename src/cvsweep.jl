@@ -150,7 +150,7 @@ function cvsweep(
     tprogress = 0
     @withprogress begin
         function pre(sol, t)
-            working_electrode_voltage!(cdata,voltages(t))
+            working_electrode_voltage!(cdata, voltages(t))
         end
 
         function post(sol, oldsol, t, Δt)

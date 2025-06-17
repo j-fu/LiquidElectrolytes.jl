@@ -134,7 +134,7 @@ end
 @testset "ExplicitImports" begin
     @test ExplicitImports.check_no_implicit_imports(LiquidElectrolytes, skip = (Base, Core, Markdown)) === nothing
     @test ExplicitImports.check_all_explicit_imports_are_public(LiquidElectrolytes) === nothing
-    @test ExplicitImports.check_no_stale_explicit_imports(LiquidElectrolytes, ignore=(:README,)) === nothing
+    @test ExplicitImports.check_no_stale_explicit_imports(LiquidElectrolytes, ignore = (:README,)) === nothing
 end
 
 @testset "Aqua" begin

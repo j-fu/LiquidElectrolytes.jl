@@ -104,7 +104,7 @@ function ivsweep(
         psol = nothing
         @withprogress begin
             function pre(sol, ϕ)
-                working_electrode_voltage!(cdata,dir * ϕ)
+                working_electrode_voltage!(cdata, dir * ϕ)
             end
 
             function post(sol, oldsol, ϕ, Δϕ)

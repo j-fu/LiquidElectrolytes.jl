@@ -64,8 +64,8 @@ begin
     Y = range(0, L, length = nl)
     pnpX = geomspace(0, W, 2 * W / nr, 0.25 * W / nr)
     pnpgrid = simplexgrid(pnpX, Y)
-	cellmask!(pnpgrid, [0,0], [W,L/2], 2)
-	bfacemask!(pnpgrid,[0,L/2], [W, L/2], 5 )
+    cellmask!(pnpgrid, [0, 0], [W, L / 2], 2)
+    bfacemask!(pnpgrid, [0, L / 2], [W, L / 2], 5)
 end
 
 # ╔═╡ f49f1197-257b-4fdb-ad80-5236c3aa1ee7
@@ -83,7 +83,7 @@ end
 begin
     const cbulk = 1.0 * mol / dm^3
     const Δϕ = 0.5 * V
-    const σ = -15* μA * s / cm^2
+    const σ = -15 * μA * s / cm^2
 end
 
 # ╔═╡ 280f5233-621e-4d9d-95f2-8c97a2c343fc
@@ -107,13 +107,13 @@ md"""
 # ╔═╡ 21d159e0-1639-451e-9054-2729a5942b5f
 function pnpbcond(y, u, bnode, data)
     (; iϕ, ip, cspecies) = data
-	λ=bnode.embedparam
-    boundary_neumann!(y, u, bnode, species = iϕ, region = 2, value = σ*λ)
-   boundary_dirichlet!(y, u, bnode, species = iϕ, region = 1, value = -Δϕ / 2)
+    λ = bnode.embedparam
+    boundary_neumann!(y, u, bnode, species = iϕ, region = 2, value = σ * λ)
+    boundary_dirichlet!(y, u, bnode, species = iϕ, region = 1, value = -Δϕ / 2)
     boundary_dirichlet!(y, u, bnode, species = iϕ, region = 3, value = Δϕ / 2)
 
     boundary_dirichlet!(y, u, bnode, species = ip, region = 1, value = 0)
-	boundary_dirichlet!(y, u, bnode, species = ip, region = 3, value = 0)
+    boundary_dirichlet!(y, u, bnode, species = ip, region = 3, value = 0)
     for i in cspecies
         boundary_dirichlet!(y, u, bnode, species = i, region = 1, value = cbulk)
         boundary_dirichlet!(y, u, bnode, species = i, region = 3, value = cbulk)
@@ -125,16 +125,16 @@ end
 dgldata = PNPData()
 
 # ╔═╡ 259fa06a-fad4-4551-9e30-55eafdc98584
-sys=PNPSystem(pnpgrid, celldata=PNPData(), bcondition=pnpbcond)
+sys = PNPSystem(pnpgrid, celldata = PNPData(), bcondition = pnpbcond)
 
 # ╔═╡ 837be65c-f2d8-4800-96e7-ee27d448bf24
-inival=unknowns(sys)
+inival = unknowns(sys)
 
 # ╔═╡ 2b120621-9bf6-495b-8f27-9185a8c54c7c
-esol=solve(sys.vfvmsys; inival, embed=[0,1], Δp=0.1, Δu_opt=1.0e3, verbose="ne")
+esol = solve(sys.vfvmsys; inival, embed = [0, 1], Δp = 0.1, Δu_opt = 1.0e3, verbose = "ne")
 
 # ╔═╡ bd329c64-a346-4692-a79c-b8b04106b785
-dglpnpsol=esol[end]
+dglpnpsol = esol[end]
 
 # ╔═╡ 0e558929-d8b2-4c22-9596-322f0e6f335d
 #=╠═╡
@@ -188,21 +188,21 @@ md"""
 
 # ╔═╡ 79a297c3-931e-4f4d-b0b0-27cde5f69dee
 begin
-	dgldata1=PNPData()
-	dgldata2=PNPData()
-	dgldata2.D*=0.1
+    dgldata1 = PNPData()
+    dgldata2 = PNPData()
+    dgldata2.D *= 0.1
 end
 
 # ╔═╡ f087896b-652f-48bc-ad78-9d66fa339f89
 struct MyCellData{TE} <: AbstractCellData
-	electrolytes::TE
+    electrolytes::TE
 end
 
 # ╔═╡ faff62ea-e2df-4fd1-8872-fb0e98bf431f
-LiquidElectrolytes.electrolytes(data::MyCellData)= data.electrolytes
+LiquidElectrolytes.electrolytes(data::MyCellData) = data.electrolytes
 
 # ╔═╡ e892d2f7-1f58-4d94-9719-bec80588ec97
-mycelldata=MyCellData([dgldata1, dgldata2])
+mycelldata = MyCellData([dgldata1, dgldata2])
 
 # ╔═╡ 19e2ff08-5347-41e1-bef8-808e415eb3ed
 md"""
@@ -211,18 +211,18 @@ md"""
 
 # ╔═╡ 57d2d467-6e2e-4501-be9e-7b2e643c8c16
 Base.@kwdef struct MyCellData2{TE} <: AbstractCellData
-	electrolytes::TE
-	k::Float64=1.0e1
+    electrolytes::TE
+    k::Float64 = 1.0e1
 end
 
 # ╔═╡ 771bf8d8-0e68-4ea5-b926-9fa945d239ba
-LiquidElectrolytes.electrolytes(data::MyCellData2)= data.electrolytes
+LiquidElectrolytes.electrolytes(data::MyCellData2) = data.electrolytes
 
 # ╔═╡ 20d53525-cbb3-44a4-bce2-d18fb395c66a
 function pnpbcond2(y, u, bnode, data)
     (; iϕ, ip, cspecies) = electrolytes(data)[1]
-	λ=bnode.embedparam
-    boundary_neumann!(y, u, bnode, species = iϕ, region = 2, value = σ*λ)
+    λ = bnode.embedparam
+    boundary_neumann!(y, u, bnode, species = iϕ, region = 2, value = σ * λ)
     boundary_dirichlet!(y, u, bnode, species = iϕ, region = 1, value = -Δϕ / 2)
     boundary_dirichlet!(y, u, bnode, species = iϕ, region = 3, value = Δϕ / 2)
     boundary_dirichlet!(y, u, bnode, species = ip, region = 1, value = 0)
@@ -235,13 +235,13 @@ function pnpbcond2(y, u, bnode, data)
 end
 
 # ╔═╡ d466c44b-48e4-4b17-bcfc-44f01cca90c5
-sys2=PNPSystem(pnpgrid, celldata=mycelldata, bcondition=pnpbcond2)
+sys2 = PNPSystem(pnpgrid, celldata = mycelldata, bcondition = pnpbcond2)
 
 # ╔═╡ fff71cb0-c109-4686-8411-74528a98714c
-inival2=unknowns(sys2)
+inival2 = unknowns(sys2)
 
 # ╔═╡ d5f33923-57f7-4e08-88fb-78c84c147a98
-esol2=solve(sys2.vfvmsys; inival2, embed=[0,1], Δp=0.1, Δu_opt=1.0e3, verbose="ne")
+esol2 = solve(sys2.vfvmsys; inival2, embed = [0, 1], Δp = 0.1, Δu_opt = 1.0e3, verbose = "ne")
 
 # ╔═╡ 2ccdf56a-6906-49af-81a3-00f32ba4e40f
 #=╠═╡
@@ -251,40 +251,40 @@ end
   ╠═╡ =#
 
 # ╔═╡ 2d7242e7-4814-4192-af57-8ec3a2df18d9
-edata1=ElectrolyteData(iϕ=5, ip=6, cspecies=[1,2], nc=4)
+edata1 = ElectrolyteData(iϕ = 5, ip = 6, cspecies = [1, 2], nc = 4)
 
 # ╔═╡ ec12834e-dad9-48fb-b6e7-7b99d2a75d49
-edata2=ElectrolyteData(iϕ=5, ip=6, cspecies=[3,4], nc=4)
+edata2 = ElectrolyteData(iϕ = 5, ip = 6, cspecies = [3, 4], nc = 4)
 
 # ╔═╡ 51257300-35c3-4fc4-bbf0-0bae0ab2fc37
-mycelldata2=MyCellData2(electrolytes=[edata1, edata2])
+mycelldata2 = MyCellData2(electrolytes = [edata1, edata2])
 
 # ╔═╡ 65e04003-6e2b-4cdc-b09a-ad41195f21d6
 function pnpbcond3(y, u, bnode, data)
-	elytes=electrolytes(data)
-	k=data.k
+    elytes = electrolytes(data)
+    k = data.k
     (; iϕ, ip) = elytes[1]
-	if bnode.region==5
-		r13= k*(u[1] - u[3])
-		y[1]+=r13
-		y[3]-=r13
-		r24= k*(u[2] - u[4])
-		y[2]+=r24
-		y[4]-=r24
-	end
+    if bnode.region == 5
+        r13 = k * (u[1] - u[3])
+        y[1] += r13
+        y[3] -= r13
+        r24 = k * (u[2] - u[4])
+        y[2] += r24
+        y[4] -= r24
+    end
 
-	
-	λ=bnode.embedparam
-    boundary_neumann!(y, u, bnode, species = iϕ, region = 2, value = σ*λ)
-    boundary_dirichlet!(y, u, bnode, species = iϕ, region = 1, value = -λ*Δϕ / 2)
-    boundary_dirichlet!(y, u, bnode, species = iϕ, region = 3, value = λ*Δϕ / 2)
 
-	boundary_dirichlet!(y, u, bnode, species = ip, region = 1, value = 0)
+    λ = bnode.embedparam
+    boundary_neumann!(y, u, bnode, species = iϕ, region = 2, value = σ * λ)
+    boundary_dirichlet!(y, u, bnode, species = iϕ, region = 1, value = -λ * Δϕ / 2)
+    boundary_dirichlet!(y, u, bnode, species = iϕ, region = 3, value = λ * Δϕ / 2)
+
+    boundary_dirichlet!(y, u, bnode, species = ip, region = 1, value = 0)
     boundary_dirichlet!(y, u, bnode, species = ip, region = 3, value = 0)
     for i in elytes[1].cspecies
         boundary_dirichlet!(y, u, bnode, species = i, region = 3, value = cbulk)
     end
-	for i in elytes[2].cspecies
+    for i in elytes[2].cspecies
         boundary_dirichlet!(y, u, bnode, species = i, region = 1, value = cbulk)
     end
     return
@@ -294,24 +294,28 @@ end
 
 
 # ╔═╡ c3acdde2-7f4c-415f-b8d7-d6f2b27edf92
-sys3=PNPSystem(pnpgrid, celldata=mycelldata2, bcondition=pnpbcond3,
-			  unknown_storage=:dense)
+sys3 = PNPSystem(
+    pnpgrid, celldata = mycelldata2, bcondition = pnpbcond3,
+    unknown_storage = :dense
+)
 
 # ╔═╡ 60ce3f69-4d31-448b-9623-741947ea40ce
 begin
-		uini=unknowns(sys3.vfvmsys, inival=0)
-	    elytes=electrolytes(mycelldata2)
-		uini[1,:].= elytes[1].c_bulk[1]
-		uini[2,:].= elytes[1].c_bulk[2]
-		uini[3,:].= elytes[2].c_bulk[3]
-		uini[4,:].= elytes[2].c_bulk[4]
+    uini = unknowns(sys3.vfvmsys, inival = 0)
+    elytes = electrolytes(mycelldata2)
+    uini[1, :] .= elytes[1].c_bulk[1]
+    uini[2, :] .= elytes[1].c_bulk[2]
+    uini[3, :] .= elytes[2].c_bulk[3]
+    uini[4, :] .= elytes[2].c_bulk[4]
 end
 
 # ╔═╡ 0bb425f7-f135-489c-81bc-9128fb87cd67
-esol3=solve(sys3.vfvmsys; inival=uini, embed=[0,1], Δp=2.0e-1, Δp_min=1.0e-2 , 
-			Δu_opt=1.0e4, verbose="ne", 
-			damp_initial=1, force_first_step=true, 
-			max_round=3, tol_round=1.0e-7, maxiters=100)
+esol3 = solve(
+    sys3.vfvmsys; inival = uini, embed = [0, 1], Δp = 2.0e-1, Δp_min = 1.0e-2,
+    Δu_opt = 1.0e4, verbose = "ne",
+    damp_initial = 1, force_first_step = true,
+    max_round = 3, tol_round = 1.0e-7, maxiters = 100
+)
 
 # ╔═╡ dca04b49-3d52-43b4-ad30-c90bcc26f74e
 #=╠═╡
