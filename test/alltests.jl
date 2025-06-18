@@ -123,6 +123,7 @@ notebooks = [
     "SurfaceKinetics_draft.jl",
     "BufferReactions.jl",
     "ElectroOsmosis.jl",
+    "IonChannel.jl",
 ]
 
 

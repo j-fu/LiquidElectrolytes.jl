@@ -186,38 +186,6 @@ md"""
 ## Two electrolyte case
 """
 
-# ╔═╡ 79a297c3-931e-4f4d-b0b0-27cde5f69dee
-begin
-    dgldata1 = PNPData()
-    dgldata2 = PNPData()
-    dgldata2.D *= 0.1
-end
-
-# ╔═╡ f087896b-652f-48bc-ad78-9d66fa339f89
-struct MyCellData{TE} <: AbstractCellData
-    electrolytes::TE
-end
-
-# ╔═╡ faff62ea-e2df-4fd1-8872-fb0e98bf431f
-LiquidElectrolytes.electrolytes(data::MyCellData) = data.electrolytes
-
-# ╔═╡ e892d2f7-1f58-4d94-9719-bec80588ec97
-mycelldata = MyCellData([dgldata1, dgldata2])
-
-# ╔═╡ 19e2ff08-5347-41e1-bef8-808e415eb3ed
-md"""
-## Two electrolytes with interface reaction
-"""
-
-# ╔═╡ 57d2d467-6e2e-4501-be9e-7b2e643c8c16
-Base.@kwdef struct MyCellData2{TE} <: AbstractCellData
-    electrolytes::TE
-    k::Float64 = 1.0e1
-end
-
-# ╔═╡ 771bf8d8-0e68-4ea5-b926-9fa945d239ba
-LiquidElectrolytes.electrolytes(data::MyCellData2) = data.electrolytes
-
 # ╔═╡ 20d53525-cbb3-44a4-bce2-d18fb395c66a
 function pnpbcond2(y, u, bnode, data)
     (; iϕ, ip, cspecies) = electrolytes(data)[1]
@@ -234,6 +202,21 @@ function pnpbcond2(y, u, bnode, data)
     return
 end
 
+# ╔═╡ 79a297c3-931e-4f4d-b0b0-27cde5f69dee
+begin
+    dgldata1 = PNPData()
+    dgldata2 = PNPData()
+    dgldata2.D *= 0.1
+end
+
+# ╔═╡ f087896b-652f-48bc-ad78-9d66fa339f89
+struct MyCellData{TE} <: AbstractCellData
+    electrolytes::TE
+end
+
+# ╔═╡ e892d2f7-1f58-4d94-9719-bec80588ec97
+mycelldata = MyCellData([dgldata1, dgldata2])
+
 # ╔═╡ d466c44b-48e4-4b17-bcfc-44f01cca90c5
 sys2 = PNPSystem(pnpgrid, celldata = mycelldata, bcondition = pnpbcond2)
 
@@ -249,6 +232,17 @@ if isdefined(Main,:PlutoRunner)
 	plotsol(pnpgrid, esol2[end])
 end
   ╠═╡ =#
+
+# ╔═╡ 19e2ff08-5347-41e1-bef8-808e415eb3ed
+md"""
+## Two electrolytes with interface reaction
+"""
+
+# ╔═╡ 57d2d467-6e2e-4501-be9e-7b2e643c8c16
+Base.@kwdef struct MyCellData2{TE} <: AbstractCellData
+    electrolytes::TE
+    k::Float64 = 1.0e1
+end
 
 # ╔═╡ 2d7242e7-4814-4192-af57-8ec3a2df18d9
 edata1 = ElectrolyteData(iϕ = 5, ip = 6, cspecies = [1, 2], nc = 4)
@@ -401,7 +395,6 @@ end;
 # ╠═20d53525-cbb3-44a4-bce2-d18fb395c66a
 # ╠═79a297c3-931e-4f4d-b0b0-27cde5f69dee
 # ╠═f087896b-652f-48bc-ad78-9d66fa339f89
-# ╠═faff62ea-e2df-4fd1-8872-fb0e98bf431f
 # ╠═e892d2f7-1f58-4d94-9719-bec80588ec97
 # ╠═d466c44b-48e4-4b17-bcfc-44f01cca90c5
 # ╠═fff71cb0-c109-4686-8411-74528a98714c
@@ -409,7 +402,6 @@ end;
 # ╠═2ccdf56a-6906-49af-81a3-00f32ba4e40f
 # ╟─19e2ff08-5347-41e1-bef8-808e415eb3ed
 # ╠═57d2d467-6e2e-4501-be9e-7b2e643c8c16
-# ╠═771bf8d8-0e68-4ea5-b926-9fa945d239ba
 # ╠═2d7242e7-4814-4192-af57-8ec3a2df18d9
 # ╠═ec12834e-dad9-48fb-b6e7-7b99d2a75d49
 # ╠═51257300-35c3-4fc4-bbf0-0bae0ab2fc37
