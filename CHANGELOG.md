@@ -1,6 +1,19 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## 2.1.0 - 2025-06-25
+
+### Added
+- **Multi-electrolyte support**: Implemented ability to handle different electrolytes in different regions of the domain
+- **AbstractCellData interface**: New abstract interface for handling cell data with multiple electrolytes
+- **Ion channel modeling capabilities**: Added support for ion channel models with interface reactions between different electrolyte regions
+- **CellData API**: New API functions including `electrolytes()`, `working_electrode()`, `bulk_electrode()`, `norm_weights()`, and related voltage/pressure handling functions
+- **Ion Channel notebook**: Added Pluto.jl notebook demonstrating multi-electrolyte functionality
+
+### Changed
+- **API Documentation**: Expanded documentation to include both single and multi-electrolyte problem sections
+- **PNPSystem constructor**: Enhanced to support `celldata` parameter for multi-electrolyte problems
+
 
 ## 2.0.2 - 2025-05-18 
 - Documentation update
