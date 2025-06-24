@@ -217,7 +217,10 @@ $(TYPEDFIELDS)
     scheme::Symbol = :deprecated
 end
 
-working_electrode(electrolyte::ElectrolyteData) = electrolyte.Γ_we
+#
+# Provide the same API for internal functions as AbstractCellData
+#
+working_electrode(electrolyte::ElectrolyteData) = electrolyte.Γ_wae
 bulk_electrode(electrolyte::ElectrolyteData) = electrolyte.Γ_bulk
 norm_weights(electrolyte::ElectrolyteData) = electrolyte.weights
 working_electrode_voltage(electrolyte::ElectrolyteData) = electrolyte.ϕ_we

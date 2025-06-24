@@ -2,7 +2,7 @@
 
 ## Electrolyte and cell data
 
-### One electrolyte domain
+### Single electrolyte problems
 ```@docs
 AbstractElectrolyteData
 ElectrolyteData
@@ -28,7 +28,7 @@ isincompressible
 c0_barc
 ``` 
 
-### Multielectrolyte data
+### Multielectrolyte problems
 Handling multiple electrolytes 
 (e.g. for certain ion channel  models) 
 is facilitated by this newer alternative API which at once
@@ -36,8 +36,16 @@ allowd to pass additional user dependent data e.g. to reaction
 problems.
 
 ```@docs
-AbstractCellData
-electrolytes
+LiquidElectrolytes.AbstractCellData
+LiquidElectrolytes.electrolytes
+LiquidElectrolytes.working_electrode
+LiquidElectrolytes.bulk_electrode
+LiquidElectrolytes.norm_weights
+LiquidElectrolytes.working_electrode_voltage
+LiquidElectrolytes.working_electrode_voltage!
+LiquidElectrolytes.pressure_index
+LiquidElectrolytes.voltage_index
+LiquidElectrolytes.check_celldata
 ```
 
 
@@ -53,6 +61,7 @@ LiquidElectrolytes.DGML_gamma!
 AbstractElectrochemicalSystem
 VoronoiFVM.unknowns
 PNPSystem
+celldata
 electrolytedata
 solventconcentration
 chemical_potentials

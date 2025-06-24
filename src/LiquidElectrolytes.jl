@@ -32,11 +32,17 @@ export isincompressible, iselectroneutral
 export chemical_potentials, electrochemical_potentials
 
 include("celldata.jl")
-export AbstractCellData, electrolytes
+
+VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse(
+"""
+public AbstractCellData, electrolytes, working_electrode, bulk_electrode,
+   norm_weights, working_electrode_voltage, working_electrode_voltage!, 
+   pressure_index, voltage_index, check_celldata
+"""))
 
 include("pnpsystem.jl")
 export PNPSystem
-export electrolytedata, bulkbcondition, unknowns
+export electrolytedata, celldata, bulkbcondition, unknowns
 
 VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public act_flux!, μex_flux!, cent_flux!, DGML_gamma!"))
 

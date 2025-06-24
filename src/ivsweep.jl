@@ -45,7 +45,7 @@ end
 Steady state voltammetry.
 
 Calculate molar reaction rates and bulk flux rates for each voltage in `voltages`.
-Returns a [`IVSweResult`](@ref).
+Returns a [`IVSweepResult`](@ref).
 """
 function ivsweep(
         esys::AbstractElectrochemicalSystem;

@@ -240,10 +240,9 @@ function PNPSystem(
         return _pnpreactionv!(f, u, node, elys[node.region])
     end
     elys = electrolytes(celldata)
-    ely1 = elys[1]
-    for ely in elys[2:end]
-        @assert ely.ip == ely1.ip
-        @assert ely.iϕ == ely1.iϕ
+    for ely in elys[1:end]
+        @assert ely.ip == pressure_index(celldata)
+        @assert ely.iϕ == voltage_index(celldata)
     end
     @assert(length(elys) >= num_cellregions(grid))
 
@@ -256,8 +255,8 @@ function PNPSystem(
         bcondition,
         kwargs...
     )
-    enable_species!(sys; species = ely1.iϕ)
-    enable_species!(sys; species = ely1.ip)
+    enable_species!(sys; species = pressure_index(celldata))
+    enable_species!(sys; species = voltage_index(celldata))
     for region in 1:num_cellregions(grid)
         enable_species!(sys; species = elys[region].cspecies, regions = [region])
     end
