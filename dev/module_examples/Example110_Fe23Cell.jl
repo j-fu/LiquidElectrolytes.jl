@@ -100,7 +100,7 @@ function main(;
         Γ_we = 1,
         Γ_bulk = 2,
         upwindflux!,
-        rlog = RLog(eps(valuetype))                        
+        rlog = RLog(eps(valuetype))
     )
 
     (; iϕ::Int, ip::Int) = celldata
@@ -172,7 +172,7 @@ function main(;
         hmol = 1 / length(molarities)
         for imol in 1:length(molarities)
             color = RGB(1 - imol / length(molarities), 0, imol / length(molarities))
-            celldata.c_bulk.= molarities[imol]
+            celldata.c_bulk .= molarities[imol]
             result = dlcapsweep(cell; voltages, kwargs...)
             scalarplot!(
                 vis,
@@ -193,7 +193,7 @@ function main(;
     currs = LiquidElectrolytes.currents(result, ife2)
 
     testresult = sum(currs)
-    
+
     sol = LiquidElectrolytes.voltages_solutions(result)
 
     xmax = xmax * nm
@@ -262,7 +262,7 @@ function main(;
 end
 
 function runtests()
-    main() ≈ -3.6857861517e+05
+    return main() ≈ -3.6857861517e+5
 end
 
 function generateplots(dir; Plotter = nothing, kwargs...)    #hide
