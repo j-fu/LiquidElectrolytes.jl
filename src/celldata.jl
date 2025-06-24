@@ -98,5 +98,3 @@ function update_derived!(d::AbstractCellData)
     map(update_derived!, electrolytes(d))
     return nothing
 end
-
-
