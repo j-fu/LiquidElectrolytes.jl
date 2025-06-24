@@ -32,10 +32,11 @@ export isincompressible, iselectroneutral
 export chemical_potentials, electrochemical_potentials
 
 include("celldata.jl")
+export AbstractCellData, electrolytes
 
 VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse(
 """
-public AbstractCellData, electrolytes, working_electrode, bulk_electrode,
+public  working_electrode, bulk_electrode,
    norm_weights, working_electrode_voltage, working_electrode_voltage!, 
    pressure_index, voltage_index, check_celldata
 """))

@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.9
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -284,9 +284,6 @@ function pnpbcond3(y, u, bnode, data)
     return
 end
 
-# ╔═╡ 85029a95-f297-4c53-b3b1-13b168d1b59a
-
-
 # ╔═╡ c3acdde2-7f4c-415f-b8d7-d6f2b27edf92
 sys3 = PNPSystem(
     pnpgrid, celldata = mycelldata2, bcondition = pnpbcond3,
@@ -406,7 +403,6 @@ end;
 # ╠═ec12834e-dad9-48fb-b6e7-7b99d2a75d49
 # ╠═51257300-35c3-4fc4-bbf0-0bae0ab2fc37
 # ╠═65e04003-6e2b-4cdc-b09a-ad41195f21d6
-# ╠═85029a95-f297-4c53-b3b1-13b168d1b59a
 # ╠═c3acdde2-7f4c-415f-b8d7-d6f2b27edf92
 # ╠═60ce3f69-4d31-448b-9623-741947ea40ce
 # ╠═0bb425f7-f135-489c-81bc-9128fb87cd67

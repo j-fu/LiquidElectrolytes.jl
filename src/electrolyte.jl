@@ -220,7 +220,7 @@ end
 #
 # Provide the same API for internal functions as AbstractCellData
 #
-working_electrode(electrolyte::ElectrolyteData) = electrolyte.Γ_wae
+working_electrode(electrolyte::ElectrolyteData) = electrolyte.Γ_we
 bulk_electrode(electrolyte::ElectrolyteData) = electrolyte.Γ_bulk
 norm_weights(electrolyte::ElectrolyteData) = electrolyte.weights
 working_electrode_voltage(electrolyte::ElectrolyteData) = electrolyte.ϕ_we
