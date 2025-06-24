@@ -43,7 +43,7 @@ Assumptions:
 """
 function dlcapsweep(
         esys::AbstractElectrochemicalSystem;
-        electrolyte = electrolytedata(esys),
+        cdata = celldata(esys),
         inival = nothing,
         voltages = (-1:0.1:1) * ufac"V",
         molarity = nothing,
@@ -51,16 +51,16 @@ function dlcapsweep(
         store_solutions = false,
         solver_kwargs...
     )
-    update_derived!(electrolyte)
+    update_derived!(cdata)
+    iϕ = voltage_index(cdata)
     sys = esys.vfvmsys
-    (; ip, iϕ) = electrolyte
     if !isnothing(molarity)
         error("The molarity kwarg of dlcapsweep has been removed. Pass the molarity information with electrolyte.c_bulk.")
     end
 
     ranges = splitz(voltages)
 
-    electrolyte.ϕ_we = 0.0
+    working_electrode_voltage!(cdata, 0.0)
 
     if isnothing(inival)
         inival = unknowns(esys)
@@ -69,9 +69,7 @@ function dlcapsweep(
     inival = solve(sys; inival, damp_initial = 0.1, solver_kwargs...)
 
     function show_error(u, δ)
-        @show u[iϕ, 1:5]
-        @show u[ip, 1:5]
-        return @error "bailing out at δ=$(δ) ϕ_we=$(electrolyte.ϕ_we)V"
+        return @error "bailing out at δ=$(δ) ϕ_we=$(working_electrode_voltage(cdata))V"
     end
 
     result_plus = DLCapSweepResult()
@@ -79,8 +77,8 @@ function dlcapsweep(
 
     control = VoronoiFVM.SolverControl(;
         max_round = 3, tol_round = 1.0e-9,
-        unorm = u -> wnorm(u, electrolyte.weights, Inf),
-        rnorm = u -> wnorm(u, electrolyte.weights, 1),
+        unorm = u -> wnorm(u, norm_weights(cdata), Inf),
+        rnorm = u -> wnorm(u, norm_weights(cdata), 1),
         solver_kwargs...
     )
     for range in ranges
@@ -95,7 +93,7 @@ function dlcapsweep(
         ϕprogress = 0
         @withprogress name = "sweep $(range[1])V -> $(range[end])V" for ϕ in range
             try
-                electrolyte.ϕ_we = ϕ
+                working_electrode_voltage!(cdata, ϕ)
                 sol = solve(sys; inival = sol, control)
             catch e
                 println(e)
@@ -111,7 +109,7 @@ function dlcapsweep(
             Q = VoronoiFVM.integrate(sys, sys.physics.reaction, sol)
 
             try
-                electrolyte.ϕ_we = ϕ + δ
+                working_electrode_voltage!(cdata, ϕ + δ)
                 sol = solve(sys; inival = sol, control)
             catch e
                 println(e)

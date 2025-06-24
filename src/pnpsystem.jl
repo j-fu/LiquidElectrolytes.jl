@@ -3,11 +3,17 @@
 
 Finite volume storage term
 """
-function pnpstorage!(f, u, node, electrolyte)
-    (; nc) = electrolyte
-    for ic in 1:nc
+function pnpstorage!(f, u, node, electrolyte::AbstractElectrolyteData)
+    (; cspecies) = electrolyte
+    for ic in cspecies
         f[ic] = u[ic]
     end
+    return
+end
+
+function pnpstorage!(f, u, node, celldata::AbstractCellData)
+    elys = electrolytes(celldata)
+    pnpstorage!(f, u, node, elys[node.region])
     return
 end
 
@@ -40,6 +46,11 @@ function pnpreaction!(f, u, node, electrolyte)
     return
 end
 
+function pnpreaction!(f, u, node, celldata::AbstractCellData)
+    elys = electrolytes(celldata)
+    pnpreaction!(f, u, node, elys[node.region])
+    return
+end
 
 """
      dμex(γk, γl, electrolyte)
@@ -65,14 +76,13 @@ https://web.archive.org/web/20210518233152/http://www-tcad.stanford.edu/tcad/pro
 Verification calculation is in the paper.
 """
 function μex_flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
-    (; D, z, F, RT, nc) = electrolyte
-    for ic in 1:nc
+    (; D, z, F, RT, cspecies) = electrolyte
+    for ic in cspecies
         bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT + dμex(γk[ic], γl[ic], electrolyte) / RT - evelo / D[ic])
         f[ic] = D[ic] * (bm * ck[ic] - bp * cl[ic])
     end
     return nothing
 end
-
 
 """
     act_flux!(ic,dϕ,ck,cl,γk,γl,electrolyte; evelo=0)
@@ -82,8 +92,8 @@ As shown in Chainais-Hilliaret, Cances, Fuhrmann, Gaudeul, 2019, this is
 consistent to thermodynamic equilibrium but shows inferior convergence behavior.
 """
 function act_flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
-    (; D, z, F, RT, nc) = electrolyte
-    for ic in 1:nc
+    (; D, z, F, RT, cspecies) = electrolyte
+    for ic in cspecies
         Dx = D[ic] * (1 / γk[ic] + 1 / γl[ic]) / 2
         bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT - evelo / D[ic])
         f[ic] = Dx * (bm * ck[ic] * γk[ic] - bp * cl[ic] * γl[ic])
@@ -100,11 +110,12 @@ covergent,  consistent to thermodynamic equilibrium but may show
 inferior convergence behavior.
 """
 function cent_flux!(f, dϕ, ck, cl, γk, γl, electrolyte; evelo = 0.0)
-    (; D, z, F, RT, nc, rlog) = electrolyte
-    for ic in 1:nc
+    (; D, z, F, RT, cspecies, rlog) = electrolyte
+    for ic in cspecies
         μk = rlog(ck[ic]) * RT
         μl = rlog(cl[ic]) * RT
-        f[ic] = D[ic] * 0.5 * (ck[ic] + cl[ic]) * ((μk - μl + dμex(γk[ic], γl[ic], electrolyte) + z[ic] * F * dϕ) / RT - evelo / D[ic])
+        f[ic] = D[ic] * 0.5 * (ck[ic] + cl[ic]) *
+            ((μk - μl + dμex(γk[ic], γl[ic], electrolyte) + z[ic] * F * dϕ) / RT - evelo / D[ic])
     end
     return nothing
 end
@@ -144,9 +155,16 @@ function pnpflux!(f, u, edge, electrolyte)
     return
 end
 
+function pnpflux!(f, u, edge, celldata::AbstractCellData)
+    elys = electrolytes(celldata)
+    pnpflux!(f, u, edge, elys[edge.region])
+    return
+end
+
 struct PNPSystem <: AbstractElectrochemicalSystem
     vfvmsys::VoronoiFVM.System
 end
+
 
 """
     PNPSystem(grid;
@@ -157,21 +175,29 @@ end
 
 Create VoronoiFVM system for generalized Poisson-Nernst-Planck. Input:
 - `grid`: discretization grid
-- `celldata`: composite struct containing electrolyte data
+- `celldata`: instance of ElectrolyteData or of subtype of AbstractCellData
 - `bcondition`: boundary condition
 - `reaction` : reactions of the bulk species
 - `kwargs`: Keyword arguments of VoronoiFVM.System
 """
 function PNPSystem(
         grid::ExtendableGrid;
-        celldata = ElectrolyteData(),
+        celldata::Union{ElectrolyteData, AbstractCellData} = ElectrolyteData(),
+        kwargs...
+    )
+    return PNPSystem(grid, celldata; kwargs...)
+end
+
+function PNPSystem(
+        grid::ExtendableGrid,
+        celldata::AbstractElectrolyteData;
         bcondition = (f, u, n, e) -> nothing,
         reaction = (f, u, n, e) -> nothing,
         kwargs...
     )
     update_derived!(celldata)
 
-    function _pnpreaction!(f, u, node, electrolyte)
+    function _pnpreaction!(f, u, node, electrolyte::AbstractElectrolyteData)
         pnpreaction!(f, u, node, electrolyte)
         reaction(f, u, node, electrolyte)
         return nothing
@@ -184,11 +210,55 @@ function PNPSystem(
         reaction = _pnpreaction!,
         storage = pnpstorage!,
         bcondition,
-        species = [1:(celldata.nc)..., celldata.iϕ, celldata.ip],
+        species = union(celldata.cspecies, [celldata.ip, celldata.iϕ]),
         kwargs...
     )
-    for ia in (celldata.nc + 1):(celldata.nc + celldata.na)
+
+    for ia in celldata.sspecies
         enable_boundary_species!(sys, ia, [celldata.Γ_we])
+    end
+    return PNPSystem(sys)
+end
+
+function PNPSystem(
+        grid::ExtendableGrid,
+        celldata::AbstractCellData;
+        bcondition = (f, u, n, e) -> nothing,
+        reaction = (f, u, n, e) -> nothing,
+        kwargs...
+    )
+    update_derived!(celldata)
+
+    function _pnpreactionv!(f, u, node, electrolyte::AbstractElectrolyteData)
+        pnpreaction!(f, u, node, electrolyte)
+        reaction(f, u, node, electrolyte)
+        return nothing
+    end
+
+    function _pnpreactionv!(f, u, node, celldata::AbstractCellData)
+        elys = electrolytes(celldata)
+        return _pnpreactionv!(f, u, node, elys[node.region])
+    end
+    elys = electrolytes(celldata)
+    for ely in elys[1:end]
+        @assert ely.ip == pressure_index(celldata)
+        @assert ely.iϕ == voltage_index(celldata)
+    end
+    @assert(length(elys) >= num_cellregions(grid))
+
+    sys = VoronoiFVM.System(
+        grid;
+        data = celldata,
+        flux = pnpflux!,
+        reaction = _pnpreactionv!,
+        storage = pnpstorage!,
+        bcondition,
+        kwargs...
+    )
+    enable_species!(sys; species = pressure_index(celldata))
+    enable_species!(sys; species = voltage_index(celldata))
+    for region in 1:num_cellregions(grid)
+        enable_species!(sys; species = elys[region].cspecies, regions = [region])
     end
     return PNPSystem(sys)
 end
@@ -200,21 +270,33 @@ Extract electrolyte data from system.
 electrolytedata(sys::AbstractElectrochemicalSystem) = sys.vfvmsys.physics.data
 
 """
+    celldata(sys)
+Extract celldata from system.
+"""
+celldata(sys::AbstractElectrochemicalSystem) = sys.vfvmsys.physics.data
+
+Base.@deprecate electrolytedata(sys) celldata(sys)
+
+
+"""
     unknowns(sys)
 
 Return vector of unknowns initialized with bulk data.
 """
 function VoronoiFVM.unknowns(esys::AbstractElectrochemicalSystem)
     sys = esys.vfvmsys
-    (; iϕ, ip, nc, na, c_bulk, Γ_we) = electrolytedata(esys)
+    edata = electrolytedata(esys)
     u = unknowns(sys)
-    @views u[iϕ, :] .= 0
-    @views u[ip, :] .= 0
-    for ic in 1:nc
-        @views u[ic, :] .= c_bulk[ic]
-    end
-    for ia in (nc + 1):(nc + na)
-        @views u[ia, :] .= 0
+    if isa(edata, ElectrolyteData)
+        (; iϕ, ip, cspecies, sspecies, c_bulk, Γ_we) = edata
+        @views u[iϕ, :] .= 0
+        @views u[ip, :] .= 0
+        for ic in cspecies
+            @views u[ic, :] .= c_bulk[ic]
+        end
+        for ia in sspecies
+            @views u[ia, :] .= 0
+        end
     end
     return u
 end

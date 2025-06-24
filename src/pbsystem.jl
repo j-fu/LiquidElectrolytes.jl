@@ -1,12 +1,12 @@
-"""
+"""l
     pbreaction!(f, u, node, electrolyte)
 
 Reaction expression for Poisson-Boltzmann
 """
 function pbreaction!(f, u, node, electrolyte)
     (;
-        ip, iϕ,
-        z, F, RT, nc, pscale,
+        ip, iϕ, cspecies,
+        z, F, RT, pscale,
         c_bulk, ϕ_bulk, p_bulk,
         actcoeff!, γk_cache, rexp, γ_bulk,
     ) = electrolyte
@@ -15,7 +15,7 @@ function pbreaction!(f, u, node, electrolyte)
     γ = get_tmp(γk_cache, u)
     actcoeff!(γ, u, p, electrolyte)
     q = zero(eltype(u))
-    for ic in 1:nc
+    for ic in cspecies
         f[ic] = u[ic] * γ[ic] - c_bulk[ic] * rexp(z[ic] * F * (ϕ_bulk - ϕ) / RT) * γ_bulk[ic]
         q += z[ic] * u[ic]
     end
@@ -67,7 +67,7 @@ function PBSystem(
         flux = pbflux!,
         reaction = pbreaction!,
         bcondition,
-        species = [1:(celldata.nc)..., celldata.iϕ, celldata.ip],
+        species = union(celldata.cspecies, [celldata.ip, celldata.iϕ]),
         kwargs...
     )
 
