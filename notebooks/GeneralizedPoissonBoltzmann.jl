@@ -43,7 +43,7 @@ end
 
 # ╔═╡ 25a19579-9cba-4416-87cb-83d00e5926f3
 md"""
-# NonlinearPoisson.jl
+# GeneralizedPoissonBoltzmann.jl
 """
 
 # ╔═╡ 1afa972d-74cf-47ce-86cf-8751a9e85218
