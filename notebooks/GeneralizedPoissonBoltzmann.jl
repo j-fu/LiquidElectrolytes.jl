@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.13
+# v0.20.17
 
 using Markdown
 using InteractiveUtils
@@ -109,7 +109,8 @@ Assuming a given bulk concentrations ``c_i^{bulk}``, bulk potential ``ϕ^{bulk}`
 ```math
 \begin{aligned}
   -\nabla \cdot εε_0 \nabla \phi & =q\\
-  q&=F\sum_{i=1}^n z_ic_i^{bulk} \frac{\gamma_i^{bulk}}{\gamma_i}\exp\left(z_i(ϕ^{bulk}-ϕ) \frac{F}{RT}\right)\\
+  q&=F\sum_{i=1}^n z_i c_i\\
+c_i&=c_i^{bulk} \frac{\gamma_i^{bulk}}{\gamma_i}\exp\left(z_i(ϕ^{bulk}-ϕ) \frac{F}{RT}\right)\\
    - Δ p &= -∇ (q\nabla ϕ)\\
 γ_i&=γ_i(c_1\dots c_n, p)\\
 γ_i^{bulk}&=γ_i(c_1^{bulk}\dots c_n^{bulk}, p^{bulk})\\
@@ -637,7 +638,7 @@ end;
 # ╟─26266ce9-1fd5-4dec-9ea7-2a79c724685d
 # ╠═eb7d0765-d5e7-4ef9-916d-764c5aca9822
 # ╠═5d15d24d-6317-4ad1-a53e-5af5c5bcf28a
-# ╠═bd6749ab-8b75-4a45-8ac4-0650ba4a903c
+# ╟─bd6749ab-8b75-4a45-8ac4-0650ba4a903c
 # ╟─bb1276fa-1991-49af-b207-1c8937219f17
 # ╠═b31af4a2-716c-4c17-b283-0103630fdf38
 # ╠═56016697-5ce9-4e0a-b14a-bb5d276a358c
