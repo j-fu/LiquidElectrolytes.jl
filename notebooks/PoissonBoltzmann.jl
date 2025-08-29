@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.8
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -23,16 +23,17 @@ begin
     import Pkg # hide
     Pkg.activate(joinpath(@__DIR__, "..", "docs")) # hide
     using Revise # hide
-	using GridVisualize
-		using CairoMakie	
-		default_plotter!(CairoMakie)
-		CairoMakie.activate!(type="svg")
+    using GridVisualize
+    using CairoMakie
+    default_plotter!(CairoMakie)
+    CairoMakie.activate!(type = "svg")
 end
   ╠═╡ =#
 
 # ╔═╡ 60941eaa-1aea-11eb-1277-97b991548781
 begin
     using PlutoUI, HypertextLiteral, UUIDs
+    using Test
     using LinearAlgebra
     using Interpolations
     using VoronoiFVM, ExtendableGrids
@@ -42,12 +43,12 @@ end
 
 # ╔═╡ 25a19579-9cba-4416-87cb-83d00e5926f3
 md"""
-# PoissonBoltzmann.jl
+# NonlinearPoisson.jl
 """
 
 # ╔═╡ 1afa972d-74cf-47ce-86cf-8751a9e85218
 md"""
-Under development, may be removed, though. Same as VoronoiFVMPoisson, but with the intention do the same things with LiquidElectrolytes.jl
+Demonstrate different variants to specify activity coefficients.
 """
 
 # ╔═╡ b181a82b-46e7-4dae-b0b1-6886dd40886a
@@ -57,7 +58,7 @@ md"""
 
 # ╔═╡ 5a5e3586-2009-4381-ae9d-a0bd34539b65
 md"""
-See LessUnitful.jl  `ph` and `ufac` and Unitful.jl for `u`
+See LessUnitful.jl for  `ph` and `ufac`.
 """
 
 # ╔═╡ b6338637-1f3c-4410-8e82-3afdaf603656
@@ -81,10 +82,7 @@ Parameters:
 begin
     const molarity = 0.01
     const c_bulk = [molarity, molarity] * mol / dm^3 # bulk ion molar concentrations
-    const z = [1, -1] # species charge numbers
-    const c̄ = 55.508mol / dm^3 # solvent (water) molar concentration
     const nref = 0 # grid refinement level
-    const T = 298.15K # temperature
     const L = 20.0nm # computational domain size
     const hmin = 1.0e-1 * nm * 2.0^(-nref) # grid size at working electrode
     const hmax = 1.0 * nm * 2.0^(-nref) # grid size at bulk
@@ -99,51 +97,83 @@ grid = simplexgrid(X)
 
 # ╔═╡ db023dac-5ce0-4126-bfd0-9036ccec11f4
 #=╠═╡
-gridplot(grid,size=(600,200))
+gridplot(grid, size = (600, 200))
   ╠═╡ =#
-
-# ╔═╡ 834c81c8-9035-449f-b331-73bbee87756c
-md"""
-Check for bulk electroneutrality:
-"""
 
 # ╔═╡ a4a4c6a4-ea90-4d23-b13a-2020790b2889
 md"""
-## Classical Poisson-Boltzmann
-
+## Generalized Poisson-Boltzmann system
+Assume ``\Omega=(0,L)``, ``\Gamma^{we}=\{0\}``, ``\Gamma^{bulk}=\{L\}``.
+ 
+Assuming a given bulk concentrations ``c_i^{bulk}``, bulk potential ``ϕ^{bulk}`` and working electrode potential ``ϕ^{we}``, solve
 ```math
-  -\nabla \cdot εε_0 \nabla \phi = F\sum_{i=1}^n z_ic_0 \exp\left(z_i\phi \frac{F}{RT}\right)
+\begin{aligned}
+  -\nabla \cdot εε_0 \nabla \phi & =q\\
+  q&=F\sum_{i=1}^n z_ic_i^{bulk} \frac{\gamma_i^{bulk}}{\gamma_i}\exp\left(z_i(ϕ^{bulk}-ϕ) \frac{F}{RT}\right)\\
+   - Δ p &= -∇ (q\nabla ϕ)\\
+γ_i&=γ_i(c_1\dots c_n, p)\\
+γ_i^{bulk}&=γ_i(c_1^{bulk}\dots c_n^{bulk}, p^{bulk})\\
+\end{aligned}
 ```
+with boundary conditions
+```math
+\begin{aligned}
+    \phi & =\phi^{we}\;  \text{on}\; \Gamma^{we}\\
+    \phi & =\phi^{bulk}\;  \text{on}\; \Gamma^{bulk}\\
+    p & =p^{bulk}\;  \text{on}\; \Gamma^{bulk}\\
+    (∇p - q∇ϕ)⋅ \vec n &=0\;  \text{on}\; \Gamma^{we}\\
+\end{aligned}
+```
+
+It is  reasonable to assume ``ϕ^{bulk}=0``, ``p^{bulk}=0`` and bulk electroneutrality 
+``\sum_{i=1}^n z_i c_i=0``.
+"""
+
+# ╔═╡ 52d579d5-075e-45e4-ab00-fc85e3351c34
+md"""
+### (Unmodified) Poisson-Boltzmann
+This is characterized by ``γ_i=1``, and thus also decouples pressure and potential.
+
+We can create an instance of ElectrolyteData which uses this particular activity coefficient,
+and the given bulk concentration. The function defining the activity coefficient has the 
+species concentrations `c` and the pressure `p` in a given collocation point as parameters, together with
+the electrolyte data. It shall write the activity coefficients for each species into the first parameter `γ`.
+
+
 """
 
 # ╔═╡ 41715397-020c-4505-a61a-4f2910318423
-begin
-    function pbo_gamma!(γ, c, p, electrolyte)
-        for i in 1:electrolyte.nc
-            γ[i] = 1
-        end
-        return nothing
+function pbo_gamma!(γ, c, p, electrolyte)
+    (; cspecies) = electrolyte
+    for ic in cspecies
+        γ[ic] = 1
     end
-    pbo_electrolyte = ElectrolyteData(; actcoeff! = pbo_gamma!, c_bulk)
+    return nothing
 end
 
-# ╔═╡ 7f209979-0776-40ab-9b2b-3b2d0145fa2c
-iselectroneutral(c_bulk, pbo_electrolyte)
-
-# ╔═╡ 80a42b07-d6b1-41d6-bf1d-66a01eeb5019
-md"""
-Derived data:
-"""
+# ╔═╡ a689c32c-0a23-465e-bc85-21983ec083c6
+pbo_electrolyte = ElectrolyteData(; actcoeff! = pbo_gamma!, c_bulk)
 
 # ╔═╡ c57e82bb-79d8-4553-b31d-d1448c38c649
 md"""
-Debye length= $(debyelength(pbo_electrolyte) |> x->round(x,sigdigits=5) |>u"nm")
+We can derive the following data which shall correspond to textbook data as e.g.
+found in Bard/Faulkner:
+
+- Debye length: $(debyelength(pbo_electrolyte) |> x->round(x,sigdigits=5) |>u"nm")
+- Double layer capacitance at zero voltage for symmetric binary electrolyte: $(dlcap0(pbo_electrolyte) |> x->round(x,sigdigits=5) |>u"μF/cm^2")
 """
 
-# ╔═╡ e2179a6c-cc1c-4850-89d4-d3f87fd5e6ee
+# ╔═╡ ecd4d177-7681-4588-a5e0-f90487b17e6b
 md"""
-Double layer capacitance at zero voltage for symmetric binary electrolyte = 
-$(dlcap0(pbo_electrolyte) |> x->round(x,sigdigits=5) |>u"μF/cm^2")
+We also can check the bulk concentration to be electroneutral:
+"""
+
+# ╔═╡ 7f209979-0776-40ab-9b2b-3b2d0145fa2c
+@test iselectroneutral(c_bulk, pbo_electrolyte)
+
+# ╔═╡ 024eb595-15cd-445f-bd3b-d3b5ab537161
+md"""
+Define the standard boundary condition function  for all variants of this problem:
 """
 
 # ╔═╡ 66a988e0-9388-4bbe-8d92-9177dfca8ac4
@@ -151,14 +181,36 @@ function pb_bcondition(f, u, bnode, data)
     (; Γ_we, Γ_bulk, ϕ_we, iϕ, ip) = data
     ## Dirichlet ϕ=ϕ_we at Γ_we
     boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_we, value = ϕ_we)
-    boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_bulk, value = data.ϕ_bulk)
-    return boundary_dirichlet!(f, u, bnode, species = ip, region = Γ_bulk, value = data.p_bulk)
 
+    ## Dirichlet ϕ=ϕ_bulk at Γ_bulk
+    boundary_dirichlet!(f, u, bnode, species = iϕ, region = Γ_bulk, value = data.ϕ_bulk)
+
+    ## Dirichlet p=p_bulk at Γ_bulk
+    boundary_dirichlet!(f, u, bnode, species = ip, region = Γ_bulk, value = data.p_bulk)
+    return nothing
 end
 
 
+# ╔═╡ 204e4d69-d5f2-468b-9493-2a0943627628
+md"""
+"""
+
+# ╔═╡ 790e4fda-9eed-489f-a455-d01681482b66
+md"""
+From the data defined so far, we can create a `PBSystem`:
+"""
+
 # ╔═╡ 91a661ee-9c0c-496e-b6fb-4bb692cb7255
-pbo_system = PBSystem(grid; celldata = pbo_electrolyte, bcondition = pb_bcondition)
+pbo_system = PBSystem(
+    grid;
+    celldata = pbo_electrolyte,
+    bcondition = pb_bcondition
+)
+
+# ╔═╡ 18acbe25-be38-44f6-872b-85eade90930f
+md"""
+Solve the system for voltages in the range from 0 to 1:
+"""
 
 # ╔═╡ 240b9017-bb20-4e0f-b372-3248a1cf0a9f
 pbo_result = dlcapsweep(
@@ -176,28 +228,42 @@ pbo_caps = pbo_result.dlcaps
 # ╔═╡ c4af7d22-52ad-495e-b1db-0cd129173c60
 pbo_sols = voltages_solutions(pbo_result);
 
+# ╔═╡ f06fbc91-4c7f-41d5-a670-c84beede05ab
+md"""
+We observe the expected, unphysical result of unbounded concentrations and double layer capacitances in the region of larger voltages.
+"""
+
 # ╔═╡ ad804cc3-93cd-421b-8314-a7d11e051e3d
 @bind pbo_v PlutoUI.Slider(range(pbo_volts[begin], pbo_volts[end], length = 201), default = 0.05, show_value = true)
 
 # ╔═╡ db5b6820-5a53-465c-b380-66756fd722a6
 md"""
-## "Poisson-Bikerman"
+### Poisson-Bikerman
+
+This assumes that solvent molecules and all ions have the same size, expressed via their molar volume `v`, which e.g. can be derived from lattice ideas. 
+Thus, 
+```math
+	γ_i = \frac{1}{1 - v\sum_{i=1}^n c_i   }
+```
+
 """
+
+
+# ╔═╡ d1ff3557-3107-482c-8698-df30d85daaa9
+function pbi_gamma!(γ, c, p, electrolyte)
+    sumc = zero(eltype(c))
+    for i in 1:electrolyte.nc
+        sumc += c[i]
+    end
+    g = 1.0 / (1.0 - sumc * electrolyte.v0)
+    for i in 1:electrolyte.nc
+        γ[i] = g
+    end
+    return nothing
+end
 
 # ╔═╡ dbc500d6-99e8-40d8-9b60-dcccf1889ce8
 begin
-    function pbi_gamma!(γ, c, p, electrolyte)
-        sumc = zero(eltype(c))
-        for i in 1:electrolyte.nc
-            sumc += c[i]
-        end
-        g = 1.0 / (1.0 - sumc * electrolyte.v0)
-        for i in 1:electrolyte.nc
-            γ[i] = g
-        end
-        return nothing
-    end
-
     pbi_electrolyte = ElectrolyteData(
         c_bulk = pbo_electrolyte.c_bulk,
         actcoeff! = pbi_gamma!
@@ -227,17 +293,41 @@ pbi_caps = pbi_result.dlcaps
 # ╔═╡ f45d7707-1626-42e7-8211-8cdcc4cccbea
 pbi_sols = voltages_solutions(pbi_result);
 
+# ╔═╡ b1a77d4c-7643-45d6-9352-b837f52eefa4
+md"""
+As a result, we see a natural limitation of concentrations and double layer capacities.
+"""
+
 # ╔═╡ 26266ce9-1fd5-4dec-9ea7-2a79c724685d
 @bind pbi_v PlutoUI.Slider(range(pbi_volts[begin], pbi_volts[end], length = 201), default = 0.05, show_value = true)
 
 # ╔═╡ bd6749ab-8b75-4a45-8ac4-0650ba4a903c
 md"""
-## "Poisson-Bikerman" #2 
+### Alternative Poisson-Bikerman 
+This solves the same problem, but uses the default 
+"Dreyer/Guhlke/Müller/Landstorfer" activity coefficient function with corresponding parameters:
+
+```math
+\begin{aligned}
+γ_i &= \exp\left(\frac{\tilde v_i p}{RT}\right) \left(\frac{\bar c}{c_0}\right)^{m_i} \frac{1}{v_0\bar c}\\
+c_0 &= 1- ∑_{i=1}^n c_i\\
+m_i &=\frac{M_i+\kappa_i M_0}{M_0}=1\\
+\tilde v_i & = \bar v_i  - m_i v_0 = v_i + \kappa_i v_0 - m_i v_0 = 0\\
+\end{aligned}
+```
+It then reduces to 
+```math
+	\gamma_i = \frac{1}{v_0c_0}
+```
+
+"""
+
+# ╔═╡ bb1276fa-1991-49af-b207-1c8937219f17
+md"""
 """
 
 # ╔═╡ b31af4a2-716c-4c17-b283-0103630fdf38
 begin
-
     pbi2_electrolyte = ElectrolyteData(c_bulk = pbo_electrolyte.c_bulk)
     pbi2_electrolyte.v .= pbi_electrolyte.v0
     pbi2_electrolyte.κ .= 0
@@ -269,62 +359,67 @@ pbi2_caps = pbi2_result.dlcaps
 # ╔═╡ d64cf39a-5f91-4d3f-ad82-1aef00a0a290
 pbi2_sols = voltages_solutions(pbi2_result);
 
+# ╔═╡ dc5a4874-8029-4752-9558-1268d6f27ba2
+@test norm(pbi2_caps - pbi_caps, Inf) < 1.0e-11
+
 # ╔═╡ e373824d-6e0d-44c8-8c8a-192cccf10298
 #=╠═╡
-function plotcdl(pbvolts,pbcaps,pbv)
-	vc=linear_interpolation(pbvolts,pbcaps)
-	cdl=round(vc(pbv)/ufac"μF/cm^2",sigdigits=4)
-	vis=GridVisualizer(size=(500,200),xlabel="Δϕ",ylabel="C_dl",legend=:lt)
-	scalarplot!(vis,pbvolts,pbcaps/ufac"μF/cm^2")
-	scalarplot!(vis,[pbv],[cdl],markershape=:circle,clear=false,markersize=20,
-	label="$(cdl)")
-	reveal(vis)
+function plotcdl(pbvolts, pbcaps, pbv)
+    vc = linear_interpolation(pbvolts, pbcaps)
+    cdl = round(vc(pbv) / ufac"μF/cm^2", sigdigits = 4)
+    vis = GridVisualizer(size = (500, 200), xlabel = "Δϕ", ylabel = "C_dl", legend = :lt)
+    scalarplot!(vis, pbvolts, pbcaps / ufac"μF/cm^2")
+    scalarplot!(
+        vis, [pbv], [cdl], markershape = :circle, clear = false, markersize = 20,
+        label = "$(cdl)"
+    )
+    return reveal(vis)
 end
   ╠═╡ =#
 
 # ╔═╡ 811fca9b-bac0-4003-a0f9-bfefcbfbfa30
 #=╠═╡
-plotcdl(pbo_volts,pbo_caps,pbo_v)
+plotcdl(pbo_volts, pbo_caps, pbo_v)
   ╠═╡ =#
 
 # ╔═╡ eb7d0765-d5e7-4ef9-916d-764c5aca9822
 #=╠═╡
-plotcdl(pbi_volts,pbi_caps,pbi_v)
+plotcdl(pbi_volts, pbi_caps, pbi_v)
   ╠═╡ =#
 
 # ╔═╡ fc55ef51-b7f4-4640-b8e5-ad7b4f8a411c
 #=╠═╡
-plotcdl(pbi2_volts,pbi2_caps,pbi2_v)
+plotcdl(pbi2_volts, pbi2_caps, pbi2_v)
   ╠═╡ =#
 
 # ╔═╡ e480b378-7afa-4906-9e8a-70eac7712b5e
 #=╠═╡
-function plotsols(pbsols,pbv)
-    vis=GridVisualizer(size=(700,200),layout=(1,2),xlabel="x/nm")
-	sol=pbsols(pbv)
-	ϕ=sol[3,:]
-	cp=sol[1,:]/ufac"mol/dm^3"
-	cm=sol[2,:]/ufac"mol/dm^3"
-	scalarplot!(vis[1,1],X/nm,ϕ,color=:green,ylabel="ϕ/V")
-	scalarplot!(vis[1,2],X/nm,cp,color=:red,ylabel="c/ (mol/L)")
-	scalarplot!(vis[1,2],X/nm,cm,color=:blue,clear=false)
-	reveal(vis)
+function plotsols(pbsols, pbv)
+    vis = GridVisualizer(size = (700, 200), layout = (1, 2), xlabel = "x/nm")
+    sol = pbsols(pbv)
+    ϕ = sol[3, :]
+    cp = sol[1, :] / ufac"mol/dm^3"
+    cm = sol[2, :] / ufac"mol/dm^3"
+    scalarplot!(vis[1, 1], X / nm, ϕ, color = :green, ylabel = "ϕ/V")
+    scalarplot!(vis[1, 2], X / nm, cp, color = :red, ylabel = "c/ (mol/L)")
+    scalarplot!(vis[1, 2], X / nm, cm, color = :blue, clear = false)
+    return reveal(vis)
 end
   ╠═╡ =#
 
 # ╔═╡ 65a25bd3-c420-4da3-b808-0e1888c6b4ba
 #=╠═╡
-plotsols(pbo_sols,pbo_v)
+plotsols(pbo_sols, pbo_v)
   ╠═╡ =#
 
 # ╔═╡ 5d15d24d-6317-4ad1-a53e-5af5c5bcf28a
 #=╠═╡
-plotsols(pbi_sols,pbi_v)
+plotsols(pbi_sols, pbi_v)
   ╠═╡ =#
 
 # ╔═╡ f29de74d-66dd-4d95-9d6a-c33bfb8361c9
 #=╠═╡
-plotsols(pbi2_sols,pbi2_v)
+plotsols(pbi2_sols, pbi2_v)
   ╠═╡ =#
 
 # ╔═╡ f9b4d4dc-7def-409f-b40a-f4eba1163741
@@ -509,33 +604,41 @@ end;
 # ╠═7da889ce-9c6b-4abc-b19d-6311aacc32b1
 # ╠═a2a8132a-d54d-48a7-aa02-ff83593f0e16
 # ╠═db023dac-5ce0-4126-bfd0-9036ccec11f4
-# ╟─834c81c8-9035-449f-b331-73bbee87756c
-# ╟─a4a4c6a4-ea90-4d23-b13a-2020790b2889
+# ╠═a4a4c6a4-ea90-4d23-b13a-2020790b2889
+# ╟─52d579d5-075e-45e4-ab00-fc85e3351c34
 # ╠═41715397-020c-4505-a61a-4f2910318423
-# ╠═7f209979-0776-40ab-9b2b-3b2d0145fa2c
-# ╟─80a42b07-d6b1-41d6-bf1d-66a01eeb5019
+# ╠═a689c32c-0a23-465e-bc85-21983ec083c6
 # ╟─c57e82bb-79d8-4553-b31d-d1448c38c649
-# ╟─e2179a6c-cc1c-4850-89d4-d3f87fd5e6ee
+# ╟─ecd4d177-7681-4588-a5e0-f90487b17e6b
+# ╠═7f209979-0776-40ab-9b2b-3b2d0145fa2c
+# ╟─024eb595-15cd-445f-bd3b-d3b5ab537161
 # ╠═66a988e0-9388-4bbe-8d92-9177dfca8ac4
+# ╟─204e4d69-d5f2-468b-9493-2a0943627628
+# ╟─790e4fda-9eed-489f-a455-d01681482b66
 # ╠═91a661ee-9c0c-496e-b6fb-4bb692cb7255
+# ╟─18acbe25-be38-44f6-872b-85eade90930f
 # ╠═240b9017-bb20-4e0f-b372-3248a1cf0a9f
 # ╠═7ce95a6a-dd5f-4c2a-810b-6483f02ce661
 # ╠═7a014d29-535b-4389-987c-cbfcde5fd8a4
 # ╠═c4af7d22-52ad-495e-b1db-0cd129173c60
+# ╟─f06fbc91-4c7f-41d5-a670-c84beede05ab
 # ╟─ad804cc3-93cd-421b-8314-a7d11e051e3d
-# ╠═811fca9b-bac0-4003-a0f9-bfefcbfbfa30
-# ╠═65a25bd3-c420-4da3-b808-0e1888c6b4ba
+# ╟─811fca9b-bac0-4003-a0f9-bfefcbfbfa30
+# ╟─65a25bd3-c420-4da3-b808-0e1888c6b4ba
 # ╟─db5b6820-5a53-465c-b380-66756fd722a6
+# ╠═d1ff3557-3107-482c-8698-df30d85daaa9
 # ╠═dbc500d6-99e8-40d8-9b60-dcccf1889ce8
 # ╠═5ccc639b-0fe9-4bd0-a672-4a9d8910d0aa
 # ╠═7bcad22f-4ad8-4f54-b920-4e5fbe3f2104
 # ╠═00ea2ca4-5051-4f38-aeb3-122a9664ba39
 # ╠═930aa7cc-47da-434a-b185-98283b3baa0d
 # ╠═f45d7707-1626-42e7-8211-8cdcc4cccbea
+# ╟─b1a77d4c-7643-45d6-9352-b837f52eefa4
 # ╟─26266ce9-1fd5-4dec-9ea7-2a79c724685d
 # ╠═eb7d0765-d5e7-4ef9-916d-764c5aca9822
 # ╠═5d15d24d-6317-4ad1-a53e-5af5c5bcf28a
-# ╟─bd6749ab-8b75-4a45-8ac4-0650ba4a903c
+# ╠═bd6749ab-8b75-4a45-8ac4-0650ba4a903c
+# ╟─bb1276fa-1991-49af-b207-1c8937219f17
 # ╠═b31af4a2-716c-4c17-b283-0103630fdf38
 # ╠═56016697-5ce9-4e0a-b14a-bb5d276a358c
 # ╠═d261c10c-6003-45b9-91ce-7b7f9acbdc8e
@@ -545,6 +648,7 @@ end;
 # ╠═fc55ef51-b7f4-4640-b8e5-ad7b4f8a411c
 # ╠═d64cf39a-5f91-4d3f-ad82-1aef00a0a290
 # ╠═f29de74d-66dd-4d95-9d6a-c33bfb8361c9
+# ╠═dc5a4874-8029-4752-9558-1268d6f27ba2
 # ╟─9b5f389f-b105-4610-bab7-f79305fedc31
 # ╠═e373824d-6e0d-44c8-8c8a-192cccf10298
 # ╠═e480b378-7afa-4906-9e8a-70eac7712b5e
