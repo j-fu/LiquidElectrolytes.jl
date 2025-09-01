@@ -90,10 +90,7 @@ function ivsweep(
     result_plus = IVSweepResult()
     result_minus = IVSweepResult()
 
-    allprogress = voltages[end] - voltages[begin]
-    ϕprogress = 0
     for range in ranges
-        @info "IV sweep from $(range[1])V to $(range[end])V..."
         dir = range[end] > range[1] ? 1 : -1
 
         if dir > 0
@@ -102,7 +99,9 @@ function ivsweep(
             result = result_minus
         end
         psol = nothing
-        @withprogress begin
+        ϕprogress = 0
+        allprogress = abs(range[end] - range[begin])
+        @withprogress name = "IV sweep $(range[1])V → $(range[end])V" begin
             function pre(sol, ϕ)
                 working_electrode_voltage!(cdata, dir * ϕ)
             end
