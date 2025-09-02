@@ -119,7 +119,7 @@ end
 notebooks = [
     "EquilibriumCheck.jl",
     "ORR.jl",
-    "PoissonBoltzmann.jl",
+    "GeneralizedPoissonBoltzmann.jl",
     "SurfaceKinetics_draft.jl",
     "BufferReactions.jl",
     "ElectroOsmosis.jl",

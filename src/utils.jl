@@ -6,13 +6,13 @@ Rounding for use in [`showstruct`](@ref).
 function myround end
 
 myround(x; kwargs...) = round(x; kwargs...)
-myround(x::Vector; kwargs...) = round.(x; kwargs...)
+myround(x::Vector; kwargs...) = myround.(x; kwargs...)
 myround(s::Symbol; kwargs...) = ":$(s)"
 myround(i::Int; kwargs...) = i
 myround(b::Bool; kwargs...) = b
 myround(::Nothing; kwargs...) = "nothing"
 myround(f::Function; kwargs...) = string(f)
-myround(c::DiffCache; kwargs...) = typeof(c)
+myround(c::DiffCache; kwargs...) = string(nameof(typeof(c)))
 
 
 """
@@ -21,7 +21,7 @@ myround(c::DiffCache; kwargs...) = typeof(c)
 Print struct with field names and field values.
 """
 function showstruct(io::IO, this)
-    println(io, "$(typeof(this))(")
+    println(io, "$(string(nameof(typeof(this))))(")
     for name in fieldnames(typeof(this))
         println(io, "$name = $(myround(getfield(this, name), sigdigits = 5)), ")
     end
