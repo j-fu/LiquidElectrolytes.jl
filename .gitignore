@@ -11,6 +11,9 @@ Manifest*.toml
 .repl_history.jl
 .vscode
 *.aux
+*.out
+*.bbl
+*.blg
 \#*
 *.log
 bvcompare.pdf
