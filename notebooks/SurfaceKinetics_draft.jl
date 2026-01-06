@@ -173,14 +173,15 @@ end;
 # ╔═╡ bf7e4757-0ac3-47db-a518-68db32217800
 function breactions(
         f,
-        u::VoronoiFVM.BNodeUnknowns{Tval, Tv, Tc, Tp, Ti},
+        u,
         bnode,
         data
-    ) where {Tval, Tv, Tc, Tp, Ti}
+    ) 
     (; Γ_we, ϕ_we, iϕ) = data
-
+    
     if bnode.region == Γ_we
-
+        Tval=eltype(u)
+        
         σ = C_gap * (ϕ_we - u[iϕ] - ϕ_pzc)
 
         kf = zeros(Tval, 3)

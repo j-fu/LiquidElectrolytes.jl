@@ -28,9 +28,8 @@ function update!(data::RRDEData, grid, func)
     return
 end
 
-function rrde_flux(f, u0, edge, data)
+function rrde_flux(f, u, edge, data)
     idx = edge.index
-    u = unknowns(edge, u0)
     for ispec in 1:data.nspecies
         f[ispec] = data.bp[ispec, idx] * u[ispec, 1] - data.bm[ispec, idx] * u[ispec, 2]
     end

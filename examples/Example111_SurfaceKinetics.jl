@@ -72,10 +72,10 @@ function main(;
 
     function halfcellbc(
             f,
-            u::VoronoiFVM.BNodeUnknowns{Tval, Tv, Tc, Tp, Ti},
+            u,
             bnode,
             data,
-        ) where {Tval, Tv, Tc, Tp, Ti}
+        )
         (; nc, na, Γ_we, Γ_bulk, ϕ_we, ip, iϕ, v, v0, T, RT, ε) = data
 
         bulkbcondition(f, u, bnode, data; region = Γ_bulk)

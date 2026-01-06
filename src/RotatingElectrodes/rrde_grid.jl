@@ -64,7 +64,7 @@ function rrde_grid(
     println("Points in z-direction: ", length(zcoord))
 
 
-    grid = VoronoiFVM.Grid(rcoord, zcoord)
+    grid = simplexgrid(rcoord, zcoord)
     bfacemask!(grid, allmaskmin, allmaskmax, b_inert, tol = 1.0e-10, allow_new = false)
     bfacemask!(grid, inmaskmin, inmaskmax, b_in, tol = 1.0e-10, allow_new = false)
     bfacemask!(grid, outmaskmin, outmaskmax, b_out, tol = 1.0e-10, allow_new = false)
@@ -78,7 +78,7 @@ end
 
 
 function rescale_z!(grid, delta)
-    coord = coordinates(grid)
+    coord = grid[Coordinates]
     maxz = coord[2, end]
     new_zscale = delta * 2 / maxz
     for i in 1:size(coord, 2)
@@ -129,7 +129,7 @@ function rrde_grid_zgeom(geom, n_ref)
 
     zcoord = geomspace(0.0, geom.h_cyl, D * 0.01 * geom.h_cyl, D * 0.25 * geom.h_cyl)
 
-    grid = VoronoiFVM.Grid(rcoord, zcoord)
+    grid = simplexgrid(rcoord, zcoord)
     bfacemask!(grid, allmaskmin, allmaskmax, b_inert, tol = 1.0e-10)
     bfacemask!(grid, inmaskmin, inmaskmax, b_in, tol = 1.0e-10)
     bfacemask!(grid, outmaskmin, outmaskmax, b_out, tol = 1.0e-10)
