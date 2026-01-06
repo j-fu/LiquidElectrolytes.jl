@@ -254,10 +254,6 @@ function Base.show(io::IOContext{Base.IOBuffer}, this::ElectrolyteData)
     return showstruct(io, this)
 end
 
-function Base.show(io::IOContext{Base.DevNull}, this::ElectrolyteData)
-    @info "show3"
-    return showstruct(io, this)
-end
 
 """
     update_derived!(electrolyte::ElectrolyteData)

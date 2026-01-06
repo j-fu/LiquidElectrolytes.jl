@@ -134,9 +134,27 @@ end
 
 @testset "ExplicitImports" begin
     @test ExplicitImports.check_no_implicit_imports(LiquidElectrolytes, skip = (Base, Core, Markdown)) === nothing
+    @test ExplicitImports.check_all_explicit_imports_via_owners(LiquidElectrolytes) === nothing
     @test ExplicitImports.check_all_explicit_imports_are_public(LiquidElectrolytes) === nothing
     @test ExplicitImports.check_no_stale_explicit_imports(LiquidElectrolytes, ignore = (:README,)) === nothing
+    @test ExplicitImports.check_all_qualified_accesses_via_owners(LiquidElectrolytes) === nothing
+    @test ExplicitImports.check_all_qualified_accesses_are_public(
+        LiquidElectrolytes,
+        ignore = (
+            :chargedensity!,
+            :extended_unknowns,
+            :flowplot,
+            :flowsolver,
+            :fvm_velocities,
+            :node_pressure,
+            :node_velocity,
+            :velocity_unknown,
+            :voltage!,
+        )
+    ) === nothing
+    @test ExplicitImports.check_no_self_qualified_accesses(LiquidElectrolytes) === nothing
 end
+
 
 @testset "Aqua" begin
     Aqua.test_all(LiquidElectrolytes)

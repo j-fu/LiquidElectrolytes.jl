@@ -21,7 +21,7 @@ function CVContext(
         reaction,
         disktype = "E6R1";
         set_voltage = () -> null,
-        bulk_reaction = VoronoiFVM.nofunc,
+        bulk_reaction = nothing,
         nref = 0,
         num_species = 1,
         num_disk_species = 0,
@@ -63,7 +63,7 @@ function CVContext(
             flux = rrde_flux,
             breaction = breaction
         )
-        cvcontext.rdcell = VoronoiFVM.DenseSystem(cvcontext.grid, physics)
+        cvcontext.rdcell = VoronoiFVM.System(cvcontext.grid, physics, unknown_storage = :dense)
     else
         physics = VoronoiFVM.Physics(
             num_species = num_species + num_disk_species,
@@ -73,7 +73,7 @@ function CVContext(
             bstorage = bstorage,
             breaction = breaction
         )
-        cvcontext.rdcell = VoronoiFVM.SparseSystem(cvcontext.grid, physics)
+        cvcontext.rdcell = VoronoiFVM.System(cvcontext.grid, physics, unknown_storage = :sparse)
     end
 
     for ispec in 1:num_species
