@@ -1,6 +1,10 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## 2.2.0 - 2026-01-07
+- Adaptations for VoronoiFVM 3.0
+- Updates for test notebooks
+
 ## 2.1.0 - 2025-06-27
 
 ### Added
