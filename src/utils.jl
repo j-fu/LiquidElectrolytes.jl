@@ -102,37 +102,37 @@ RLog() = RLog(Float64)
 
 
 """
-    splitz(range::AbstractRange)
+    splitc(range::AbstractRange; center=0)
 
-If range contains zero, split it into two parts, one with values <=0 and one with values >=0.
+If range contains `center`, split it into two parts, one with values <=center and one with values >=center.
 Otherwise, return the range or its reverse, such that first value always is the one with the smallest absolute value.
 """
-function splitz(range::AbstractRange)
-    if range[1] >= 0
+function splitc(range::AbstractRange; center = 0)
+    if range[1] >= center
         return [range]
-    elseif range[end] <= 0
+    elseif range[end] <= center
         return [reverse(range)]
     else
-        [0:(-step(range)):range[1], 0:step(range):range[end]]
+        [center:(-step(range)):range[1], center:step(range):range[end]]
     end
 end
 
 """
-    splitz(range::Vector)
+    splitc(range::Vector; center=0)
 
-Version of [`splitz(range::AbstractRange)`](@ref) for vectors.
+Version of [`splitc(range::AbstractRange)`](@ref) for vectors.
 """
-function splitz(range::Vector)
-    if range[1] >= 0
-        return [vcat([0.0], range)]
-    elseif range[end] <= 0
-        return [vcat([0.0], reverse(range))]
+function splitc(range::Vector; center = 0)
+    if range[1] >= center
+        return [vcat([center], range)]
+    elseif range[end] <= center
+        return [vcat([center], reverse(range))]
     else
         for i in 1:length(range)
-            if range[i] ≈ 0.0
+            if range[i] ≈ center
                 return [reverse(range[1:i]), range[i:end]]
-            elseif i > 1 && range[i - 1] < 0.0 && range[i] > 0.0
-                return [vcat([0.0], reverse(range[1:(i - 1)])), vcat([0.0], range[i:end])]
+            elseif i > 1 && range[i - 1] < center && range[i] > center
+                return [vcat([center], reverse(range[1:(i - 1)])), vcat([center], range[i:end])]
             end
         end
     end

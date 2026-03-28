@@ -105,6 +105,9 @@ $(TYPEDFIELDS)
     "Solvation numbers of ions ``κ_i\\; (i=1…N)``"
     κ::Vector{Float64} = fill(10.0, maximum(cspecies))
 
+    "Enforced minimum concentrations"
+    minconc = fill(-Inf, maximum(cspecies) + na)
+
     """
         actcoeff!(γ, c, p, ::ElectrolyteData)
 

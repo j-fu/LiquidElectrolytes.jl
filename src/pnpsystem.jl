@@ -68,7 +68,7 @@ end
 Excess chemical potential (Sedan) upweind flux, based on modified
 Scharfetter-Gummel scheme, see Gaudeul/Fuhrmann 2022.
 
-Appearantly first described by Yu, Zhiping  and Dutton, Robert, SEDAN III, www-tcad.stanford.edu/tcad/programs/sedan3.html
+Apparantly first described by Yu, Zhiping  and Dutton, Robert, SEDAN III, www-tcad.stanford.edu/tcad/programs/sedan3.html
 
 see also the 198? Fortran code available via
 https://web.archive.org/web/20210518233152/http://www-tcad.stanford.edu/tcad/programs/oldftpable.html
@@ -217,6 +217,15 @@ function PNPSystem(
     for ia in celldata.sspecies
         enable_boundary_species!(sys, ia, [celldata.Γ_we])
     end
+
+    minconc = celldata.minconc
+    constraints = [ (-Inf, Inf) for i in 1:num_species(sys)]
+    for i in 1:length(minconc)
+        constraints[i] = (minconc[i], Inf)
+    end
+    sys.constraints = constraints
+
+
     return PNPSystem(sys)
 end
 
@@ -246,6 +255,7 @@ function PNPSystem(
     end
     @assert(length(elys) >= num_cellregions(grid))
 
+
     sys = VoronoiFVM.System(
         grid;
         data = celldata,
@@ -260,6 +270,13 @@ function PNPSystem(
     for region in 1:num_cellregions(grid)
         enable_species!(sys; species = elys[region].cspecies, regions = [region])
     end
+
+    minconc = elys[1].minconc
+    constraints = [ (-Inf, Inf) for i in 1:num_species(sys)]
+    for i in 1:length(minconc)
+        constraints[i] = (minconc[i], Inf)
+    end
+    sys.constraints = constraints
     return PNPSystem(sys)
 end
 
