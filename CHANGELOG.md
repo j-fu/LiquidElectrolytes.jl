@@ -1,6 +1,9 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## 2.3.0 - 2026-04-04
+- sweeps now have a center kwarg which allows to start them e.g. with pzc instead of zero.
+
 ## 2.2.0 - 2026-01-07
 - Adaptations for VoronoiFVM 3.0
 - Updates for test notebooks
