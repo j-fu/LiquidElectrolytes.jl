@@ -218,14 +218,6 @@ function PNPSystem(
         enable_boundary_species!(sys, ia, [celldata.Γ_we])
     end
 
-    minconc = celldata.minconc
-    constraints = [ (-Inf, Inf) for i in 1:num_species(sys)]
-    for i in 1:length(minconc)
-        constraints[i] = (minconc[i], Inf)
-    end
-    sys.constraints = constraints
-
-
     return PNPSystem(sys)
 end
 
@@ -271,12 +263,6 @@ function PNPSystem(
         enable_species!(sys; species = elys[region].cspecies, regions = [region])
     end
 
-    minconc = elys[1].minconc
-    constraints = [ (-Inf, Inf) for i in 1:num_species(sys)]
-    for i in 1:length(minconc)
-        constraints[i] = (minconc[i], Inf)
-    end
-    sys.constraints = constraints
     return PNPSystem(sys)
 end
 
