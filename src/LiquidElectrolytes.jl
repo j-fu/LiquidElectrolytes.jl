@@ -13,7 +13,7 @@ using ProgressMeter: ProgressMeter
 using ProgressLogging: @withprogress, @logprogress
 using SciMLBase: SciMLBase, solve!
 using VoronoiFVM: VoronoiFVM, TransientSolution, enable_boundary_species!, enable_species!, solve, testfunction, unknowns
-using VoronoiFVM: boundary_dirichlet!, fbernoulli_pm, SolverControl, num_species
+using VoronoiFVM: boundary_dirichlet!, fbernoulli_pm, SolverControl
 import VoronoiFVM
 using LinearAlgebra: LinearAlgebra
 using PreallocationTools: DiffCache, get_tmp
