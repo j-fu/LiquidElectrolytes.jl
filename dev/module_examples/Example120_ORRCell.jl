@@ -38,7 +38,7 @@ function main(;
         upwindflux! = LiquidElectrolytes.μex_flux!,   ## Flux calculation scheme
         Plotter = nothing,
         R0::Float64 = 4.0e-15,
-        valuetype = Double64,
+        valuetype = Float64,
         kwargs...,
     )
 

@@ -39,7 +39,7 @@ function main(;
         κ = 10.0,
         Plotter = nothing,
         new = false,
-        valuetype = Double64,
+        valuetype = Float64,
         kwargs...,
     )
 
