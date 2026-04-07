@@ -51,12 +51,14 @@ function ivsweep(
         esys::AbstractElectrochemicalSystem;
         cdata = celldata(esys),
         voltages = (-0.5:0.1:0.5) * ufac"V",
+        pzc = 0 * ufac"V",
         store_solutions = false,
         solver_kwargs...
     )
     update_derived!(cdata)
     sys = esys.vfvmsys
-    ranges = splitz(voltages)
+    ranges = splitc(voltages; center = pzc)
+    @show ranges
     F = ph"N_A" * ph"e"
     factory = VoronoiFVM.TestFunctionFactory(sys)
     tf_bulk = testfunction(factory, [working_electrode(cdata)], [bulk_electrode(cdata)])
@@ -71,7 +73,7 @@ function ivsweep(
     sminus = []
     splus = []
 
-    working_electrode_voltage!(cdata, 0)
+    working_electrode_voltage!(cdata, pzc)
     control = SolverControl(;
         verbose = true,
         handle_exceptions = true,
@@ -84,7 +86,7 @@ function ivsweep(
         solver_kwargs...
     )
 
-    @info "Solving for 0V..."
+    @info "Solving for $(pzc)V..."
     inival = solve(sys; inival = unknowns(esys), control)
 
     result_plus = IVSweepResult()

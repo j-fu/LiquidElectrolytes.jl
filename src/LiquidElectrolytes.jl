@@ -5,10 +5,10 @@ module LiquidElectrolytes
 using Base: @kwdef
 using DocStringExtensions: DocStringExtensions, TYPEDEF, TYPEDFIELDS, README
 using ExtendableGrids: ExtendableGrids, ExtendableGrid, num_nodes, num_cellregions
-using LessUnitful: LessUnitful, @local_phconstants, @local_unitfactors, @ph_str, @ufac_str
+using LessUnitful: LessUnitful, @ph_str, @ufac_str
 using InteractiveUtils: InteractiveUtils
-using Markdown: @md_str
-using Printf: Printf, @printf, @sprintf
+#using Markdown: @md_str
+#using Printf: Printf, @printf, @sprintf
 using ProgressMeter: ProgressMeter
 using ProgressLogging: @withprogress, @logprogress
 using SciMLBase: SciMLBase, solve!
@@ -39,8 +39,7 @@ VERSION >= v"1.11.0-DEV.469" && eval(
         """
         public  working_electrode, bulk_electrode,
            norm_weights, working_electrode_voltage, working_electrode_voltage!, 
-           pressure_index, voltage_index, check_celldata
-        """
+           pressure_index, voltage_index, check_celldata        """
     )
 )
 
