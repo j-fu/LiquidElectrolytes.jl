@@ -11,7 +11,7 @@ using InteractiveUtils: InteractiveUtils
 #using Printf: Printf, @printf, @sprintf
 using ProgressMeter: ProgressMeter
 using ProgressLogging: @withprogress, @logprogress
-using CommonSolve: CommonSolve, solve!
+using SciMLBase: SciMLBase, solve!
 using VoronoiFVM: VoronoiFVM, TransientSolution, enable_boundary_species!, enable_species!, solve, testfunction, unknowns
 using VoronoiFVM: boundary_dirichlet!, fbernoulli_pm, SolverControl
 import VoronoiFVM

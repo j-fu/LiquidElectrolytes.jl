@@ -56,7 +56,7 @@ function PNPStokesSolver(;
     return PNPStokesSolver(flowslv, pnpslv)
 end
 
-function CommonSolve.solve(
+function SciMLBase.solve(
         pnpssolver::PNPStokesSolver; damp0 = 0.1,
         embed = (data, λ) -> nothing,
         nembed = 0, niter = 20, damp_initial = 1, kwargs...
