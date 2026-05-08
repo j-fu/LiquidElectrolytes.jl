@@ -11,7 +11,7 @@ using InteractiveUtils: InteractiveUtils
 #using Printf: Printf, @printf, @sprintf
 using ProgressMeter: ProgressMeter
 using ProgressLogging: @withprogress, @logprogress
-using SciMLBase: SciMLBase, solve!
+using CommonSolve: CommonSolve, solve!
 using VoronoiFVM: VoronoiFVM, TransientSolution, enable_boundary_species!, enable_species!, solve, testfunction, unknowns
 using VoronoiFVM: boundary_dirichlet!, fbernoulli_pm, SolverControl
 import VoronoiFVM
@@ -30,6 +30,7 @@ export AbstractElectrochemicalSystem, ElectrolyteData, AbstractElectrolyteData, 
 export dlcap0, chargedensity, chemical_potentials!, rrate, debyelength, chemical_potential, c0_barc, solventconcentration
 export isincompressible, iselectroneutral
 export chemical_potentials, electrochemical_potentials
+export conductivity
 
 include("celldata.jl")
 export AbstractCellData, electrolytes
