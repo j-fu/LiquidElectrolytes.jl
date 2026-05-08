@@ -19,6 +19,7 @@ ElectrolyteData()
 update_derived!
 dlcap0(::ElectrolyteData)
 debyelength(::ElectrolyteData)
+conductivity
 chargedensity
 chemical_potential
 chemical_potentials!
