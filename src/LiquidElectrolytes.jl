@@ -30,6 +30,7 @@ export AbstractElectrochemicalSystem, ElectrolyteData, AbstractElectrolyteData, 
 export dlcap0, chargedensity, chemical_potentials!, rrate, debyelength, chemical_potential, c0_barc, solventconcentration
 export isincompressible, iselectroneutral
 export chemical_potentials, electrochemical_potentials
+export conductivity
 
 include("celldata.jl")
 export AbstractCellData, electrolytes

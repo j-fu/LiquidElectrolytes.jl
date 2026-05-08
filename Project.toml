@@ -1,6 +1,6 @@
 name = "LiquidElectrolytes"
 uuid = "5a7dfd8c-b3af-4c8d-a082-d3a774d75e72"
-version = "2.3.1"
+version = "2.4.0"
 authors = ["Jürgen Fuhrmann <juergen-fuhrmann@web.de>", "Steffen Maaß", "Rene Kehl", "Hong Zhao"]
 
 [deps]
@@ -55,7 +55,7 @@ PreallocationTools = "0.4.27, 1"
 Printf = "1"
 ProgressLogging = "0.1.4"
 ProgressMeter = "1.7"
-SciMLBase = "2, 3.3"
+SciMLBase = "2,3"
 StaticArrays = "1.6.0"
 Test = "1"
 UUIDs = "1"

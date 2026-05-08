@@ -19,9 +19,11 @@ ExampleJuggler.verbose!(true)
 
 thisproject = dirname(Base.active_project())
 
-@testset "cdl0" begin
-    ely = ElectrolyteData(c_bulk = fill(0.01 * mol / dm^3, 2) .|> unitfactor)
+@testset "electrolytedata" begin
+    ely = ElectrolyteData(c_bulk = fill(0.01 * mol / dm^3, 2))
     @test dlcap0(ely) ≈ 0.22846691848825248
+    ely = ElectrolyteData(c_bulk = fill(1 * mol / dm^3, 2))
+    @test conductivity(ely, ely.c_bulk) ≈ 15.02150977814831
 end
 
 
@@ -157,7 +159,11 @@ end
 
 
 @testset "Aqua" begin
-    Aqua.test_all(LiquidElectrolytes)
+    persistent_tasks = true
+    if VERSION >= v"1.12.0" && VERSION < v"1.13.0-alpha1"
+        persistent_tasks = false
+    end
+    Aqua.test_all(VoronoiFVM; persistent_tasks)
 end
 
 @testset "UndocumentedNames" begin

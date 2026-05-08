@@ -626,3 +626,21 @@ function bulkbcondition(f, u, bnode, electrolyte; region = electrolyte.Γ_bulk)
     end
     return nothing
 end
+
+
+"""
+    conductivity(electrolyte, concentration)
+
+Return conductivity of electrolyte with concentrations c
+```math
+σ=\\frac{F^2}{RT}\\sum_{i=1}^{n_{c}} z_i^2 D_i c_i 
+``` 
+"""
+function conductivity(electrolyte, c)
+    (; nc, z, F, RT, D) = electrolyte
+    σ = 0
+    for i in 1:nc
+        σ += z[i]^2 * D[i] * c[i] * F^2 / RT
+    end
+    return σ
+end
