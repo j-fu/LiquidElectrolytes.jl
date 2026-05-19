@@ -113,8 +113,22 @@ $(TYPEDFIELDS)
     """
     actcoeff!::Tγ = DGML_gamma!
 
+    """
+        IR compensation mode:
+           - `:none` (no compensation),
+           - `:pseudopotentiostat` (generic operator enforces the sawtooth waveform across the double layer)
+           - `:ohmicdrop` (generic operator compensates the estimated ohmic drop from Faradaic and capacitive currents)."
+    """
+    ircompensation::Symbol = :none
+
+
     "Bulk ion concentrations ``c_i^b\\; (i=1…N)`` "
     c_bulk::Vector{Float64} = fill(0.1 * ufac"M", maximum(cspecies))
+
+    """
+    Pseudo-reference electrode position    
+    """
+    x_ref::Vector{Float64} = zeros(3)
 
     "Working electrode boundary number"
     Γ_we::Int = 1
@@ -201,6 +215,11 @@ $(TYPEDFIELDS)
 
     "Cache for activity coefficient calculation (reserved)"
     γl_cache::Tcache = DiffCache(zeros(maximum(cspecies)), 10 * maximum(cspecies))
+
+    """
+    Pseudo reference electrode node index (reserved; derived from x_ref)
+    """
+    i_ref::Int = 0
 
     """
     Working electrode voltage ``ϕ_{we}`` (reserved)

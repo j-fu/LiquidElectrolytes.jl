@@ -4,7 +4,7 @@ $(README)
 module LiquidElectrolytes
 using Base: @kwdef
 using DocStringExtensions: DocStringExtensions, TYPEDEF, TYPEDFIELDS, README
-using ExtendableGrids: ExtendableGrids, ExtendableGrid, num_nodes, num_cellregions
+using ExtendableGrids: ExtendableGrids, ExtendableGrid, num_nodes, num_cellregions, Coordinates, dim_space
 using LessUnitful: LessUnitful, @ph_str, @ufac_str
 using InteractiveUtils: InteractiveUtils
 #using Markdown: @md_str
@@ -15,7 +15,7 @@ using SciMLBase: SciMLBase, solve!
 using VoronoiFVM: VoronoiFVM, TransientSolution, enable_boundary_species!, enable_species!, solve, testfunction, unknowns
 using VoronoiFVM: boundary_dirichlet!, fbernoulli_pm, SolverControl
 import VoronoiFVM
-using LinearAlgebra: LinearAlgebra
+using LinearAlgebra: LinearAlgebra, norm
 using PreallocationTools: DiffCache, get_tmp
 using StaticArrays: MVector
 

@@ -166,6 +166,17 @@ function pnpflux!(f, u, edge, celldata::AbstractCellData)
     return
 end
 
+
+function pseudopotentiostat(f0, u0, sys, data)
+    f0 .= 0.0
+    (; iϕ, ϕ_we, i_ref) = data
+    f = reshape(f0, sys)
+    u = reshape(u0, sys)
+    f[iϕ, 1] += 1.0e10 * (u[iϕ, 1] - (u[iϕ, i_ref] + ϕ_we))
+    return
+end
+
+
 struct PNPSystem <: AbstractElectrochemicalSystem
     vfvmsys::VoronoiFVM.System
 end
@@ -201,6 +212,23 @@ function PNPSystem(
         kwargs...
     )
     update_derived!(celldata)
+    (; ircompensation) = celldata
+    ircompensation ∈ (:none, :pseudopotentiostat, :ohmicdrop) ||
+        error("ircompensation must be :none, :pseudopotentiostat, or :ohmicdrop, got :$ircompensation")
+
+    coord = grid[Coordinates]
+    x_ref = [celldata.x_ref[i] for i in 1:dim_space(grid)]
+    dmin = 1.0e30
+    imin = 0
+    for i in 1:size(coord, 2)
+        d = norm(x_ref - coord[:, i])
+        if d < dmin
+            dmin = d
+            imin = i
+        end
+    end
+    celldata.i_ref = imin
+
 
     function _pnpreaction!(f, u, node, electrolyte::AbstractElectrolyteData)
         pnpreaction!(f, u, node, electrolyte)
@@ -208,16 +236,36 @@ function PNPSystem(
         return nothing
     end
 
-    sys = VoronoiFVM.System(
-        grid;
-        data = celldata,
-        flux = pnpflux!,
-        reaction = _pnpreaction!,
-        storage = pnpstorage!,
-        bcondition,
-        species = union(celldata.cspecies, [celldata.ip, celldata.iϕ]),
-        kwargs...
-    )
+    generic = nothing
+    if ircompensation == :pseudopotentiostat
+        generic = pseudopotentiostat
+    end
+
+    species = union(celldata.cspecies, [celldata.ip, celldata.iϕ])
+    if isnothing(generic)
+        sys = VoronoiFVM.System(
+            grid;
+            data = celldata,
+            flux = pnpflux!,
+            reaction = _pnpreaction!,
+            storage = pnpstorage!,
+            bcondition,
+            species,
+            kwargs...
+        )
+    else
+        sys = VoronoiFVM.System(
+            grid;
+            data = celldata,
+            flux = pnpflux!,
+            reaction = _pnpreaction!,
+            storage = pnpstorage!,
+            bcondition,
+            species,
+            generic,
+            kwargs...
+        )
+    end
 
     for ia in celldata.sspecies
         enable_boundary_species!(sys, ia, [celldata.Γ_we])
