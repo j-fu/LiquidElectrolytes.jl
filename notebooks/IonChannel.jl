@@ -134,7 +134,7 @@ inival = unknowns(sys)
 esol = solve(sys.vfvmsys; inival, embed = [0, 1], Δp = 0.1, Δu_opt = 1.0e3, verbose = "ne")
 
 # ╔═╡ bd329c64-a346-4692-a79c-b8b04106b785
-dglpnpsol = esol[end]
+dglpnpsol = esol.u[end]
 
 # ╔═╡ 0e558929-d8b2-4c22-9596-322f0e6f335d
 #=╠═╡
@@ -229,7 +229,7 @@ esol2 = solve(sys2.vfvmsys; inival2, embed = [0, 1], Δp = 0.1, Δu_opt = 1.0e3,
 # ╔═╡ 2ccdf56a-6906-49af-81a3-00f32ba4e40f
 #=╠═╡
 if isdefined(Main,:PlutoRunner)
-	plotsol(pnpgrid, esol2[end])
+	plotsol(pnpgrid, esol2.u[end])
 end
   ╠═╡ =#
 
