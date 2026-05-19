@@ -1,6 +1,11 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## 2.5.0 - 2026-05-19
+- EXPERIMENTAL: add position dependent dielectric decrement
+- Add capacitative, displacement currents and charge to cvresults
+
 ## 2.4.0 - 2026-05-08
 - Add `conductivity(electrolyte, conentrations)` method
 
