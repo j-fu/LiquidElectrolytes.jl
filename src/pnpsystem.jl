@@ -128,7 +128,7 @@ Finite volume flux. It calls either [`μex_flux!`](@ref), [`cent_flux!`](@ref) o
 function pnpflux!(f, u, edge, electrolyte)
     (;
         nc, ip, iϕ,
-        ε_0, ε,
+        ε_0, ε, ε_dec,
         eneutral, pscale, p_bulk,
         upwindflux!, actcoeff!,
         γk_cache, γl_cache,
@@ -144,8 +144,13 @@ function pnpflux!(f, u, edge, electrolyte)
     actcoeff!(γk, ck, pk, electrolyte)
     actcoeff!(γl, cl, pl, electrolyte)
 
+    xmid = MVector{3, Float64}(undef)
+    for i in 1:size(edge.coord)[1]
+        xmid[i] = 0.5 * (edge[i, 1] + edge[i, 2])
+    end
+
     dϕ = ϕk - ϕl
-    f[iϕ] = ε * ε_0 * dϕ * !eneutral
+    f[iϕ] = ε_dec(xmid) * ε * ε_0 * dϕ * !eneutral
     if solvepressure(electrolyte)
         f[ip] = u[ip, 1] - u[ip, 2] + (qk + ql) * dϕ / (2 * pscale)
     end

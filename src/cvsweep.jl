@@ -95,6 +95,22 @@ Base.@kwdef mutable struct CVSweepResult <: AbstractSimulationResult
     j_we = []
 
     """
+    Space charge in region 1 (assuming this is around WE)
+    """
+    q = []
+
+    """
+    Displacement current
+    """
+    j_dsp = []
+
+    """
+    capacitive current
+    """
+    j_cap = []
+
+
+    """
     Transient solution
     """
     tsol = nothing
@@ -158,10 +174,20 @@ function cvsweep(
             I_react = I[:, working_electrode(cdata)]
             I_we = -VoronoiFVM.integrate(sys, tf_we, sol, oldsol, Δt)
             I_bulk = -VoronoiFVM.integrate(sys, tf_bulk, sol, oldsol, Δt)
+            Q = VoronoiFVM.integrate(sys, sys.physics.reaction, sol)
+            Qold = VoronoiFVM.integrate(sys, sys.physics.reaction, oldsol)
+            IEdge = VoronoiFVM.integrate_∇TxFlux(sys, tf_we, sol)
+            IEdgeOld = VoronoiFVM.integrate_∇TxFlux(sys, tf_we, oldsol)
+            I_dsp = (IEdge[cdata.iϕ] - IEdgeOld[cdata.iϕ]) / Δt
+            I_cap = (Q[cdata.iϕ] - Qold[cdata.iϕ]) / Δt
+
             push!(result.times, t)
             push!(result.voltages, voltages(t))
             push!(result.j_reaction, I_react)
             push!(result.j_we, I_we)
+            push!(result.q, Q[cdata.iϕ])
+            push!(result.j_dsp, I_dsp)
+            push!(result.j_cap, I_cap)
             push!(result.j_bulk, I_bulk)
             tprogress += abs(Δt)
             @logprogress tprogress / allprogress
