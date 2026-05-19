@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.5.0 - 2026-05-20
+- EXPERIMENTAL: add IR compensation via pseudopotentiostat or ohmic drop
+
 ## 2.5.0 - 2026-05-19
 - EXPERIMENTAL: add position dependent dielectric decrement
 - Add capacitative, displacement currents and charge to cvresults
