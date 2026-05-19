@@ -17,6 +17,7 @@ using VoronoiFVM: boundary_dirichlet!, fbernoulli_pm, SolverControl
 import VoronoiFVM
 using LinearAlgebra: LinearAlgebra
 using PreallocationTools: DiffCache, get_tmp
+using StaticArrays: MVector
 
 function __init__()
     return LessUnitful.ensureSIBase()

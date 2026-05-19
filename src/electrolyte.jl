@@ -56,7 +56,7 @@ The struct has three groups of fields:
 Fields (reserved fields are modified by some algorithms):
 $(TYPEDFIELDS)
 """
-@kwdef mutable struct ElectrolyteData{Tγ, Tcache, Texp, Tlog, Tflux} <: AbstractElectrolyteData
+@kwdef mutable struct ElectrolyteData{Tγ, Tcache, Texp, Tlog, Tflux, Tεdec} <: AbstractElectrolyteData
     """
     Number of charged species ``N``.
 
@@ -133,6 +133,9 @@ $(TYPEDFIELDS)
 
     "Dielectric permittivity of solvent ``ε``"
     ε::Float64 = 78.49
+
+    "X dependent dielectric permittivity decrement"
+    ε_dec::Tεdec = (x) -> 1.0
 
     "Regularized exponential, default: `exp` (unregularized)"
     rexp::Texp = exp
