@@ -122,6 +122,7 @@ notebooks = [
     "EquilibriumCheck.jl",
     "ORR.jl",
     "GeneralizedPoissonBoltzmann.jl",
+    "IRCompensation.jl",
     "SurfaceKinetics_draft.jl",
     "BufferReactions.jl",
     "ElectroOsmosis.jl",
