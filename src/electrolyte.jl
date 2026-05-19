@@ -56,7 +56,7 @@ The struct has three groups of fields:
 Fields (reserved fields are modified by some algorithms):
 $(TYPEDFIELDS)
 """
-@kwdef mutable struct ElectrolyteData{Tγ, Tcache, Texp, Tlog, Tflux, Tεdec} <: AbstractElectrolyteData
+@kwdef mutable struct ElectrolyteData{Tγ, Tcache, Texp, Tlog, Tflux, Tεdec, Tredox} <: AbstractElectrolyteData
     """
     Number of charged species ``N``.
 
@@ -82,7 +82,13 @@ $(TYPEDFIELDS)
     iϕ::Int = maximum(cspecies) + na + 1
 
     "Index of pressure `p` in species list"
-    ip::Int = maximum(cspecies) + na + 2
+    ip::Int = iϕ + 1
+
+    "Index of double layer charge in case of ohmic drop compensation"
+    iq::Int = ip + 1
+
+    "Index of capacitive current in case of ohmic drop compensation"
+    icc::Int = iq + 1
 
     "Mobility coefficients ``D_i\\; (i=1…N)``"
     D::Vector{Float64} = fill(2.0e-9 * ufac"m^2/s", maximum(cspecies))
@@ -121,6 +127,15 @@ $(TYPEDFIELDS)
     """
     ircompensation::Symbol = :none
 
+    """
+    IR compensation factor in the case of ohmic drop compensation
+    """
+    ircompfactor::Float64 = 0.95
+
+    """
+    Estimated uncompensated resistance between working electrode and counter electrode
+    """
+    Ru::Float64 = 0.0 * ufac"Ω"
 
     "Bulk ion concentrations ``c_i^b\\; (i=1…N)`` "
     c_bulk::Vector{Float64} = fill(0.1 * ufac"M", maximum(cspecies))
@@ -175,7 +190,7 @@ $(TYPEDFIELDS)
     """
     Species weights for norms in solver control.
     """
-    weights::Vector{Float64} = [v..., zeros(na)..., 1.0, 0.0]
+    weights::Vector{Float64} = [v..., zeros(na)..., 1.0, 0.0, 0.0, 0.0]
 
     """
     Solve for pressure. 
@@ -216,6 +231,9 @@ $(TYPEDFIELDS)
     "Cache for activity coefficient calculation (reserved)"
     γl_cache::Tcache = DiffCache(zeros(maximum(cspecies)), 10 * maximum(cspecies))
 
+    "Redox reaction function for ohmic drop compensation"
+    redoxreaction::Tredox = (y, u, bnode, data) -> nothing
+
     """
     Pseudo reference electrode node index (reserved; derived from x_ref)
     """
@@ -231,6 +249,11 @@ $(TYPEDFIELDS)
     Edge velocity projection (reserved).
     """
     edgevelocity::Union{Float64, Vector{Float64}} = 0.0
+
+    """
+    Node volumes (reserved)
+    """
+    nv::Vector{Float64} = zeros(0)
 
     """
     Scheme parameter. Deprecated and disabled. 
