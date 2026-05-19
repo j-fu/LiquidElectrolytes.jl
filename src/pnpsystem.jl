@@ -22,13 +22,14 @@ end
 
 Finite volume boundary storage term
 """
-function pnpbstorage!(f, u, node, electrolyte)
+function disabled_pnpbstorage!(f, u, node, electrolyte)
     (; nc, na) = electrolyte
     for ia in (nc + 1):(nc + na)
         f[ia] = u[ia]
     end
     return
 end
+
 
 """
     pnpreaction!(f, u, node, electrolyte)            
@@ -166,6 +167,80 @@ function pnpflux!(f, u, edge, celldata::AbstractCellData)
     return
 end
 
+
+"""
+    pseudopotentiostat(f0, u0, sys, data)
+
+VoronoiFVM generic operator implementing an IR-compensated pseudopotentiostat.
+"""
+function pseudopotentiostat(f0, u0, sys, data)
+    f0 .= 0.0
+    (; iϕ, ϕ_we, i_ref) = data
+    f = reshape(f0, sys)
+    u = reshape(u0, sys)
+    f[iϕ, 1] += 1.0e10 * (u[iϕ, 1] - (u[iϕ, i_ref] + ϕ_we))
+    return
+end
+
+"""
+    bstorage(y, u, node, data)
+
+VoronoiFVM boundary storage callback used in the `:ohmicdrop` compensation mode.
+"""
+function pnpbstorage(y, u, node, data)
+    (; Γ_we, iq, icc) = data
+    if node.region == Γ_we
+        y[icc] = u[iq]
+    end
+    return nothing
+end
+
+
+"""
+    ohmicdropcompensation(f0, u0, sys, data)
+
+VoronoiFVM generic operator implementing ohmic-drop IR compensation.
+
+The operator couples three global constraints at the electrode boundary `BP1`:
+
+1. **Helmholtz surface charge** (`ia`):
+   Species `iq` tracks the double layer  charge.
+
+2. **Capacitive current** (`icc`): via [`pnpbstorage`](@ref) the storage term
+   for `icc` is `∂Q/∂t`, giving `j_C = ∂Q/∂t` as the capacitive current
+
+3. **Electrode potential** (`iϕ`): after evaluating the reaction
+"""
+function ohmicdropcompensation(f0, u0, sys, data)
+    f0 .= 0.0
+    (; iϕ, iq, icc, ϕ_we, i_ref, Ru, F, ircompfactor, nv, redoxreaction) = data
+
+    f = reshape(f0, sys)
+    u = reshape(u0, sys)
+
+    q = zero(eltype(u))
+
+    for i in 1:i_ref
+        @views q += chargedensity(u[:, i], data) * nv[i]
+    end
+    f[iq, 1] = u[iq, 1] - q
+    f[icc, 1] = u[icc, 1]
+    j_C = u[icc, 1]
+
+    @views redoxreaction(
+        f[:, 1], u[:, 1],
+        nothing, data
+    )
+
+    j_F = -f[1, 1] * F
+
+    ϕ_DL = ircompfactor * Ru * (j_F + j_C)
+
+    f[iϕ, 1] += 1.0e10 * (u[iϕ, 1] - (ϕ_DL + ϕ_we))
+    return
+end
+
+
 struct PNPSystem <: AbstractElectrochemicalSystem
     vfvmsys::VoronoiFVM.System
 end
@@ -201,6 +276,24 @@ function PNPSystem(
         kwargs...
     )
     update_derived!(celldata)
+    celldata.nv = ones(num_nodes(grid))
+    (; ircompensation, iq, icc, Γ_we) = celldata
+    ircompensation ∈ (:none, :pseudopotentiostat, :ohmicdrop) ||
+        error("ircompensation must be :none, :pseudopotentiostat, or :ohmicdrop, got :$ircompensation")
+
+    # find iref
+    coord = grid[Coordinates]
+    x_ref = [celldata.x_ref[i] for i in 1:dim_space(grid)]
+    dmin = 1.0e30
+    imin = 0
+    for i in 1:size(coord, 2)
+        d = norm(x_ref - coord[:, i])
+        if d < dmin
+            dmin = d
+            imin = i
+        end
+    end
+    celldata.i_ref = imin
 
     function _pnpreaction!(f, u, node, electrolyte::AbstractElectrolyteData)
         pnpreaction!(f, u, node, electrolyte)
@@ -208,21 +301,54 @@ function PNPSystem(
         return nothing
     end
 
-    sys = VoronoiFVM.System(
-        grid;
-        data = celldata,
-        flux = pnpflux!,
-        reaction = _pnpreaction!,
-        storage = pnpstorage!,
-        bcondition,
-        species = union(celldata.cspecies, [celldata.ip, celldata.iϕ]),
-        kwargs...
-    )
+    species = union(celldata.cspecies, [celldata.ip, celldata.iϕ])
+
+    if ircompensation == :none
+        sys = VoronoiFVM.System(
+            grid;
+            data = celldata,
+            flux = pnpflux!,
+            reaction = _pnpreaction!,
+            storage = pnpstorage!,
+            bcondition,
+            species,
+            kwargs...
+        )
+    elseif ircompensation == :pseudopotentiostat
+        sys = VoronoiFVM.System(
+            grid;
+            data = celldata,
+            flux = pnpflux!,
+            reaction = _pnpreaction!,
+            storage = pnpstorage!,
+            bcondition,
+            species,
+            generic = pseudopotentiostat,
+            kwargs...
+        )
+    elseif ircompensation == :ohmicdrop
+        sys = VoronoiFVM.System(
+            grid;
+            data = celldata,
+            flux = pnpflux!,
+            reaction = _pnpreaction!,
+            storage = pnpstorage!,
+            bcondition,
+            species,
+            generic = ohmicdropcompensation,
+            bstorage = pnpbstorage,
+            kwargs...
+        )
+    end
 
     for ia in celldata.sspecies
         enable_boundary_species!(sys, ia, [celldata.Γ_we])
     end
-
+    if ircompensation == :ohmicdrop
+        enable_boundary_species!(sys, iq, [Γ_we])
+        enable_boundary_species!(sys, icc, [Γ_we])
+        celldata.nv .= nodevolumes(sys)
+    end
     return PNPSystem(sys)
 end
 
@@ -234,7 +360,6 @@ function PNPSystem(
         kwargs...
     )
     update_derived!(celldata)
-
     function _pnpreactionv!(f, u, node, electrolyte::AbstractElectrolyteData)
         pnpreaction!(f, u, node, electrolyte)
         reaction(f, u, node, electrolyte)

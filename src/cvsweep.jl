@@ -144,6 +144,10 @@ function cvsweep(
     tf_we = testfunction(factory, [bulk_electrode(cdata)], [working_electrode(cdata)])
     tf_bulk = testfunction(factory, [working_electrode(cdata)], [bulk_electrode(cdata)])
 
+    # Review calculation of ϕ_we by averaging over  Γ_we
+    @assert dim_space(sys.grid) == 1
+    ϕ_we(u) = u[cdata.iϕ, 1]
+
     working_electrode_voltage!(cdata, voltages(0))
     control = SolverControl(;
         verbose = "",
@@ -182,7 +186,7 @@ function cvsweep(
             I_cap = (Q[cdata.iϕ] - Qold[cdata.iϕ]) / Δt
 
             push!(result.times, t)
-            push!(result.voltages, voltages(t))
+            push!(result.voltages, ϕ_we(sol))
             push!(result.j_reaction, I_react)
             push!(result.j_we, I_we)
             push!(result.q, Q[cdata.iϕ])
