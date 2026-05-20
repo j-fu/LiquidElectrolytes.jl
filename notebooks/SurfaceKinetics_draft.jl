@@ -176,12 +176,12 @@ function breactions(
         u,
         bnode,
         data
-    ) 
+    )
     (; Γ_we, ϕ_we, iϕ) = data
-    
+
     if bnode.region == Γ_we
-        Tval=eltype(u)
-        
+        Tval = eltype(u)
+
         σ = C_gap * (ϕ_we - u[iϕ] - ϕ_pzc)
 
         kf = zeros(Tval, 3)

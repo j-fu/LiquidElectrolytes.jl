@@ -28,6 +28,7 @@ function make(; with_notebooks = true, with_examples = true)
             "ElectroOsmosis.jl",
             "VoronoiFVMPoisson.jl",
             "VoronoiFVMPoisson2.jl",
+            "IRCompensation.jl",
         ] #, "BufferReactions.jl", "SurfaceKinetics_draft.jl"]
         notebook_examples = @docplutonotebooks(notebookdir, notebooks, iframe = false, append_build_context = false)
         size_threshold_ignore = last.(notebook_examples)

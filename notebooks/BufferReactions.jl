@@ -169,7 +169,7 @@ $H_2O \rightleftharpoons H^+ + OH^-$
 
 # ╔═╡ 12c99cb0-8a3a-49f5-b49b-92e8e6d63507
 function reaction(f, u, node, data)
-    Tv=eltype(u)
+    Tv = eltype(u)
     # buffer reactions
     rates = zeros(Tv, 5)
     ## in base
