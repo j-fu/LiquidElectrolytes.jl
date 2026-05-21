@@ -22,10 +22,12 @@ end
 
 Finite volume boundary storage term
 """
-function disabled_pnpbstorage!(f, u, node, electrolyte)
-    (; nc, na) = electrolyte
-    for ia in (nc + 1):(nc + na)
-        f[ia] = u[ia]
+function pnpbstorage!(f, u, node, electrolyte)
+    (; nc, na, Γ_we) = electrolyte
+    if node.region == Γ_we
+        for ia in (nc + 1):(nc + na)
+            f[ia] = u[ia]
+        end
     end
     return
 end
@@ -183,12 +185,13 @@ function pseudopotentiostat(f0, u0, sys, data)
 end
 
 """
-    bstorage(y, u, node, data)
+    pnpbstorage_ohmicdrop!(y, u, node, data)
 
 VoronoiFVM boundary storage callback used in the `:ohmicdrop` compensation mode.
 """
-function pnpbstorage(y, u, node, data)
+function pnpbstorage_ohmicdrop!(y, u, node, data)
     (; Γ_we, iq, icc) = data
+    pnpbstorage!(y, u, node, data)
     if node.region == Γ_we
         y[icc] = u[iq]
     end
@@ -310,6 +313,7 @@ function PNPSystem(
             flux = pnpflux!,
             reaction = _pnpreaction!,
             storage = pnpstorage!,
+            bstorage = pnpbstorage!,
             bcondition,
             species,
             kwargs...
@@ -321,6 +325,7 @@ function PNPSystem(
             flux = pnpflux!,
             reaction = _pnpreaction!,
             storage = pnpstorage!,
+            bstorage = pnpbstorage!,
             bcondition,
             species,
             generic = pseudopotentiostat,
@@ -333,10 +338,10 @@ function PNPSystem(
             flux = pnpflux!,
             reaction = _pnpreaction!,
             storage = pnpstorage!,
+            bstorage = pnpbstorage_ohmicdrop!,
             bcondition,
             species,
             generic = ohmicdropcompensation,
-            bstorage = pnpbstorage,
             kwargs...
         )
     end
