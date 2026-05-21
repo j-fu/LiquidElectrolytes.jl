@@ -21,3 +21,4 @@ jfsettings.tex
 *.pdf
 *.png
 *.mp4
+.pre-commit-config.yaml
