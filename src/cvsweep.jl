@@ -144,9 +144,15 @@ function cvsweep(
     tf_we = testfunction(factory, [bulk_electrode(cdata)], [working_electrode(cdata)])
     tf_bulk = testfunction(factory, [working_electrode(cdata)], [bulk_electrode(cdata)])
 
-    # Review calculation of ϕ_we by averaging over  Γ_we
+    ### todo: Review calculation of ϕ_we by averaging over  Γ_we
     @assert dim_space(sys.grid) == 1
-    ϕ_we(u) = u[cdata.iϕ, 1]
+    function ϕ_we(u, data)
+        if isinf(data.ϕ_we_set)
+            return u[data.iϕ, 1]
+        else
+            return data.ϕ_we_set
+        end
+    end
 
     working_electrode_voltage!(cdata, voltages(0))
     control = SolverControl(;
@@ -186,7 +192,8 @@ function cvsweep(
             I_cap = (Q[cdata.iϕ] - Qold[cdata.iϕ]) / Δt
 
             push!(result.times, t)
-            push!(result.voltages, ϕ_we(sol))
+            ### todo: replace index 1 by relevant current species
+            push!(result.voltages, ϕ_we(sol, cdata))
             push!(result.j_reaction, I_react)
             push!(result.j_we, I_we)
             push!(result.q, Q[cdata.iϕ])

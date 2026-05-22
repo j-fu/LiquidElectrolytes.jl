@@ -77,7 +77,12 @@ struct RLog{T <: AbstractFloat}
     eps::T
 end
 
-function (mylog::RLog)(x)
+function (mylog::RLog)(x::Any)
+    (; eps) = mylog
+    return ifelse(x < eps, log(eps) + (x - eps) / eps, log(x))
+end
+
+function (mylog::RLog)(x::Union{AbstractFloat, ForwardDiff.Dual})
     (; eps) = mylog
     if x < eps
         return log(eps) + (x - eps) / eps
@@ -85,7 +90,6 @@ function (mylog::RLog)(x)
         return log(x)
     end
 end
-
 
 """
     RLog(T::type)
@@ -137,3 +141,11 @@ function splitc(range::Vector; center = 0)
         end
     end
 end
+
+# Large value of gap capacitance enforcing
+# Dirichlet BC
+const C_large = 1.0e15
+
+myvalue(::Any) = 0.0
+myvalue(x::ForwardDiff.Dual) = value(x)
+myvalue(x::AbstractFloat) = x

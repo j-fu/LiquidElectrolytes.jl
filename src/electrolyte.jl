@@ -119,6 +119,9 @@ $(TYPEDFIELDS)
     """
     actcoeff!::Tγ = DGML_gamma!
 
+    "Redox reaction function for ohmic drop compensation"
+    redoxreaction::Tredox = (y, u, bnode, data) -> nothing
+
     """
         IR compensation mode:
            - `:none` (no compensation),
@@ -136,6 +139,17 @@ $(TYPEDFIELDS)
     Estimated uncompensated resistance between working electrode and counter electrode
     """
     Ru::Float64 = 0.0 * ufac"Ω"
+
+    """
+    Gap capacitance at working electrode. Large value enforces Dirichlet BC.
+    Needed with IR compensation schemes.
+    """
+    C_gap = C_large * ufac"F/m^2"
+
+    """
+    Potential of zero charge at working electrode
+    """
+    ϕ_pzc = 0 * ufac"V"
 
     "Bulk ion concentrations ``c_i^b\\; (i=1…N)`` "
     c_bulk::Vector{Float64} = fill(0.1 * ufac"M", maximum(cspecies))
@@ -231,9 +245,6 @@ $(TYPEDFIELDS)
     "Cache for activity coefficient calculation (reserved)"
     γl_cache::Tcache = DiffCache(zeros(maximum(cspecies)), 10 * maximum(cspecies))
 
-    "Redox reaction function for ohmic drop compensation"
-    redoxreaction::Tredox = (y, u, bnode, data) -> nothing
-
     """
     Pseudo reference electrode node index (reserved; derived from x_ref)
     """
@@ -241,9 +252,15 @@ $(TYPEDFIELDS)
 
     """
     Working electrode voltage ``ϕ_{we}`` (reserved)
-    Used by sweep algorithms to pass boundary data.
+    Used by sweep algorithms to pass boundary value data.
     """
     ϕ_we::Float64 = 0.0 * ufac"V"
+
+    """
+    Working electrode voltage actually applied (reserved)
+    Used by sweep algorithms to read out boundary value data
+    """
+    ϕ_we_set::Float64 = Inf
 
     """
     Edge velocity projection (reserved).
@@ -668,6 +685,22 @@ function bulkbcondition(f, u, bnode, electrolyte; region = electrolyte.Γ_bulk)
         for ic in cspecies
             boundary_dirichlet!(f, u, bnode; species = ic, region, value = c_bulk[ic])
         end
+    end
+    return nothing
+end
+
+bulkbcondition!(f, u, bnode, electrolyte; kwargs...) = bulkbcondition(f, u, bnode, electrolyte; kwargs...)
+
+"""
+    potentialbcondition!(y, u, bnode, electrolyte, ϕ_applied; region=Γ_we)
+
+Boundary condition for electrostatic potential.
+"""
+function potentialbcondition!(y, u, bnode, electrolyte, ϕ_applied; region = electrolyte.Γ_we)
+    (; iϕ, C_gap, ϕ_pzc) = electrolyte
+    if bnode.region == region
+        y[iϕ] = C_gap * (u[iϕ] - (ϕ_applied - ϕ_pzc))
+        electrolyte.ϕ_we_set = myvalue(ϕ_applied)
     end
     return nothing
 end

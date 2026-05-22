@@ -167,6 +167,26 @@ function pnpflux!(f, u, edge, celldata::AbstractCellData)
     return
 end
 
+function sgflux!(y, u, edge, data)
+    (; nc, z, iϕ, ip, ε_0, ε, ε_dec, F, RT, D, eneutral) = data
+    dϕ = u[iϕ, 1] - u[iϕ, 2]
+    xmid = MVector{3, Float64}(undef)
+    for i in 1:size(edge.coord)[1]
+        xmid[i] = 0.5 * (edge[i, 1] + edge[i, 2])
+    end
+    y[iϕ] = ε_dec(xmid) * ε * ε_0 * dϕ * !eneutral
+
+
+    # Dummy equation for pressure
+    y[ip] = u[ip, 1] - u[ip, 2]
+
+    for ic in 1:nc
+        bp, bm = fbernoulli_pm(z[ic] * dϕ * F / RT)
+        y[ic] = D[ic] * (bm * u[ic, 1] - bp * u[ic, 2]) # Scharfetter-Gummel flux
+    end
+    return nothing
+end
+
 
 """
     pseudopotentiostat(f0, u0, sys, data)
@@ -175,10 +195,10 @@ VoronoiFVM generic operator implementing an IR-compensated pseudopotentiostat.
 """
 function pseudopotentiostat(f0, u0, sys, data)
     f0 .= 0.0
-    (; iϕ, ϕ_we, i_ref) = data
+    (; iϕ, ϕ_we, i_ref, Γ_we) = data
     f = reshape(f0, sys)
     u = reshape(u0, sys)
-    f[iϕ, 1] += 1.0e10 * (u[iϕ, 1] - (u[iϕ, i_ref] + ϕ_we))
+    @views potentialbcondition!(f[:, 1], u[:, 1], (; region = Γ_we), data, u[iϕ, i_ref] + ϕ_we)
     return
 end
 
@@ -213,17 +233,14 @@ The operator couples three global constraints at the electrode boundary `BP1`:
 """
 function ohmicdropcompensation(f0, u0, sys, data)
     f0 .= 0.0
-    (; iϕ, iq, icc, ϕ_we, i_ref, Ru, F, ircompfactor, nv, redoxreaction) = data
+    (; iϕ, iq, icc, ϕ_we, Γ_we, i_ref, Ru, F, ircompfactor, nv, redoxreaction) = data
 
     f = reshape(f0, sys)
     u = reshape(u0, sys)
 
     q = zero(eltype(u))
 
-    for i in 1:i_ref
-        @views q += chargedensity(u[:, i], data) * nv[i]
-    end
-    f[iq, 1] = u[iq, 1] - q
+
     f[icc, 1] = u[icc, 1]
     j_C = u[icc, 1]
 
@@ -231,12 +248,25 @@ function ohmicdropcompensation(f0, u0, sys, data)
         f[:, 1], u[:, 1],
         nothing, data
     )
-
+    ### todo: replace species 1
     j_F = -f[1, 1] * F
+
 
     ϕ_DL = ircompfactor * Ru * (j_F + j_C)
 
-    f[iϕ, 1] += 1.0e10 * (u[iϕ, 1] - (ϕ_DL + ϕ_we))
+    for i in 1:i_ref
+        @views q += chargedensity(u[:, i], data) * nv[i]
+    end
+    if !(data.C_gap ≈ C_large)
+        #        q += data.C_gap * (u[iϕ, 1] - (ϕ_DL + ϕ_we))
+    end
+
+    f[iq, 1] = u[iq, 1] - q
+
+    @views potentialbcondition!(
+        f[:, 1], u[:, 1], (; region = Γ_we), data,
+        ϕ_DL + ϕ_we
+    )
     return
 end
 
@@ -271,6 +301,7 @@ end
 function PNPSystem(
         grid::ExtendableGrid,
         celldata::AbstractElectrolyteData;
+        flux = pnpflux!,
         bcondition = (f, u, n, e) -> nothing,
         reaction = (f, u, n, e) -> nothing,
         kwargs...
@@ -307,7 +338,7 @@ function PNPSystem(
         sys = VoronoiFVM.System(
             grid;
             data = celldata,
-            flux = pnpflux!,
+            flux,
             reaction = _pnpreaction!,
             storage = pnpstorage!,
             bcondition,
@@ -318,7 +349,7 @@ function PNPSystem(
         sys = VoronoiFVM.System(
             grid;
             data = celldata,
-            flux = pnpflux!,
+            flux,
             reaction = _pnpreaction!,
             storage = pnpstorage!,
             bcondition,
@@ -330,7 +361,7 @@ function PNPSystem(
         sys = VoronoiFVM.System(
             grid;
             data = celldata,
-            flux = pnpflux!,
+            flux,
             reaction = _pnpreaction!,
             storage = pnpstorage!,
             bcondition,
