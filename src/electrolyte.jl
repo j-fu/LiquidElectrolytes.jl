@@ -695,6 +695,11 @@ function bulkbcondition!(f, u, bnode, electrolyte; region = electrolyte.Γ_bulk)
     return nothing
 end
 
+"""
+    bulkbcondition(f,u,bnode,electrolyte; region = data.Γ_bulk)
+
+Deprecated. Replace by [`bulkbcondition`](@ref).
+"""
 bulkbcondition(f, u, bnode, electrolyte; kwargs...) = bulkbcondition!(f, u, bnode, electrolyte; kwargs...)
 
 """

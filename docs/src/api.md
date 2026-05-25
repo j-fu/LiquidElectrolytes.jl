@@ -95,3 +95,8 @@ PNPStokesSolver
 RLog
 RExp
 ```
+
+## Deprecated
+```@docs
+bulkbcondition
+```
