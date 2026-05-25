@@ -1,8 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## 2.7.0 - 2026-05-26
+- fix missing bstorage call for surface concentrations
+- consistently handle robin BC for voltages and and gap capacitance
+- introduce potentialbcondition! to handle applied potential properly
+  in  case of finite gap capacitance
 
-## 2.5.0 - 2026-05-20
+## 2.6.0 - 2026-05-20
 - EXPERIMENTAL: add IR compensation via pseudopotentiostat or ohmic drop
 
 ## 2.5.0 - 2026-05-19
