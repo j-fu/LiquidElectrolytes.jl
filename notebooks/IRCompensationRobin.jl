@@ -89,6 +89,18 @@ begin
 end;
 
 
+# ╔═╡ b4042abb-8d18-482e-a24c-ff846265b555
+begin
+    ε1 = 6.0 * ph"VacuumElectricPermittivity"
+    ε2 = 30.0 * ph"VacuumElectricPermittivity"
+    x2 = 0.29ufac"nm"
+    x3 = 0.59ufac"nm"
+    d1 = x2
+    d2 = x3 - x2
+    C_gap = 1.0 / (d1 / ε1 + d2 / ε2)
+    C_gap / ufac"μF/cm^2"
+end
+
 # ╔═╡ ee617289-890a-476d-b1c5-1d1267e1cda8
 md"""
 Dielectric decrement: this is in the moment an experiemental feature due to lack of an implementation of a better model.
@@ -165,7 +177,7 @@ Redox rection function using the rate expressions according to Landstorfer et al
 """
 
 # ╔═╡ 76cd84dd-505e-4ee4-9ef7-eafaf122eaa9
-function redoxreaction(f, u, bnode, data)
+function redoxreaction0(f, u, bnode, data)
     (; ip, iϕ, v, v0, F, RT, κ) = data
     c0, barc = c0_barc(u, data)
     μR = chemical_potential(u[iR], barc, u[ip], v[iR] + κ[iR] * v0, data)
@@ -175,6 +187,23 @@ function redoxreaction(f, u, bnode, data)
     f[iO] -= j_O
     f[iR] += j_O
     return
+end
+
+# ╔═╡ cc629369-59a1-4180-9271-09f5f8c1ed39
+function redoxreaction(y, u, bnode, data)
+    (; iϕ, F, RT) = data
+    # E is the applied electrode potential (vs. the reference electrode).
+    ϕ_PET = u[iϕ]
+    ϕ_L = 0
+    E = u[iϕ]
+    iO = 1
+    iR = 2
+    η = (E - E0 - (ϕ_PET - ϕ_L)) * F / RT
+    k_f = k0 * exp(-α * η)
+    k_b = k0 * exp((1 - α) * η)
+    j_O = k_b * u[iR] - k_f * u[iO]
+    y[iO] -= j_O
+    return y[iR] += j_O
 end
 
 # ╔═╡ 55ce733f-82ef-4c66-94e6-b948e9865385
@@ -190,6 +219,7 @@ edata_unc = ElectrolyteData(;
         1.9e-5,
     ] * ufac"cm^2/s",
     ε = 80.0,
+    C_gap,
     T = 293.15 * ufac"K",
     # Position of "pseudo reference electrode" for pseudopotentiostat approach
     x_ref = [10.0 * ufac"nm"],
@@ -201,7 +231,8 @@ edata_unc = ElectrolyteData(;
     ircompfactor,
 
     # alternative activity coefficients
-    # actcoeff! = pbi_gamma!,
+    #  actcoeff! = pbo_gamma!,
+    rlog = RLog()
 )
 
 # ╔═╡ 1896cb6f-ccf9-4914-9827-2c0ba4bf5498
@@ -273,7 +304,10 @@ function simulate(
 
     )
 
-    pnpcell = PNPSystem(grid; bcondition = halfcellbc, celldata)
+    pnpcell = PNPSystem(
+        grid; bcondition = halfcellbc, celldata,
+        #flux=LiquidElectrolytes.sgflux!
+    )
     cvresult = LiquidElectrolytes.cvsweep(
         pnpcell;
         voltages = sawtooth,
@@ -300,7 +334,12 @@ cell_unc, cvresult_unc = simulate(grid, edata_unc)
 cell_pts, cvresult_pts = simulate(grid, edata_pts)
 
 # ╔═╡ 2efc764c-f7a0-4afe-9bca-4bcb32232510
-cell_odr, cvresult_odr = simulate(grid, edata_odr)
+cell_odr, cvresult_odr = simulate(
+    grid, edata_odr,
+    Δu_opt = 0.1,
+    tol_round = 1.0e-9,
+    max_round = 3
+)
 
 # ╔═╡ c3ce835a-4c7c-427e-a72d-5d1fe91e647c
 md"""
@@ -471,7 +510,7 @@ function plotresult2(cvresult, celldata)
     (; i_ref, iϕ) = celldata
     j_we = -hcat(cvresult.j_we...)[1, :] * celldata.F
     Ωdrop = (j_we + cvresult.j_cap) * R_u
-    dlvolts = [ u[iϕ, 1] - u[iϕ, i_ref]    for u in cvresult.tsol.u]
+    dlvolts = cvresult.voltages - [u[iϕ, i_ref]    for u in cvresult.tsol.u[2:end]]
     st = [sawtooth(t) for t in times]
     fig = Figure(size = (700, 400))
     Label(fig[0, 1:2], "IR compensation: $(celldata.ircompensation), scanrate=$(scanrate) V/s")
@@ -479,11 +518,11 @@ function plotresult2(cvresult, celldata)
     ax2 = Axis(fig[2, 1], xlabel = "t/s", ylabel = "Δϕ/V")
 
     lines!(ax1, times[2:end], cvresult.voltages, label = L"ϕ_0-ϕ_L")
-    lines!(ax1, times, dlvolts, label = L"ϕ_0-ϕ_{DL}")
+    lines!(ax1, times[2:end], dlvolts, label = L"ϕ_0-ϕ_{DL}")
     Legend(fig[1, 2], ax1)
 
     lines!(
-        ax2, times, st - dlvolts,
+        ax2, times[2:end], st[2:end] - dlvolts,
         label = L"ϕ_{sawtooth} - ϕ_{DL} "
     )
     scatter!(ax2, cvresult.times, Ωdrop, label = L"R_u\cdot (I_F+I_C)", markersize = 3, color = :red)
@@ -511,16 +550,28 @@ plotresult2(cvresult_odr, edata_odr)
 function checkir(cvresult, celldata; tol = 1.0e-11)
     times = cvresult.tsol.t
     (; i_ref, iϕ) = celldata
-    dlvolts = [ u[iϕ, 1] - u[iϕ, i_ref]    for u in cvresult.tsol.u]
-    st = [sawtooth(t) for t in times]
+    dlvolts = cvresult.voltages - [u[iϕ, i_ref]    for u in cvresult.tsol.u[2:end]]
+
+    st = [sawtooth(t) for t in times[2:end]]
     return norm(dlvolts - st, Inf) < tol
 end
 
 # ╔═╡ fc406613-fa88-4b18-8b26-53afae756cbc
-@test checkir(cvresult_pts, edata_pts)
+@test checkir(cvresult_pts, edata_pts, tol = 1.0e-10)
 
 # ╔═╡ fdf4e114-a627-4941-979a-a168a63f4ff0
 @test checkir(cvresult_odr, edata_odr; tol = 0.03)
+
+# ╔═╡ 21d90274-2b3f-4920-9422-d1dd1bd2e829
+md"""
+```math
+\begin{aligned}
+ϕ_0, ϕ_1, d \\
+-\nabla ε_0∇ ϕ=0\\
+ε_1\nabla ϕ|_1 = ε_0∇ϕ|_1 = \frac{ε_0}{d} (ϕ_1 - ϕ_0)= C_{gap}(ϕ_1 - ϕ_0)
+\end{aligned}
+```
+"""
 
 # ╔═╡ Cell order:
 # ╠═670585dc-bee1-4d2f-88b7-282a791badc8
@@ -531,6 +582,7 @@ end
 # ╟─a7ac6c61-28a1-4699-834c-25cf84504a12
 # ╠═fb05cabb-026f-4f2e-a180-9a7b29e65451
 # ╠═502e3108-72cd-40c0-b0f1-6fa922446ef9
+# ╠═b4042abb-8d18-482e-a24c-ff846265b555
 # ╟─ee617289-890a-476d-b1c5-1d1267e1cda8
 # ╠═147576d8-e9c4-4afd-a579-0fd285b09bd7
 # ╟─a7f0a44f-6580-4e78-a0d5-cc5e0541629c
@@ -549,6 +601,7 @@ end
 # ╠═16490d65-5f1b-4428-ae90-42b21d6a48bd
 # ╟─82518a2b-04eb-4f64-8ab5-f46580a76bf1
 # ╠═76cd84dd-505e-4ee4-9ef7-eafaf122eaa9
+# ╠═cc629369-59a1-4180-9271-09f5f8c1ed39
 # ╟─675ce578-8028-4af7-a236-5279a7dadc7b
 # ╠═1089d336-2dce-4cb0-a6de-feb7008f30c9
 # ╟─9331c262-ce81-4c1f-997a-7e078c3a88f7
@@ -580,3 +633,4 @@ end
 # ╠═962d64d5-13cf-4bc7-b369-65853c74f395
 # ╠═fc406613-fa88-4b18-8b26-53afae756cbc
 # ╠═fdf4e114-a627-4941-979a-a168a63f4ff0
+# ╠═21d90274-2b3f-4920-9422-d1dd1bd2e829

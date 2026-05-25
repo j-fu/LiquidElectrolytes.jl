@@ -153,6 +153,8 @@ end
             :node_velocity,
             :velocity_unknown,
             :voltage!,
+            :Dual,
+            :value,
         )
     ) === nothing
     @test ExplicitImports.check_no_self_qualified_accesses(LiquidElectrolytes) === nothing

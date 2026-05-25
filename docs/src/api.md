@@ -19,6 +19,8 @@ ElectrolyteData()
 update_derived!
 dlcap0(::ElectrolyteData)
 debyelength(::ElectrolyteData)
+bulkbcondition!
+potentialbcondition!
 conductivity
 chargedensity
 chemical_potential
@@ -92,4 +94,9 @@ PNPStokesSolver
 ```@docs
 RLog
 RExp
+```
+
+## Deprecated
+```@docs
+bulkbcondition
 ```
