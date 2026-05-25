@@ -70,7 +70,7 @@ Access methods: [`voltages`](@ref), [`currents`](@ref)  [`voltages_currents`](@r
 """
 Base.@kwdef mutable struct CVSweepResult <: AbstractSimulationResult
     """
-    Vector of voltages
+    Vector of applied voltages
     """
     voltages = zeros(0)
 
@@ -105,7 +105,7 @@ Base.@kwdef mutable struct CVSweepResult <: AbstractSimulationResult
     j_dsp = []
 
     """
-    capacitive current
+    Capacitive current
     """
     j_cap = []
 

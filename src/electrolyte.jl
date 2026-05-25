@@ -61,7 +61,7 @@ $(TYPEDFIELDS)
     Number of charged species ``N``.
 
     While in the default constructor, this value is primary to the value of cspecies, 
-    [`update_derived!`](@ref) treats it as a derived datum. 
+    [`update_derived!`](@ref) treats it as a derived datum. Default: 2.
     """
     nc::Int = 2
 
@@ -70,7 +70,7 @@ $(TYPEDFIELDS)
     """
     cspecies::Vector{Int} = collect(1:nc)
 
-    "Number of surface species"
+    "Number of surface species. Default: 0"
     na::Int = 0
 
     """
@@ -119,14 +119,17 @@ $(TYPEDFIELDS)
     """
     actcoeff!::Tγ = DGML_gamma!
 
-    "Redox reaction function for ohmic drop compensation"
+    """
+    Redox reaction function for ohmic drop compensation. This function
+    just shall calculate the rate equations of the reacting species.
+    """
     redoxreaction::Tredox = (y, u, bnode, data) -> nothing
 
     """
         IR compensation mode:
-           - `:none` (no compensation),
-           - `:pseudopotentiostat` (generic operator enforces the sawtooth waveform across the double layer)
-           - `:ohmicdrop` (generic operator compensates the estimated ohmic drop from Faradaic and capacitive currents)."
+           - `:none`: no compensation (default)
+           - `:pseudopotentiostat`: Enforce the sawtooth waveform across the double layer
+           - `:ohmicdrop`: add the estimated ohmic drop from Faradaic current to applied voltage"
     """
     ircompensation::Symbol = :none
 
@@ -136,7 +139,8 @@ $(TYPEDFIELDS)
     ircompfactor::Float64 = 0.95
 
     """
-    Estimated uncompensated resistance between working electrode and counter electrode
+    Estimated uncompensated resistance between working electrode and counter electrode.
+    This needs to calculated from distance between working and counter electrode and conductivity.
     """
     Ru::Float64 = 0.0 * ufac"Ω"
 
@@ -155,7 +159,9 @@ $(TYPEDFIELDS)
     c_bulk::Vector{Float64} = fill(0.1 * ufac"M", maximum(cspecies))
 
     """
-    Pseudo-reference electrode position    
+    Pseudo-reference electrode position used by pseudopotentiostat,
+    and as the upper integration limit for calculating electrode charge
+    in the Ohmic drop compensation scheme.
     """
     x_ref::Vector{Float64} = zeros(3)
 
@@ -177,7 +183,7 @@ $(TYPEDFIELDS)
     "Dielectric permittivity of solvent ``ε``"
     ε::Float64 = 78.49
 
-    "X dependent dielectric permittivity decrement"
+    "Position dependent dielectric permittivity decrement (experimental)"
     ε_dec::Tεdec = (x) -> 1.0
 
     "Regularized exponential, default: `exp` (unregularized)"
@@ -257,7 +263,7 @@ $(TYPEDFIELDS)
     ϕ_we::Float64 = 0.0 * ufac"V"
 
     """
-    Working electrode voltage actually applied (reserved)
+    Working electrode voltage actually applied via [`potentialbcondition!`](@ref) (reserved)
     Used by sweep algorithms to read out boundary value data
     """
     ϕ_we_set::Float64 = Inf
@@ -673,11 +679,11 @@ end
 
 
 """
-    bulkbcondition(f,u,bnode,electrolyte; region = data.Γ_bulk)
+    bulkbcondition!(f,u,bnode,electrolyte; region = data.Γ_bulk)
 
 Bulk boundary condition for electrolyte: set potential, pressure and concentrations to bulk values.
 """
-function bulkbcondition(f, u, bnode, electrolyte; region = electrolyte.Γ_bulk)
+function bulkbcondition!(f, u, bnode, electrolyte; region = electrolyte.Γ_bulk)
     (; iϕ, ip, cspecies, ϕ_bulk, p_bulk, c_bulk) = electrolyte
     if bnode.region == region
         boundary_dirichlet!(f, u, bnode; species = iϕ, region, value = ϕ_bulk)
@@ -689,12 +695,25 @@ function bulkbcondition(f, u, bnode, electrolyte; region = electrolyte.Γ_bulk)
     return nothing
 end
 
-bulkbcondition!(f, u, bnode, electrolyte; kwargs...) = bulkbcondition(f, u, bnode, electrolyte; kwargs...)
+bulkbcondition(f, u, bnode, electrolyte; kwargs...) = bulkbcondition!(f, u, bnode, electrolyte; kwargs...)
 
 """
     potentialbcondition!(y, u, bnode, electrolyte, ϕ_applied; region=Γ_we)
 
-Boundary condition for electrostatic potential.
+Boundary condition for electrostatic potential at working electrode `Γ_we`.
+Apply `ϕ_applied-ϕ_pzc` as Robin boundary condition:
+```math
+\\partial_n ϕ + C_{gap} (ϕ - (ϕ_{applied} - ϕ_{pzc}) = 0
+```
+
+With the large default value of ``C_{gap}`` this effectively becomes the Dirichlet
+boundary condition
+```math
+ϕ = ϕ_{applied} - ϕ_{pzc}
+```
+
+As a side effect, the call sets the value of `electrolyte.ϕ_we_set` which used
+to calculate the voltages in [`CVSweepResult`](@ref).
 """
 function potentialbcondition!(y, u, bnode, electrolyte, ϕ_applied; region = electrolyte.Γ_we)
     (; iϕ, C_gap, ϕ_pzc) = electrolyte
