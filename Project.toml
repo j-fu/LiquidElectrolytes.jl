@@ -1,6 +1,6 @@
 name = "LiquidElectrolytes"
 uuid = "5a7dfd8c-b3af-4c8d-a082-d3a774d75e72"
-version = "2.6.1"
+version = "2.7.0"
 authors = ["Jürgen Fuhrmann <juergen-fuhrmann@web.de>", "Steffen Maaß", "Rene Kehl", "Hong Zhao"]
 
 [deps]

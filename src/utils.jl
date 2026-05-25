@@ -147,5 +147,5 @@ end
 const C_large = 1.0e15
 
 myvalue(::Any) = 0.0
-myvalue(x::ForwardDiff.Dual) = value(x)
+myvalue(x::ForwardDiff.Dual) = ForwardDiff.value(x)
 myvalue(x::AbstractFloat) = x
