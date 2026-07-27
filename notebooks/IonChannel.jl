@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.13
+# v1.0.1
 
 using Markdown
 using InteractiveUtils
@@ -177,7 +177,7 @@ function plotsol(grid,sol)
 # ╔═╡ a91c5744-e744-4c25-a748-30d7155e9b63
 #=╠═╡
 if isdefined(Main,:PlutoRunner)
-	plotsol(pnpgrid, esol[end])
+	plotsol(pnpgrid, esol.u[end])
 end
   ╠═╡ =#
 
@@ -311,7 +311,7 @@ esol3 = solve(
 # ╔═╡ dca04b49-3d52-43b4-ad30-c90bcc26f74e
 #=╠═╡
 if isdefined(Main,:PlutoRunner)
-	plotsol(pnpgrid, esol3[end])
+	plotsol(pnpgrid, esol3.u[end])
 end
   ╠═╡ =#
 
