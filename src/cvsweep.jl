@@ -70,9 +70,20 @@ Access methods: [`voltages`](@ref), [`currents`](@ref)  [`voltages_currents`](@r
 """
 Base.@kwdef mutable struct CVSweepResult <: AbstractSimulationResult
     """
-    Vector of applied voltages
+    Vector of applied working electrode voltages including possible IR compensation. 
     """
     voltages = zeros(0)
+
+
+    """
+    Vector of working elenctrode voltages - voltages at x_ref
+    """
+    dlvoltages = zeros(0)
+
+    """
+    Applied sawtooth waveform sampled at each time step (V).
+    """
+    sawtooth = zeros(0)
 
     """
     Vector of times
@@ -169,11 +180,17 @@ function cvsweep(
         solver_kwargs...
     )
     times = [i * period(voltages) for i in 0:nperiods]
+
     @info "Solving for $(voltages(0))V..."
     inival = solve(sys; inival = unknowns(esys), control = deepcopy(control), damp_initial = 0.1)
+
+
+    @info "Solving for $nperiods period(s) in $(times[begin])s - $(times[end])s..."
     result = CVSweepResult()
     allprogress = times[end] - times[begin]
     tprogress = 0
+    nsteps = 0
+    telapsed = 0
     @withprogress begin
         function pre(sol, t)
             working_electrode_voltage!(cdata, voltages(t))
@@ -194,6 +211,8 @@ function cvsweep(
             push!(result.times, t)
             ### todo: replace index 1 by relevant current species
             push!(result.voltages, ϕ_we(sol, cdata))
+            push!(result.dlvoltages, ϕ_we(sol, cdata) - sol[cdata.iϕ, cdata.i_ref])
+            push!(result.sawtooth, voltages(t))
             push!(result.j_reaction, I_react)
             push!(result.j_we, I_we)
             push!(result.q, Q[cdata.iϕ])
@@ -201,6 +220,7 @@ function cvsweep(
             push!(result.j_cap, I_cap)
             push!(result.j_bulk, I_bulk)
             tprogress += abs(Δt)
+            nsteps += 1
             @logprogress tprogress / allprogress
         end
 
@@ -208,7 +228,7 @@ function cvsweep(
             n = wnorm(u - v, norm_weights(cdata), Inf)
         end
 
-        tsol = solve(
+        telapsed = @elapsed tsol = solve(
             sys;
             inival,
             times,
@@ -222,5 +242,6 @@ function cvsweep(
             result.tsol = tsol
         end
     end
+    @info "Solved $nsteps steps in $(telapsed)s."
     return result
 end

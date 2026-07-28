@@ -236,7 +236,7 @@ The operator couples three global constraints at the electrode boundary `BP1`:
 """
 function ohmicdropcompensation(f0, u0, sys, data)
     f0 .= 0.0
-    (; iϕ, iq, icc, ϕ_we, Γ_we, i_ref, Ru, F, ircompfactor, nv, redoxreaction) = data
+    (; iϕ, iq, icc, ϕ_we, Γ_we, i_ref, Ru, F, z, ircompfactor, ircompspecies, ircompnelectrons, nv, redoxreaction) = data
 
     f = reshape(f0, sys)
     u = reshape(u0, sys)
@@ -251,15 +251,15 @@ function ohmicdropcompensation(f0, u0, sys, data)
         f[:, 1], u[:, 1],
         nothing, data
     )
-    ### todo: replace species 1
-    j_F = -f[1, 1] * F
 
+    j_F = -ircompnelectrons * f[ircompspecies, 1] * F
 
     ϕ_DL = ircompfactor * Ru * (j_F + j_C)
 
     for i in 1:i_ref
         @views q += chargedensity(u[:, i], data) * nv[i]
     end
+
     if !(data.C_gap ≈ C_large)
         #        q += data.C_gap * (u[iϕ, 1] - (ϕ_DL + ϕ_we))
     end
@@ -326,6 +326,9 @@ function PNPSystem(
             dmin = d
             imin = i
         end
+    end
+    if imin < 1 || imin > size(coord, 2)
+        imin = size(coord, 2)
     end
     celldata.i_ref = imin
 

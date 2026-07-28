@@ -139,6 +139,16 @@ $(TYPEDFIELDS)
     ircompfactor::Float64 = 0.95
 
     """
+    Species index used to calculate current in the case of ohmic drop compensation
+    """
+    ircompspecies::Int = 1
+
+    """
+    Number of electrons transferred per redox reaction
+    """
+    ircompnelectrons::Int = 1
+
+    """
     Estimated uncompensated resistance between working electrode and counter electrode.
     This needs to calculated from distance between working and counter electrode and conductivity.
     """
