@@ -1,6 +1,13 @@
 # Changelog
-
 All notable changes to this project will be documented in this file.
+
+## 2.8.0 - 2026-07-28
+- Update handling of IR compensation:
+  - introduce ircompspecies and ircompnelectons fields in elecrolyte data
+  - record double layer voltage difference + sawtooth voltage in CVSweepResult
+- new CellSizeComparison notebook
+
+
 ## 2.7.0 - 2026-05-26
 - fix missing bstorage call for surface concentrations
 - consistently handle robin BC for voltages and and gap capacitance
