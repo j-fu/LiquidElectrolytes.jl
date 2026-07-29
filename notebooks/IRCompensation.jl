@@ -64,7 +64,7 @@ Data according to "Simulation of the cyclic voltammetric response of an outer-sp
 
 # ╔═╡ fb05cabb-026f-4f2e-a180-9a7b29e65451
 begin
-    scanrate = 100ufac"V/s"
+    scanrate = 1ufac"V/s"
     vmin = -0.5ufac"V"
     vmax = 0.1ufac"V"
     L = 1ufac"mm"
@@ -89,6 +89,19 @@ begin
 end;
 
 
+# ╔═╡ ccd44b6c-8e15-48b9-bdfe-15ca7dc3c2e4
+begin
+    ε1 = 6.0 * ph"VacuumElectricPermittivity"
+    ε2 = 30.0 * ph"VacuumElectricPermittivity"
+    x2 = 0.29ufac"nm"
+    x3 = 0.59ufac"nm"
+    d1 = x2
+    d2 = x3 - x2
+    const C_gap_robin = 1.0 / (d1 / ε1 + d2 / ε2)
+    const C_gap_dirichlet = 1.0e15
+    C_gap_robin / ufac"μF/cm^2"
+end
+
 # ╔═╡ ee617289-890a-476d-b1c5-1d1267e1cda8
 md"""
 Dielectric decrement: this is in the moment an experiemental feature due to lack of an implementation of a better model.
@@ -103,79 +116,10 @@ function ε_dec(x)
     end
 end
 
-# ╔═╡ a7f0a44f-6580-4e78-a0d5-cc5e0541629c
-md"""
-Activity coefficient functions for testing; not used  in the moment.
-"""
-
-# ╔═╡ 6ef4e7d7-f268-4547-ad46-ae01bed4e800
-function pbi_gamma!(γ, c, p, electrolyte)
-    sumc = zero(eltype(c))
-    for i in 1:electrolyte.nc
-        sumc += c[i]
-    end
-    g = 1.0 / (1.0 - sumc * electrolyte.v0)
-    for i in 1:electrolyte.nc
-        γ[i] = g
-    end
-    return nothing
-end
-
-
-# ╔═╡ 96599aed-df1f-4776-8c91-e8c65110d840
-function pbo_gamma!(γ, c, p, electrolyte)
-    (; cspecies) = electrolyte
-    for ic in cspecies
-        γ[ic] = 1
-    end
-    return nothing
-end
-
 # ╔═╡ 06833006-7050-498e-8316-612523a6697a
 md"""
 Electrolyte data for calculations without IR compensation
 """
-
-# ╔═╡ c541518f-116a-45d9-a6ad-04e2e3e1854d
-md"""
-Estimate of uncompensated resistance based on bulk concentrations
-"""
-
-# ╔═╡ 01b1639b-7928-4912-9e4b-e76305663ed5
-md"""
-Electrolyte data for calculations with IR compensation by the "pseudopotentionstat" approach.
-"""
-
-# ╔═╡ 3f3e21f6-1d1f-4e8d-a378-3530f040781c
-md"""
-Electrolyte data for calculations with IR compensation by ohmic drop compensation via the estimate of the uncompensated resistance.
-"""
-
-# ╔═╡ d26f2c0f-d935-439a-9b30-bf47a40a7bc6
-md"""
-Sawtooth voltage control:
-"""
-
-# ╔═╡ 16490d65-5f1b-4428-ae90-42b21d6a48bd
-sawtooth = SawTooth(; scanrate, vmin, vmax)
-
-# ╔═╡ 82518a2b-04eb-4f64-8ab5-f46580a76bf1
-md"""
-Redox rection function using the rate expressions according to Landstorfer et al.:
-"""
-
-# ╔═╡ 76cd84dd-505e-4ee4-9ef7-eafaf122eaa9
-function redoxreaction(f, u, bnode, data)
-    (; ip, iϕ, v, v0, F, RT, κ) = data
-    c0, barc = c0_barc(u, data)
-    μR = chemical_potential(u[iR], barc, u[ip], v[iR] + κ[iR] * v0, data)
-    μO = chemical_potential(u[iO], barc, u[ip], v[iO] + κ[iO] * v0, data)
-    A = (μR - μO - F * E0) / RT
-    j_O = rrate(k0, α, A)
-    f[iO] -= j_O
-    f[iR] += j_O
-    return
-end
 
 # ╔═╡ 55ce733f-82ef-4c66-94e6-b948e9865385
 edata_unc = ElectrolyteData(;
@@ -192,14 +136,11 @@ edata_unc = ElectrolyteData(;
     ε = 80.0,
     T = 293.15 * ufac"K",
     # Position of "pseudo reference electrode" for pseudopotentiostat approach
-    x_ref = [10.0 * ufac"nm"],
+    xref = [10.0 * ufac"nm"],
     # Dielectric decrement
     ε_dec,
-    # Redox reaction function to be evaluated during ohmic drop compensation
-    redoxreaction,
-    # IR compensation factor used during ohmic drop compensation
-    ircompfactor,
-
+    # IR compensation
+    ircompensation = NoIRCompensation()
     # alternative activity coefficients
     # actcoeff! = pbi_gamma!,
 )
@@ -207,23 +148,103 @@ edata_unc = ElectrolyteData(;
 # ╔═╡ 1896cb6f-ccf9-4914-9827-2c0ba4bf5498
 @test iselectroneutral(edata_unc.c_bulk, edata_unc)
 
-# ╔═╡ bb3d0553-79c3-423f-9ae0-63efa5a0c25c
-R_u = L / LiquidElectrolytes.conductivity(edata_unc, edata_unc.c_bulk)
+# ╔═╡ 01b1639b-7928-4912-9e4b-e76305663ed5
+md"""
+Electrolyte data for calculations with IR compensation by the "pseudopotentionstat" approach.
+"""
 
 # ╔═╡ b43f5473-1624-4fb6-bbe6-c23a1322841c
-begin
-    edata_pts = deepcopy(edata_unc)
-    edata_pts.ircompensation = :pseudopotentiostat
-    edata_pts
+edata_pts = copy(edata_unc, ircompensation = PseudoPotentiostat())
+
+# ╔═╡ c541518f-116a-45d9-a6ad-04e2e3e1854d
+md"""
+Estimate of uncompensated resistance based on bulk concentrations
+"""
+
+# ╔═╡ bb3d0553-79c3-423f-9ae0-63efa5a0c25c
+Ru = L / LiquidElectrolytes.conductivity(edata_unc, edata_unc.c_bulk)
+
+# ╔═╡ 3f3e21f6-1d1f-4e8d-a378-3530f040781c
+md"""
+Electrolyte data for calculations with IR compensation by ohmic drop compensation via the estimate of the uncompensated resistance.
+"""
+
+# ╔═╡ d26f2c0f-d935-439a-9b30-bf47a40a7bc6
+md"""
+Sawtooth voltage control:
+"""
+
+# ╔═╡ 16490d65-5f1b-4428-ae90-42b21d6a48bd
+sawtooth = SawTooth(; scanrate, vmin, vmax)
+
+# ╔═╡ 9478563d-b382-420e-be99-58d525ab8240
+md"""
+### Boundary Conditions
+"""
+
+# ╔═╡ 82518a2b-04eb-4f64-8ab5-f46580a76bf1
+md"""
+Redox rection function using the rate expressions according to Landstorfer et al.:
+"""
+
+# ╔═╡ 76cd84dd-505e-4ee4-9ef7-eafaf122eaa9
+function redoxreaction_dirichlet(f, u, bnode, data)
+    (; ip, iϕ, v, v0, F, RT, κ) = data
+    c0, barc = c0_barc(u, data)
+    μR = chemical_potential(u[iR], barc, u[ip], v[iR] + κ[iR] * v0, data)
+    μO = chemical_potential(u[iO], barc, u[ip], v[iO] + κ[iO] * v0, data)
+    A = (μR - μO - F * E0) / RT
+    j_O = rrate(k0, α, A)
+    f[iO] -= j_O
+    f[iR] += j_O
+    return
+end
+
+# ╔═╡ 2fbb39ef-be14-4d2c-9958-f0f5132ff183
+function redoxreaction_robin(y, u, bnode, data)
+    (; iϕ, F, RT, ϕ_we, ircompensation, iϕ_we) = data
+    ϕ_PET = u[iϕ]
+    ϕ_L = 0
+    # E is the applied electrode potential (vs. the reference electrode).
+    if isactive(ircompensation)
+        E = u[iϕ_we]
+    else
+        E = ϕ_we
+    end
+    iO = 1
+    iR = 2
+    η = (E - E0 - (ϕ_PET - ϕ_L)) * F / RT
+    k_f = k0 * exp(-α * η)
+    k_b = k0 * exp((1 - α) * η)
+    j_O = k_b * u[iR] - k_f * u[iO]
+    y[iO] -= j_O
+    y[iR] += j_O
+
+    return
+end
+
+# ╔═╡ c219c417-d61a-4460-aa2f-37870e376c56
+function redoxreaction(y, u, bnode, data)
+    if data.C_gap < C_gap_dirichlet
+        redoxreaction_robin(y, u, bnode, data)
+    else
+        redoxreaction_dirichlet(y, u, bnode, data)
+    end
+    return nothing
 end
 
 # ╔═╡ 591bfd86-fe3e-46cb-9c10-781848fb94ee
-begin
-    edata_odr = deepcopy(edata_unc)
-    edata_odr.ircompensation = :ohmicdrop
-    edata_odr.Ru = R_u
-    edata_odr
-end
+edata_odr = copy(
+    edata_unc,
+    ircompensation = OhmicDropEstimation(;
+        factor = 0.95,
+        Ru = Ru,
+        species = 1,
+        ne = 1,
+        # Redox reaction function to be evaluated during ohmic drop compensation
+        redoxreaction,
+    )
+)
 
 # ╔═╡ 675ce578-8028-4af7-a236-5279a7dadc7b
 md"""
@@ -235,17 +256,18 @@ function halfcellbc(f, u, bnode, data)
     (; Γ_we, Γ_bulk, ϕ_we, iϕ, ircompensation) = data
     bulkbcondition(f, u, bnode, data; region = Γ_bulk)
     if bnode.region == Γ_we
-        if ircompensation == :none
-            # With IR compensation, working electrode voltage is set by a generic
-            # operator which adds the necessary compensation value to ϕ_we which is
-            # internally defined by the sawtooth function
+        if !isactive(ircompensation)
             potentialbcondition!(f, u, bnode, data, ϕ_we)
         end
-        if ircompensation != :ohmicdrop
-            # Ohmic drop compensation needs to evaluate the faradaic current, so the
-            # reaction expression is invoked in the generic operator
+        # With IR compensation, working electrode voltage is set by a generic
+        # operator which adds the necessary compensation value to ϕ_we
+
+        if !isa(ircompensation, OhmicDropEstimation)
             redoxreaction(f, u, bnode, data)
         end
+        # Ohmic drop compensation needs to evaluate the faradaic current, so the
+        # reaction expression is invoked in the generic operator
+
     end
     return nothing
 end
@@ -257,8 +279,8 @@ md"""
 
 # ╔═╡ 1043a71d-1cc8-40ad-a335-0e949ea283eb
 begin
-    hmin = 0.01ufac"nm"
-    hmax = L / 50
+    hmin = 0.05ufac"nm"
+    hmax = L / 10
     X = geomspace(0, L, hmin, hmax)
     grid = simplexgrid(X)
 end
@@ -269,11 +291,16 @@ function simulate(
         damp_initial = 0.5,
         tol_round = 1.0e-9,
         max_round = 3,
+        C_gap = C_gap_dirichlet,
         kwargs...
-
     )
-
-    pnpcell = PNPSystem(grid; bcondition = halfcellbc, celldata)
+    LiquidElectrolytes.trace!(10)
+    xcelldata = copy(celldata; C_gap)
+    pnpcell = PNPSystem(
+        grid;
+        bcondition = halfcellbc,
+        celldata = xcelldata
+    )
     cvresult = LiquidElectrolytes.cvsweep(
         pnpcell;
         voltages = sawtooth,
@@ -285,27 +312,22 @@ function simulate(
         max_round,
         kwargs...
     )
-    return pnpcell, cvresult
+    return pnpcell, cvresult, xcelldata
 end
 
 # ╔═╡ 97670da1-940a-46e8-9388-c904618066d3
 md"""
-## Run simulations
+## Dirichlet boundary conditions
 """
 
 # ╔═╡ 9d7921c9-1b19-4399-aab0-e43dbc974117
-cell_unc, cvresult_unc = simulate(grid, edata_unc)
+cell_unc_dirichlet, cvresult_unc_dirichlet, celldata_unc_dirichlet = simulate(grid, edata_unc, C_gap = C_gap_dirichlet)
 
 # ╔═╡ 7c64dcde-9530-4494-bf07-dce3e9e6d247
-cell_pts, cvresult_pts = simulate(grid, edata_pts)
+cell_pts_dirichlet, cvresult_pts_dirichlet, celldata_pts_dirichlet = simulate(grid, edata_pts, C_gap = C_gap_dirichlet)
 
 # ╔═╡ 2efc764c-f7a0-4afe-9bca-4bcb32232510
-cell_odr, cvresult_odr = simulate(grid, edata_odr)
-
-# ╔═╡ c3ce835a-4c7c-427e-a72d-5d1fe91e647c
-md"""
-## Plots
-"""
+cell_odr_dirichlet, cvresult_odr_dirichlet, celldata_odr_dirichlet = simulate(grid, edata_odr, C_gap = C_gap_dirichlet)
 
 # ╔═╡ 80f3ba36-30d3-4759-b92a-9fb87c63dd23
 md"""
@@ -319,12 +341,57 @@ md"""
 
 # ╔═╡ 023b176b-6174-4b87-b716-6435062ebbb0
 md"""
-t/s: $@bind t PlutoUI.Slider(range(cvresult_unc.tsol.t[begin], cvresult_unc.tsol.t[end], length = 1001), show_value = true, default=cvresult_unc.tsol.t[end]/5)
+t/s: $@bind t_dirichlet PlutoUI.Slider(range(cvresult_unc_dirichlet.tsol.t[begin], cvresult_unc_dirichlet.tsol.t[end], length = 1001), show_value = true, default=cvresult_unc_dirichlet.tsol.t[end]/5)
 """
 
 # ╔═╡ 61e0320d-44d3-40ec-8f3c-58ffc1239669
 md"""
 ### Time dependent voltages 
+"""
+
+# ╔═╡ 08ef3f36-40c4-415f-a3e6-e6d9fc574d54
+md"""
+### Tests
+"""
+
+# ╔═╡ baa733de-ba00-4124-9169-e2e959c7946d
+md"""
+## Robin boundary conditions
+"""
+
+# ╔═╡ 392b4681-5b78-42f5-ad88-d5efb73578c5
+cell_unc_robin, cvresult_unc_robin, celldata_unc_robin = simulate(grid, edata_unc, C_gap = C_gap_robin)
+
+# ╔═╡ 2ad28a94-96f5-4ce6-8b38-b6983bcba8d3
+cell_pts_robin, cvresult_pts_robin, celldata_pts_robin = simulate(grid, edata_pts, C_gap = C_gap_robin)
+
+# ╔═╡ 9ec13079-54d8-4e7b-9e21-2bb97ec57685
+cell_odr_robin, cvresult_odr_robin, celldata_odr_robin = simulate(grid, edata_odr, C_gap = C_gap_robin)
+
+# ╔═╡ b4bbe022-5df7-43f0-8f3e-325bc908c484
+md"""
+### CVs and surface concentrations
+"""
+
+# ╔═╡ 5f8a5f0a-8f39-4d4f-b9a2-1d0f10b9aec4
+md"""
+### Voltages and concentrations
+"""
+
+# ╔═╡ 481705b5-3833-4269-8f87-bef3e489d00b
+md"""
+t/s: $@bind t_robin PlutoUI.Slider(range(cvresult_unc_robin.tsol.t[begin], cvresult_unc_robin.tsol.t[end], length = 1001), show_value = true, default=cvresult_unc_robin.tsol.t[end]/5)
+"""
+
+
+# ╔═╡ ea4200b5-1443-4068-96d5-271f48da3707
+md"""
+### Time dependent voltages
+"""
+
+# ╔═╡ 2a800901-54bf-4d85-8133-04cf3bf7a032
+md"""
+### Tests
 """
 
 # ╔═╡ edf4bfb7-62cc-4ee5-8a8a-a05416d478e7
@@ -397,17 +464,32 @@ end
 
 # ╔═╡ f68da385-91a5-4878-8e71-11d380fa7d9b
 #=╠═╡
-xplotsol(grid, cvresult_unc.tsol(t), edata_unc; xcut = 1ufac"nm")
+xplotsol(grid, cvresult_unc_dirichlet.tsol(t_dirichlet), celldata_unc_dirichlet; xcut = 1ufac"nm")
   ╠═╡ =#
 
 # ╔═╡ 9095f5dd-4e2f-4c2d-89c3-e7aaf2c872d3
 #=╠═╡
-xplotsol(grid, cvresult_pts.tsol(t), edata_pts; xcut = 1ufac"nm")
+xplotsol(grid, cvresult_pts_dirichlet.tsol(t_dirichlet), celldata_pts_dirichlet; xcut = 1ufac"nm")
   ╠═╡ =#
 
 # ╔═╡ ef27ab55-3502-4747-960e-be25240c5df8
 #=╠═╡
-xplotsol(grid, cvresult_odr.tsol(t), edata_odr; xcut = 1ufac"nm")
+xplotsol(grid, cvresult_odr_dirichlet.tsol(t_dirichlet), celldata_odr_dirichlet; xcut = 1ufac"nm")
+  ╠═╡ =#
+
+# ╔═╡ 9c7ce60a-3abe-44c2-ad6f-4784b5a83a3a
+#=╠═╡
+xplotsol(grid, cvresult_unc_robin.tsol(t_robin), celldata_unc_robin; xcut = 1ufac"nm")
+  ╠═╡ =#
+
+# ╔═╡ 20927491-e3f9-4e18-a92f-1abc803e55c3
+#=╠═╡
+xplotsol(grid, cvresult_pts_robin.tsol(t_robin), celldata_pts_robin; xcut = 1ufac"nm")
+  ╠═╡ =#
+
+# ╔═╡ 9296e3fa-95b3-40e2-b3ff-08a2e2cb7cbb
+#=╠═╡
+xplotsol(grid, cvresult_odr_robin.tsol(t_robin), celldata_odr_robin; xcut = 1ufac"nm")
   ╠═╡ =#
 
 # ╔═╡ 784b4c3e-bb2a-4940-a83a-ed5e5898dfd4
@@ -450,17 +532,32 @@ end
 
 # ╔═╡ 5b8c96f4-9d64-4475-b04d-5950002bafaa
 #=╠═╡
-plotcv(cvresult_unc, edata_unc)
+plotcv(cvresult_unc_dirichlet, celldata_unc_dirichlet)
   ╠═╡ =#
 
 # ╔═╡ 40fc09c4-8820-4208-b031-89d173d95f1a
 #=╠═╡
-plotcv(cvresult_pts, edata_pts)
+plotcv(cvresult_pts_dirichlet, celldata_pts_dirichlet)
   ╠═╡ =#
 
 # ╔═╡ 3ef89245-a0c8-4129-bfb2-77c6cd1df8ef
 #=╠═╡
-plotcv(cvresult_odr, edata_odr)
+plotcv(cvresult_odr_dirichlet, celldata_odr_dirichlet)
+  ╠═╡ =#
+
+# ╔═╡ 5082c976-51e2-4d11-aa89-de7e26fbd602
+#=╠═╡
+plotcv(cvresult_unc_robin, celldata_unc_robin)
+  ╠═╡ =#
+
+# ╔═╡ cec0dd3f-6dbc-4c93-ae90-b02753a7d33b
+#=╠═╡
+plotcv(cvresult_pts_robin, celldata_pts_robin)
+  ╠═╡ =#
+
+# ╔═╡ 3a9ce9cf-a94c-4837-bbb5-585f92de7551
+#=╠═╡
+plotcv(cvresult_odr_robin, celldata_odr_robin)
   ╠═╡ =#
 
 # ╔═╡ 2cba58da-4576-4bec-af73-af8c3581a58e
@@ -468,24 +565,20 @@ plotcv(cvresult_odr, edata_odr)
 function plotresult2(cvresult, celldata)
     !isdefined(Main, :PlutoRunner) && return
     times = cvresult.tsol.t
-    (; i_ref, iϕ) = celldata
-    j_we = -hcat(cvresult.j_we...)[1, :] * celldata.F
-    Ωdrop = (j_we + cvresult.j_cap) * R_u
-    dlvolts = [ u[iϕ, 1] - u[iϕ, i_ref]    for u in cvresult.tsol.u]
-    st = [sawtooth(t) for t in times]
+    (; iref, iϕ) = celldata
+    j_we = hcat(cvresult.j_reaction...)[1, :] * celldata.F
+    Ωdrop = (j_we + cvresult.j_cap) * Ru
+    st = cvresult.sawtooth
     fig = Figure(size = (700, 400))
     Label(fig[0, 1:2], "IR compensation: $(celldata.ircompensation), scanrate=$(scanrate) V/s")
     ax1 = Axis(fig[1, 1], xlabel = "t/s", ylabel = "Δϕ/V")
     ax2 = Axis(fig[2, 1], xlabel = "t/s", ylabel = "Δϕ/V")
 
-    lines!(ax1, times[2:end], cvresult.voltages, label = L"ϕ_0-ϕ_L")
-    lines!(ax1, times, dlvolts, label = L"ϕ_0-ϕ_{DL}")
+    lines!(ax1, cvresult.times, cvresult.voltages, label = L"ϕ_0-ϕ_L")
+    lines!(ax1, cvresult.times, cvresult.dlvoltages, label = L"ϕ_0-ϕ_{DL}")
     Legend(fig[1, 2], ax1)
 
-    lines!(
-        ax2, times, st - dlvolts,
-        label = L"ϕ_{sawtooth} - ϕ_{DL} "
-    )
+    lines!(ax2, cvresult.times, st - cvresult.dlvoltages, label = L"ϕ_{sawtooth} - ϕ_{DL} ")
     scatter!(ax2, cvresult.times, Ωdrop, label = L"R_u\cdot (I_F+I_C)", markersize = 3, color = :red)
     Legend(fig[2, 2], ax2)
     return fig
@@ -494,33 +587,52 @@ end
 
 # ╔═╡ ce8a8eef-04d9-4c0f-8ce3-e8248dc9c623
 #=╠═╡
-plotresult2(cvresult_unc, edata_unc)
+plotresult2(cvresult_unc_dirichlet, celldata_unc_dirichlet)
   ╠═╡ =#
 
 # ╔═╡ 62d58a40-ff6c-4277-9622-fbf02dd3515e
 #=╠═╡
-plotresult2(cvresult_pts, edata_pts)
+plotresult2(cvresult_pts_dirichlet, celldata_pts_dirichlet)
   ╠═╡ =#
 
 # ╔═╡ d86e93aa-5d05-43e1-8934-d88e879d1bc8
 #=╠═╡
-plotresult2(cvresult_odr, edata_odr)
+plotresult2(cvresult_odr_dirichlet, celldata_odr_dirichlet)
+  ╠═╡ =#
+
+# ╔═╡ c58759ee-2a2f-42bc-ac66-4f84b01ffbab
+#=╠═╡
+plotresult2(cvresult_unc_robin, celldata_unc_robin)
+  ╠═╡ =#
+
+# ╔═╡ 207144e2-ee6b-441d-82f7-dbbe699dcc27
+#=╠═╡
+plotresult2(cvresult_pts_robin, celldata_pts_robin)
+  ╠═╡ =#
+
+# ╔═╡ 95d0d8fa-984b-4588-b3ab-97c64b697343
+#=╠═╡
+plotresult2(cvresult_odr_robin, celldata_odr_robin)
   ╠═╡ =#
 
 # ╔═╡ 962d64d5-13cf-4bc7-b369-65853c74f395
 function checkir(cvresult, celldata; tol = 1.0e-11)
     times = cvresult.tsol.t
-    (; i_ref, iϕ) = celldata
-    dlvolts = [ u[iϕ, 1] - u[iϕ, i_ref]    for u in cvresult.tsol.u]
-    st = [sawtooth(t) for t in times]
-    return norm(dlvolts - st, Inf) < tol
+    (; iref, iϕ) = celldata
+    return norm(cvresult.dlvoltages - cvresult.sawtooth, Inf) < tol
 end
 
 # ╔═╡ fc406613-fa88-4b18-8b26-53afae756cbc
-@test checkir(cvresult_pts, edata_pts)
+@test checkir(cvresult_pts_dirichlet, celldata_pts_dirichlet)
 
 # ╔═╡ fdf4e114-a627-4941-979a-a168a63f4ff0
-@test checkir(cvresult_odr, edata_odr; tol = 0.03)
+@test checkir(cvresult_odr_dirichlet, celldata_odr_dirichlet; tol = 0.03)
+
+# ╔═╡ c8a176a6-030d-4a8c-86bb-2c8ed5e64612
+@test checkir(cvresult_pts_robin, celldata_pts_robin)
+
+# ╔═╡ e30667e7-7ef5-40af-851a-e189cd78fd6b
+@test checkir(cvresult_odr_robin, celldata_odr_robin, tol = 0.03)
 
 # ╔═╡ Cell order:
 # ╠═670585dc-bee1-4d2f-88b7-282a791badc8
@@ -531,24 +643,25 @@ end
 # ╟─a7ac6c61-28a1-4699-834c-25cf84504a12
 # ╠═fb05cabb-026f-4f2e-a180-9a7b29e65451
 # ╠═502e3108-72cd-40c0-b0f1-6fa922446ef9
+# ╠═ccd44b6c-8e15-48b9-bdfe-15ca7dc3c2e4
 # ╟─ee617289-890a-476d-b1c5-1d1267e1cda8
 # ╠═147576d8-e9c4-4afd-a579-0fd285b09bd7
-# ╟─a7f0a44f-6580-4e78-a0d5-cc5e0541629c
-# ╠═6ef4e7d7-f268-4547-ad46-ae01bed4e800
-# ╠═96599aed-df1f-4776-8c91-e8c65110d840
 # ╟─06833006-7050-498e-8316-612523a6697a
 # ╠═55ce733f-82ef-4c66-94e6-b948e9865385
 # ╠═1896cb6f-ccf9-4914-9827-2c0ba4bf5498
-# ╟─c541518f-116a-45d9-a6ad-04e2e3e1854d
-# ╠═bb3d0553-79c3-423f-9ae0-63efa5a0c25c
 # ╟─01b1639b-7928-4912-9e4b-e76305663ed5
 # ╠═b43f5473-1624-4fb6-bbe6-c23a1322841c
+# ╟─c541518f-116a-45d9-a6ad-04e2e3e1854d
+# ╠═bb3d0553-79c3-423f-9ae0-63efa5a0c25c
 # ╟─3f3e21f6-1d1f-4e8d-a378-3530f040781c
 # ╠═591bfd86-fe3e-46cb-9c10-781848fb94ee
 # ╟─d26f2c0f-d935-439a-9b30-bf47a40a7bc6
 # ╠═16490d65-5f1b-4428-ae90-42b21d6a48bd
+# ╟─9478563d-b382-420e-be99-58d525ab8240
 # ╟─82518a2b-04eb-4f64-8ab5-f46580a76bf1
 # ╠═76cd84dd-505e-4ee4-9ef7-eafaf122eaa9
+# ╠═2fbb39ef-be14-4d2c-9958-f0f5132ff183
+# ╠═c219c417-d61a-4460-aa2f-37870e376c56
 # ╟─675ce578-8028-4af7-a236-5279a7dadc7b
 # ╠═1089d336-2dce-4cb0-a6de-feb7008f30c9
 # ╟─9331c262-ce81-4c1f-997a-7e078c3a88f7
@@ -558,25 +671,45 @@ end
 # ╠═9d7921c9-1b19-4399-aab0-e43dbc974117
 # ╠═7c64dcde-9530-4494-bf07-dce3e9e6d247
 # ╠═2efc764c-f7a0-4afe-9bca-4bcb32232510
-# ╟─c3ce835a-4c7c-427e-a72d-5d1fe91e647c
 # ╟─80f3ba36-30d3-4759-b92a-9fb87c63dd23
 # ╠═5b8c96f4-9d64-4475-b04d-5950002bafaa
 # ╠═40fc09c4-8820-4208-b031-89d173d95f1a
 # ╠═3ef89245-a0c8-4129-bfb2-77c6cd1df8ef
 # ╟─166bb0c9-17f7-4c43-8fc6-3bd3d4afd42c
 # ╟─023b176b-6174-4b87-b716-6435062ebbb0
-# ╟─f68da385-91a5-4878-8e71-11d380fa7d9b
+# ╠═f68da385-91a5-4878-8e71-11d380fa7d9b
 # ╠═9095f5dd-4e2f-4c2d-89c3-e7aaf2c872d3
 # ╠═ef27ab55-3502-4747-960e-be25240c5df8
 # ╟─61e0320d-44d3-40ec-8f3c-58ffc1239669
 # ╠═ce8a8eef-04d9-4c0f-8ce3-e8248dc9c623
 # ╠═62d58a40-ff6c-4277-9622-fbf02dd3515e
 # ╠═d86e93aa-5d05-43e1-8934-d88e879d1bc8
+# ╟─08ef3f36-40c4-415f-a3e6-e6d9fc574d54
+# ╠═fc406613-fa88-4b18-8b26-53afae756cbc
+# ╠═fdf4e114-a627-4941-979a-a168a63f4ff0
+# ╟─baa733de-ba00-4124-9169-e2e959c7946d
+# ╠═392b4681-5b78-42f5-ad88-d5efb73578c5
+# ╠═2ad28a94-96f5-4ce6-8b38-b6983bcba8d3
+# ╠═9ec13079-54d8-4e7b-9e21-2bb97ec57685
+# ╟─b4bbe022-5df7-43f0-8f3e-325bc908c484
+# ╠═5082c976-51e2-4d11-aa89-de7e26fbd602
+# ╠═cec0dd3f-6dbc-4c93-ae90-b02753a7d33b
+# ╠═3a9ce9cf-a94c-4837-bbb5-585f92de7551
+# ╟─5f8a5f0a-8f39-4d4f-b9a2-1d0f10b9aec4
+# ╟─481705b5-3833-4269-8f87-bef3e489d00b
+# ╠═9c7ce60a-3abe-44c2-ad6f-4784b5a83a3a
+# ╠═20927491-e3f9-4e18-a92f-1abc803e55c3
+# ╠═9296e3fa-95b3-40e2-b3ff-08a2e2cb7cbb
+# ╟─ea4200b5-1443-4068-96d5-271f48da3707
+# ╠═c58759ee-2a2f-42bc-ac66-4f84b01ffbab
+# ╠═207144e2-ee6b-441d-82f7-dbbe699dcc27
+# ╠═95d0d8fa-984b-4588-b3ab-97c64b697343
+# ╟─2a800901-54bf-4d85-8133-04cf3bf7a032
+# ╠═c8a176a6-030d-4a8c-86bb-2c8ed5e64612
+# ╠═e30667e7-7ef5-40af-851a-e189cd78fd6b
 # ╟─edf4bfb7-62cc-4ee5-8a8a-a05416d478e7
 # ╠═28c3bed8-f225-4405-bbdd-90951ef6211f
 # ╟─784b4c3e-bb2a-4940-a83a-ed5e5898dfd4
 # ╠═25ab8427-22f1-4b68-b4a8-bae98af47fe9
 # ╠═2cba58da-4576-4bec-af73-af8c3581a58e
 # ╠═962d64d5-13cf-4bc7-b369-65853c74f395
-# ╠═fc406613-fa88-4b18-8b26-53afae756cbc
-# ╠═fdf4e114-a627-4941-979a-a168a63f4ff0

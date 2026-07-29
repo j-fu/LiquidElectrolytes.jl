@@ -191,16 +191,47 @@ end
 
 
 """
+    potentialbcondition!(y, u, bnode, electrolyte, ϕ_applied; region=Γ_we)
+
+Boundary condition for electrostatic potential at working electrode `Γ_we`.
+Apply `ϕ_applied-ϕ_pzc` as Robin boundary condition:
+```math
+\\partial_n ϕ + C_{gap} (ϕ - (ϕ_{applied} - ϕ_{pzc}) = 0
+```
+
+With the large default value of ``C_{gap}`` this effectively becomes the Dirichlet
+boundary condition
+```math
+ϕ = ϕ_{applied} - ϕ_{pzc}
+```
+
+"""
+function potentialbcondition!(y, u, bnode, electrolyte, ϕ_applied; region = electrolyte.Γ_we)
+    (; iϕ, C_gap, ϕ_pzc, iϕ_we, ircompensation) = electrolyte
+    if bnode.region == region
+        y[iϕ] = C_gap * (u[iϕ] - (ϕ_applied - ϕ_pzc))
+        if isactive(ircompensation)
+            y[iϕ_we] = u[iϕ_we] - ϕ_applied
+        end
+    end
+    return nothing
+end
+
+
+"""
     pseudopotentiostat(f0, u0, sys, data)
 
 VoronoiFVM generic operator implementing an IR-compensated pseudopotentiostat.
 """
 function pseudopotentiostat(f0, u0, sys, data)
     f0 .= 0.0
-    (; iϕ, ϕ_we, i_ref, Γ_we) = data
+    (; iϕ, ϕ_we, iref, Γ_we) = data
     f = reshape(f0, sys)
     u = reshape(u0, sys)
-    @views potentialbcondition!(f[:, 1], u[:, 1], (; region = Γ_we), data, u[iϕ, i_ref] + ϕ_we)
+    @views potentialbcondition!(
+        f[:, 1], u[:, 1], (; region = Γ_we), data,
+        u[iϕ, iref] + ϕ_we
+    )
     return
 end
 
@@ -236,7 +267,8 @@ The operator couples three global constraints at the electrode boundary `BP1`:
 """
 function ohmicdropcompensation(f0, u0, sys, data)
     f0 .= 0.0
-    (; iϕ, iq, icc, ϕ_we, Γ_we, i_ref, Ru, F, z, ircompfactor, ircompspecies, ircompnelectrons, nv, redoxreaction) = data
+    (; iϕ, iq, icc, ϕ_we, Γ_we, iref, F, z, ircompensation, nv) = data
+    (; Ru, ne, factor, species, redoxreaction) = ircompensation
 
     f = reshape(f0, sys)
     u = reshape(u0, sys)
@@ -252,11 +284,11 @@ function ohmicdropcompensation(f0, u0, sys, data)
         nothing, data
     )
 
-    j_F = -ircompnelectrons * f[ircompspecies, 1] * F
+    j_F = -ne * f[species, 1] * F
 
-    ϕ_DL = ircompfactor * Ru * (j_F + j_C)
+    ϕ_DL = factor * Ru * (j_F + j_C)
 
-    for i in 1:i_ref
+    for i in 1:iref
         @views q += chargedensity(u[:, i], data) * nv[i]
     end
 
@@ -310,27 +342,26 @@ function PNPSystem(
         kwargs...
     )
     update_derived!(celldata)
-    celldata.nv = ones(num_nodes(grid))
-    (; ircompensation, iq, icc, Γ_we) = celldata
-    ircompensation ∈ (:none, :pseudopotentiostat, :ohmicdrop) ||
-        error("ircompensation must be :none, :pseudopotentiostat, or :ohmicdrop, got :$ircompensation")
 
-    # find iref
-    coord = grid[Coordinates]
-    x_ref = [celldata.x_ref[i] for i in 1:dim_space(grid)]
-    dmin = 1.0e30
-    imin = 0
-    for i in 1:size(coord, 2)
-        d = norm(x_ref - coord[:, i])
-        if d < dmin
-            dmin = d
-            imin = i
+    (; ircompensation, iq, icc, iϕ_we, Γ_we) = celldata
+
+    if length(celldata.xref) > 0
+        coord = grid[Coordinates]
+        xref = [celldata.xref[i] for i in 1:dim_space(grid)]
+        dmin = 1.0e30
+        imin = 0
+        for i in 1:size(coord, 2)
+            d = norm(xref - coord[:, i])
+            if d < dmin
+                dmin = d
+                imin = i
+            end
         end
+        if imin < 1 || imin > size(coord, 2)
+            imin = size(coord, 2)
+        end
+        celldata.iref = imin
     end
-    if imin < 1 || imin > size(coord, 2)
-        imin = size(coord, 2)
-    end
-    celldata.i_ref = imin
 
     function _pnpreaction!(f, u, node, electrolyte::AbstractElectrolyteData)
         pnpreaction!(f, u, node, electrolyte)
@@ -340,7 +371,7 @@ function PNPSystem(
 
     species = union(celldata.cspecies, [celldata.ip, celldata.iϕ])
 
-    if ircompensation == :none
+    if isa(ircompensation, NoIRCompensation)
         sys = VoronoiFVM.System(
             grid;
             data = celldata,
@@ -352,7 +383,7 @@ function PNPSystem(
             species,
             kwargs...
         )
-    elseif ircompensation == :pseudopotentiostat
+    elseif isa(ircompensation, PseudoPotentiostat)
         sys = VoronoiFVM.System(
             grid;
             data = celldata,
@@ -365,7 +396,9 @@ function PNPSystem(
             generic = pseudopotentiostat,
             kwargs...
         )
-    elseif ircompensation == :ohmicdrop
+    elseif isa(ircompensation, OhmicDropEstimation)
+        # We need to acces nv already during sparsity detection
+        celldata.nv = ones(num_nodes(grid))
         sys = VoronoiFVM.System(
             grid;
             data = celldata,
@@ -383,7 +416,11 @@ function PNPSystem(
     for ia in celldata.sspecies
         enable_boundary_species!(sys, ia, [celldata.Γ_we])
     end
-    if ircompensation == :ohmicdrop
+
+    if isa(ircompensation, PseudoPotentiostat)
+        enable_boundary_species!(sys, iϕ_we, [Γ_we])
+    elseif isa(ircompensation, OhmicDropEstimation)
+        enable_boundary_species!(sys, iϕ_we, [Γ_we])
         enable_boundary_species!(sys, iq, [Γ_we])
         enable_boundary_species!(sys, icc, [Γ_we])
         celldata.nv .= nodevolumes(sys)
