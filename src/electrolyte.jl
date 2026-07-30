@@ -40,11 +40,27 @@ end
 
 abstract type AbstractIRCompensationMode end
 
+"""
+    NoIRCompensation()
 
+NO IR Compensation mode.
+"""
 struct NoIRCompensation <: AbstractIRCompensationMode end
 
-Base.@kwdef mutable struct PseudoPotentiostat <: AbstractIRCompensationMode end
+"""
+    PseudoPotentionstat()
 
+Pseudopotentionstat IR compensatio mode.
+"""
+struct PseudoPotentiostat <: AbstractIRCompensationMode end
+
+"""
+    OhmicDropEstimation(;kwargs...)
+
+IR compensation based on ohmic drop estimation.
+
+$(TYPEDFIELDS)
+"""
 Base.@kwdef mutable struct OhmicDropEstimation{Tredox} <: AbstractIRCompensationMode
     """
     IR compensation factor
@@ -75,6 +91,12 @@ Base.@kwdef mutable struct OhmicDropEstimation{Tredox} <: AbstractIRCompensation
 
 end
 
+
+"""
+    isactive(ircompensation)
+
+Is IR compensation active ?
+"""
 isactive(::AbstractIRCompensationMode) = false
 isactive(::OhmicDropEstimation) = true
 isactive(::PseudoPotentiostat) = true
