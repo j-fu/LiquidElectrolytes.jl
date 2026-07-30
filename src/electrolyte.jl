@@ -361,6 +361,11 @@ function Base.copy(this::OhmicDropEstimation; kwargs...)
     return OhmicDropEstimation(; (f => getfield(this, f) for f in fieldnames(OhmicDropEstimation))..., kwargs...)
 end;
 
+
+function Base.show(io::IO, this::OhmicDropEstimation)
+    return write(io, "OhmicDropEstimation(Ru=$(this.Ru), factor=$(this.factor))")
+end
+
 """
     update_derived!(electrolyte::ElectrolyteData)
 
@@ -431,6 +436,21 @@ round(dlcap0(ely),sigdigits=5) |> u"μF/cm^2"
 """
 function dlcap0(data::AbstractElectrolyteData)
     return sqrt(2 * data.ε * data.ε_0 * data.F^2 * data.c_bulk[1] / (data.RT))
+end
+
+
+"""
+   applied_voltage(data, u::AbstractVector)
+
+Applied voltage with IR compensation. To be used in electrode boundary
+conditions
+"""
+function applied_voltage(u::AbstractVector{T}, data) where {T}
+    if isactive(data.ircompensation)
+        return u[data.iϕ_we]
+    else
+        return T(data.ϕ_we)
+    end
 end
 
 """

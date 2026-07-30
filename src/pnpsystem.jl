@@ -292,9 +292,9 @@ function ohmicdropcompensation(f0, u0, sys, data)
         @views q += chargedensity(u[:, i], data) * nv[i]
     end
 
-    if !(data.C_gap ≈ C_large)
-        #        q += data.C_gap * (u[iϕ, 1] - (ϕ_DL + ϕ_we))
-    end
+    # if data.C_gap < C_large
+    #        q -= data.C_gap * (u[iϕ, 1] - (ϕ_DL + ϕ_we))
+    # end
 
     f[iq, 1] = u[iq, 1] - q
 
