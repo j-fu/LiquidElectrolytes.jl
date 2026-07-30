@@ -5,10 +5,11 @@ Rounding for use in [`showstruct`](@ref).
 """
 function myround end
 
-myround(x; kwargs...) = round(x; kwargs...)
+myround(x::Any; kwargs...) = x
+myround(x::Real; kwargs...) = round(x; kwargs...)
 myround(x::Vector; kwargs...) = myround.(x; kwargs...)
 myround(s::Symbol; kwargs...) = ":$(s)"
-myround(i::Int; kwargs...) = i
+myround(i::Integer; kwargs...) = i
 myround(b::Bool; kwargs...) = b
 myround(::Nothing; kwargs...) = "nothing"
 myround(f::Function; kwargs...) = string(f)
