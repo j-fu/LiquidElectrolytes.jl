@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 2.9.0 - 2026-07-31
+- Refactoring of IR compensation API - control by type instances (still EXPERIMENTAL)
+- Introduced additional surface pseudo species to record IR corrected potential
+- IR compensation now appears to work correctly for both Robin and Dirichlet BC
+
 ## 2.8.0 - 2026-07-28
 - Update handling of IR compensation:
   - introduce ircompspecies and ircompnelectons fields in elecrolyte data
