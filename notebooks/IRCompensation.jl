@@ -294,7 +294,7 @@ function simulate(
         C_gap = C_gap_dirichlet,
         kwargs...
     )
-    LiquidElectrolytes.trace!(10)
+
     xcelldata = copy(celldata; C_gap)
     pnpcell = PNPSystem(
         grid;
