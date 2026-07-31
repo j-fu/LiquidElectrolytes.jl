@@ -38,6 +38,69 @@ function DGML_gamma!(γ, c, p, electrolyte)
     return nothing
 end
 
+abstract type AbstractIRCompensationMode end
+
+"""
+    NoIRCompensation()
+
+NO IR Compensation mode.
+"""
+struct NoIRCompensation <: AbstractIRCompensationMode end
+
+"""
+    PseudoPotentionstat()
+
+Pseudopotentionstat IR compensatio mode.
+"""
+struct PseudoPotentiostat <: AbstractIRCompensationMode end
+
+"""
+    OhmicDropEstimation(;kwargs...)
+
+IR compensation based on ohmic drop estimation.
+
+$(TYPEDFIELDS)
+"""
+Base.@kwdef mutable struct OhmicDropEstimation{Tredox} <: AbstractIRCompensationMode
+    """
+    IR compensation factor
+    """
+    factor::Float64 = 0.95
+
+    """
+    Index of species used to calculate current from redoxreaction
+    """
+    species::Int = 1
+
+    """
+    Number of electrons transferred
+    """
+    ne::Int = 1
+
+    """
+    Estimated uncompensated resistance between working electrode and counter electrode.
+    This needs to calculated from distance between working and counter electrode and conductivity.
+    """
+    Ru::Float64 = 0.0 * ufac"Ω"
+
+    """
+    Redox reaction function for ohmic drop compensation. This function
+    just shall calculate the rate equations of the reacting species.
+    """
+    redoxreaction::Tredox = (y, u, bnode, data) -> nothing
+
+end
+
+
+"""
+    isactive(ircompensation)
+
+Is IR compensation active ?
+"""
+isactive(::AbstractIRCompensationMode) = false
+isactive(::OhmicDropEstimation) = true
+isactive(::PseudoPotentiostat) = true
+
 
 """
 $(TYPEDEF)
@@ -56,7 +119,15 @@ The struct has three groups of fields:
 Fields (reserved fields are modified by some algorithms):
 $(TYPEDFIELDS)
 """
-@kwdef mutable struct ElectrolyteData{Tγ, Tcache, Texp, Tlog, Tflux, Tεdec, Tredox} <: AbstractElectrolyteData
+@kwdef mutable struct ElectrolyteData{
+        Tγ,
+        Tcache,
+        Texp,
+        Tlog,
+        Tflux,
+        Tεdec,
+        Tirc,
+    } <: AbstractElectrolyteData
     """
     Number of charged species ``N``.
 
@@ -84,8 +155,11 @@ $(TYPEDFIELDS)
     "Index of pressure `p` in species list"
     ip::Int = iϕ + 1
 
+    "Index of applied potential in ir compensation"
+    iϕ_we::Int = ip + 1
+
     "Index of double layer charge in case of ohmic drop compensation"
-    iq::Int = ip + 1
+    iq::Int = iϕ_we + 1
 
     "Index of capacitive current in case of ohmic drop compensation"
     icc::Int = iq + 1
@@ -120,43 +194,24 @@ $(TYPEDFIELDS)
     actcoeff!::Tγ = DGML_gamma!
 
     """
-    Redox reaction function for ohmic drop compensation. This function
-    just shall calculate the rate equations of the reacting species.
-    """
-    redoxreaction::Tredox = (y, u, bnode, data) -> nothing
-
-    """
         IR compensation mode:
-           - `:none`: no compensation (default)
-           - `:pseudopotentiostat`: Enforce the sawtooth waveform across the double layer
-           - `:ohmicdrop`: add the estimated ohmic drop from Faradaic current to applied voltage"
+           - `NoIRCompensation()`: no compensation (default)
+           - `PseudoPotentiostat()`: Enforce the sawtooth waveform across the double layer
+           - `OhmicDropEstimate()`: add the estimated ohmic drop from Faradaic current to applied voltage"
     """
-    ircompensation::Symbol = :none
+    ircompensation::Tirc = NoIRCompensation()
 
     """
-    IR compensation factor in the case of ohmic drop compensation
+    Pseudo-reference electrode position used by pseudopotentiostat,
+    and as the upper integration limit for calculating electrode charge
+    in the Ohmic drop compensation scheme. Also calculating for voltage drop
+    over double layer
     """
-    ircompfactor::Float64 = 0.95
-
-    """
-    Species index used to calculate current in the case of ohmic drop compensation
-    """
-    ircompspecies::Int = 1
-
-    """
-    Number of electrons transferred per redox reaction
-    """
-    ircompnelectrons::Int = 1
-
-    """
-    Estimated uncompensated resistance between working electrode and counter electrode.
-    This needs to calculated from distance between working and counter electrode and conductivity.
-    """
-    Ru::Float64 = 0.0 * ufac"Ω"
+    xref::Vector{Float64} = zeros(0)
 
     """
     Gap capacitance at working electrode. Large value enforces Dirichlet BC.
-    Needed with IR compensation schemes.
+    Needed for Robin BC and used in IR compensation scheme
     """
     C_gap = C_large * ufac"F/m^2"
 
@@ -167,13 +222,6 @@ $(TYPEDFIELDS)
 
     "Bulk ion concentrations ``c_i^b\\; (i=1…N)`` "
     c_bulk::Vector{Float64} = fill(0.1 * ufac"M", maximum(cspecies))
-
-    """
-    Pseudo-reference electrode position used by pseudopotentiostat,
-    and as the upper integration limit for calculating electrode charge
-    in the Ohmic drop compensation scheme.
-    """
-    x_ref::Vector{Float64} = zeros(3)
 
     "Working electrode boundary number"
     Γ_we::Int = 1
@@ -220,7 +268,7 @@ $(TYPEDFIELDS)
     """
     Species weights for norms in solver control.
     """
-    weights::Vector{Float64} = [v..., zeros(na)..., 1.0, 0.0, 0.0, 0.0]
+    weights::Vector{Float64} = [v..., zeros(na)..., 1.0, 0.0, 0.0, 0.0, 0.0]
 
     """
     Solve for pressure. 
@@ -262,26 +310,20 @@ $(TYPEDFIELDS)
     γl_cache::Tcache = DiffCache(zeros(maximum(cspecies)), 10 * maximum(cspecies))
 
     """
-    Pseudo reference electrode node index (reserved; derived from x_ref)
-    """
-    i_ref::Int = 0
-
-    """
     Working electrode voltage ``ϕ_{we}`` (reserved)
     Used by sweep algorithms to pass boundary value data.
     """
     ϕ_we::Float64 = 0.0 * ufac"V"
 
     """
-    Working electrode voltage actually applied via [`potentialbcondition!`](@ref) (reserved)
-    Used by sweep algorithms to read out boundary value data
-    """
-    ϕ_we_set::Float64 = Inf
-
-    """
     Edge velocity projection (reserved).
     """
     edgevelocity::Union{Float64, Vector{Float64}} = 0.0
+
+    """
+    Pseudo reference electrode node index (reserved; derived from xref)
+    """
+    iref::Int = 0
 
     """
     Node volumes (reserved)
@@ -294,6 +336,7 @@ $(TYPEDFIELDS)
     """
     scheme::Symbol = :deprecated
 end
+
 
 #
 # Provide the same API for internal functions as AbstractCellData
@@ -332,6 +375,18 @@ function Base.show(io::IOContext{Base.IOBuffer}, this::ElectrolyteData)
     return showstruct(io, this)
 end
 
+function Base.copy(this::ElectrolyteData; kwargs...)
+    return ElectrolyteData(; (f => getfield(this, f) for f in fieldnames(ElectrolyteData))..., kwargs...)
+end;
+
+function Base.copy(this::OhmicDropEstimation; kwargs...)
+    return OhmicDropEstimation(; (f => getfield(this, f) for f in fieldnames(OhmicDropEstimation))..., kwargs...)
+end;
+
+
+function Base.show(io::IO, this::OhmicDropEstimation)
+    return write(io, "OhmicDropEstimation(Ru=$(this.Ru), factor=$(this.factor))")
+end
 
 """
     update_derived!(electrolyte::ElectrolyteData)
@@ -405,6 +460,21 @@ function dlcap0(data::AbstractElectrolyteData)
     return sqrt(2 * data.ε * data.ε_0 * data.F^2 * data.c_bulk[1] / (data.RT))
 end
 
+
+"""
+   applied_voltage(data, u::AbstractVector)
+
+Applied voltage with IR compensation. To be used in electrode boundary
+conditions
+"""
+function applied_voltage(u::AbstractVector{T}, data) where {T}
+    if isactive(data.ircompensation)
+        return u[data.iϕ_we]
+    else
+        return T(data.ϕ_we)
+    end
+end
+
 """
     debyelength(electrolyte)
 
@@ -468,9 +538,9 @@ Calculate time dependent charge densities from  from time/voltage dependent solu
 Returns a [`VoronoiFVM.TransientSolution`](https://wias-pdelib.github.io/VoronoiFVM.jl/stable/solutions/#VoronoiFVM.TransientSolution).
 """
 function chargedensity(tsol::TransientSolution, electrolyte)
-    nv = length(tsol.t)
+    nt = length(tsol.t)
     nx = size(tsol.u[1], 2)
-    charges = [ reshape(chargedensity(tsol.u[i], electrolyte), (1, nx)) for i in 1:nv]
+    charges = [ reshape(chargedensity(tsol.u[i], electrolyte), (1, nx)) for i in 1:nt]
     return TransientSolution(charges, tsol.t)
 end
 
@@ -711,33 +781,6 @@ end
 Deprecated. Replace by [`bulkbcondition`](@ref).
 """
 bulkbcondition(f, u, bnode, electrolyte; kwargs...) = bulkbcondition!(f, u, bnode, electrolyte; kwargs...)
-
-"""
-    potentialbcondition!(y, u, bnode, electrolyte, ϕ_applied; region=Γ_we)
-
-Boundary condition for electrostatic potential at working electrode `Γ_we`.
-Apply `ϕ_applied-ϕ_pzc` as Robin boundary condition:
-```math
-\\partial_n ϕ + C_{gap} (ϕ - (ϕ_{applied} - ϕ_{pzc}) = 0
-```
-
-With the large default value of ``C_{gap}`` this effectively becomes the Dirichlet
-boundary condition
-```math
-ϕ = ϕ_{applied} - ϕ_{pzc}
-```
-
-As a side effect, the call sets the value of `electrolyte.ϕ_we_set` which used
-to calculate the voltages in [`CVSweepResult`](@ref).
-"""
-function potentialbcondition!(y, u, bnode, electrolyte, ϕ_applied; region = electrolyte.Γ_we)
-    (; iϕ, C_gap, ϕ_pzc) = electrolyte
-    if bnode.region == region
-        y[iϕ] = C_gap * (u[iϕ] - (ϕ_applied - ϕ_pzc))
-        electrolyte.ϕ_we_set = myvalue(ϕ_applied)
-    end
-    return nothing
-end
 
 
 """

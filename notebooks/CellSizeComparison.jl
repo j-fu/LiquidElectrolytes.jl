@@ -21,13 +21,14 @@ begin
     using PlutoUI
     using VoronoiFVM
     using LinearAlgebra
+    using HypertextLiteral
     VoronoiFVM.log_output!()
 end
 
 # ╔═╡ de0e3435-2736-4f75-8706-aade9016bc1f
 begin
     scanrate = 10
-    Ls = [0.1, 0.5, 1, 1.5] * ufac"mm"
+    Ls = [0.1, 0.5, 1, 2] * ufac"mm"
     nperiods = 2
     C_elec = 0.01ufac"mol/dm^3"
     C_O = 1.0e-3 * ufac"mol / dm^3"
@@ -48,6 +49,9 @@ begin
     max_round = 3
 end
 
+# ╔═╡ 30698409-7cbd-4328-937a-e76f26d15151
+
+
 # ╔═╡ bf07c780-2c90-4bce-a18a-3f9a7514dfc2
 begin
     ε1 = 6.0 * ph"VacuumElectricPermittivity"
@@ -57,6 +61,7 @@ begin
     d1 = x2
     d2 = x3 - x2
     C_gap = 1.0 / (d1 / ε1 + d2 / ε2)
+    C_gap_dirichlet = 1.0e15
     C_gap / ufac"μF/cm^2"
 end
 
@@ -102,11 +107,15 @@ end
 
 # ╔═╡ abc2f8e7-8357-47c4-bb3e-bbbbb5b816e9
 function redoxreaction_robin(y, u, bnode, data)
-    (; iϕ, F, RT) = data
-    # E is the applied electrode potential (vs. the reference electrode).
+    (; iϕ, F, RT, ϕ_we, ircompensation, iϕ_we) = data
     ϕ_PET = u[iϕ]
     ϕ_L = 0
-    E = u[iϕ]
+    # E is the applied electrode potential (vs. the reference electrode).
+    if isactive(ircompensation)
+        E = u[iϕ_we]
+    else
+        E = ϕ_we
+    end
     iO = 1
     iR = 2
     η = (E - E0 - (ϕ_PET - ϕ_L)) * F / RT
@@ -119,8 +128,15 @@ function redoxreaction_robin(y, u, bnode, data)
     return
 end
 
-# ╔═╡ 30698409-7cbd-4328-937a-e76f26d15151
-redoxreaction = redoxreaction_robin
+# ╔═╡ 8d8abfcc-d316-4663-abe1-134046b5ebb1
+function redoxreaction(y, u, bnode, data)
+    if data.C_gap < C_gap_dirichlet
+        redoxreaction_robin(y, u, bnode, data)
+    else
+        redoxreaction_dirichlet(y, u, bnode, data)
+    end
+    return nothing
+end
 
 # ╔═╡ c32610f4-88e2-499d-abbc-03d6513806d3
 edata_unc = ElectrolyteData(;
@@ -137,14 +153,11 @@ edata_unc = ElectrolyteData(;
     ε = 80.0,
     T = 293.15 * ufac"K",
     # Position of "pseudo reference electrode" for pseudopotentiostat approach
-    x_ref = [10.0 * ufac"nm"],
+    xref = [10.0 * ufac"nm"],
     # Dielectric decrement
     ε_dec,
-    # Redox reaction function to be evaluated during ohmic drop compensation
-    redoxreaction,
-    # IR compensation factor used during ohmic drop compensation
-    ircompfactor,
-    C_gap,
+    # IR compensation
+    ircompensation = NoIRCompensation()
     # alternative activity coefficients
     # actcoeff! = pbi_gamma!,
 )
@@ -166,32 +179,34 @@ function halfcellbc(f, u, bnode, data)
     (; Γ_we, Γ_bulk, ϕ_we, iϕ, ircompensation) = data
     bulkbcondition(f, u, bnode, data; region = Γ_bulk)
     if bnode.region == Γ_we
-        if ircompensation == :none
-            # With IR compensation, working electrode voltage is set by a generic
-            # operator which adds the necessary compensation value to ϕ_we which is
-            # internally defined by the sawtooth function
+        if !isactive(ircompensation)
             potentialbcondition!(f, u, bnode, data, ϕ_we)
         end
-        if ircompensation != :ohmicdrop
-            # Ohmic drop compensation needs to evaluate the faradaic current, so the
-            # reaction expression is invoked in the generic operator
+        # With IR compensation, working electrode voltage is set by a generic
+        # operator which adds the necessary compensation value to ϕ_we
+
+        if !isa(ircompensation, OhmicDropEstimation)
             redoxreaction(f, u, bnode, data)
         end
+        # Ohmic drop compensation needs to evaluate the faradaic current, so the
+        # reaction expression is invoked in the generic operator
+
     end
     return nothing
 end
 
 # ╔═╡ 8fd659d3-f5cc-4d3a-aa61-e6f932d5823b
-function run(; ircompensation = :pseudopotentiostat, kwargs...)
+function run(; ircompensation = PseudoPotentiostat(), kwargs...)
     tsols = []
     cvresults = []
     grids = []
     celldatas = []
-    for L in Ls
+    for (L, Ru) in zip(Ls, R_u)
+        if isa(ircompensation, OhmicDropEstimation)
+            ircompensation = copy(ircompensation; Ru = Ru)
+        end
+        celldata = copy(edata_unc; ircompensation = ircompensation)
 
-        celldata = deepcopy(edata_unc)
-        celldata.ircompensation = ircompensation
-        celldata.Ru = L / LiquidElectrolytes.conductivity(celldata, celldata.c_bulk)
         X = geomspace(0, L, 0.1 * ufac"nm", 0.1 * L)
         grd = simplexgrid(X)
         pnpcell = PNPSystem(grd; bcondition = halfcellbc, celldata)
@@ -215,13 +230,13 @@ function run(; ircompensation = :pseudopotentiostat, kwargs...)
 end
 
 # ╔═╡ 7a13cc37-6389-4b04-aa5b-7b2fcaa5624c
-cvr_irc, tsols_irc, grids_irc, celldatas_irc = run(; ircompensation = :pseudopotentiostat);
+cvr_irc, tsols_irc, grids_irc, celldatas_irc = run(; ircompensation = PseudoPotentiostat())
 
 # ╔═╡ a356f994-e64d-4430-8027-f69fe0748a86
-cvr_unc, tsols_unc, grids_unc, celldatas_unc = run(; ircompensation = :none);
+cvr_unc, tsols_unc, grids_unc, celldatas_unc = run(; ircompensation = NoIRCompensation());
 
 # ╔═╡ 170f0933-19a2-492d-83b2-3a38811b16e9
-cvr_odr, tsols_odr, grids_odr, celldatas_odr = run(; ircompensation = :ohmicdrop);
+cvr_odr, tsols_odr, grids_odr, celldatas_odr = run(; ircompensation = OhmicDropEstimation(; factor = 0.95, redoxreaction));
 
 # ╔═╡ b8236e74-612d-4d14-9da3-51d191e307cc
 function cv2plot(voltages = :voltages)
@@ -273,6 +288,21 @@ cmax = 0.005
 
 # ╔═╡ 462ca6e2-7221-4cb5-8ee8-2bbdddb80d6d
 figscale = 0.6
+
+# ╔═╡ 0cd7de0e-ea16-4426-94bc-7d3bed11b1f6
+function fixed(fig)
+    return @htl(
+        """
+        <div style="
+            display: inline-block;
+            align-self: flex-start;
+            flex: 0 0 auto;
+        ">
+            $(fig)
+        </div>
+        """
+    )
+end
 
 # ╔═╡ 6888ef1c-3871-4a8a-b149-29fb874ffeb3
 md"""
@@ -387,13 +417,13 @@ end
 
 
 # ╔═╡ 8c9af918-0d4e-411f-b520-880f591a5ed1
-plots_irc = [plottsol(grd, celldata, tsol; figscale, species = 1, limits = (0, cmax)) for (grd, celldata, tsol) in zip(grids_irc, celldatas_irc, tsols_irc)];
+plots_irc = [plottsol(grd, celldata, tsol; figscale, species = 1, limits = (0, cmax)) |> fixed for (grd, celldata, tsol) in zip(grids_irc, celldatas_irc, tsols_irc)];
 
 # ╔═╡ dbb604e0-a3ae-4558-ba73-a460aaf99c02
-plots_unc = [plottsol(grd, celldata, tsol; figscale, species = 1, limits = (0, cmax)) for (grd, celldata, tsol) in zip(grids_unc, celldatas_unc, tsols_unc)];
+plots_unc = [plottsol(grd, celldata, tsol; figscale, species = 1, limits = (0, cmax)) |> fixed for (grd, celldata, tsol) in zip(grids_unc, celldatas_unc, tsols_unc)];
 
 # ╔═╡ 91a78db3-e464-48b8-a266-4020b21d6f5d
-plots_odr = [plottsol(grd, celldata, tsol; figscale, species = 1, limits = (0, cmax)) for (grd, celldata, tsol) in zip(grids_odr, celldatas_odr, tsols_odr)];
+plots_odr = [plottsol(grd, celldata, tsol; figscale, species = 1, limits = (0, cmax)) |> fixed for (grd, celldata, tsol) in zip(grids_odr, celldatas_odr, tsols_odr)];
 
 # ╔═╡ 4cd52496-43be-46f0-b773-cc401fe2f820
 plots = hcat(plots_irc, plots_unc, plots_odr)
@@ -427,6 +457,7 @@ main {
 # ╟─ffb2f6e4-4a9c-4b9e-95a8-4bfb7150e502
 # ╠═a5b7c828-c97d-49eb-bd7f-16462c9ebd50
 # ╠═abc2f8e7-8357-47c4-bb3e-bbbbb5b816e9
+# ╠═8d8abfcc-d316-4663-abe1-134046b5ebb1
 # ╠═c32610f4-88e2-499d-abbc-03d6513806d3
 # ╠═3489aed7-dd28-4bfa-878c-e6128a6c49f8
 # ╠═18c45fc4-f73e-4c06-a997-1c171094ba0b
@@ -446,6 +477,7 @@ main {
 # ╠═dbb604e0-a3ae-4558-ba73-a460aaf99c02
 # ╠═91a78db3-e464-48b8-a266-4020b21d6f5d
 # ╠═4cd52496-43be-46f0-b773-cc401fe2f820
+# ╠═0cd7de0e-ea16-4426-94bc-7d3bed11b1f6
 # ╠═c78a70f3-ea86-48b6-ada8-15dc8b039933
 # ╟─6888ef1c-3871-4a8a-b149-29fb874ffeb3
 # ╠═c521b0bf-5546-426d-aabb-5f2627ab8891

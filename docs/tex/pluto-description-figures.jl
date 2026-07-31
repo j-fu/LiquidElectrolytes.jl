@@ -9,7 +9,7 @@ begin
     using Pkg
     Pkg.activate(joinpath(@__DIR__, ".."))
     using Revise
-	using PlutoUI
+    using PlutoUI
     using LessUnitful
     using LaTeXStrings
     using VoronoiFVM, ExtendableGrids, GridVisualize
@@ -19,7 +19,7 @@ begin
     using DoubleFloats
     CairoMakie.activate!(; type = "png", visible = false)
     GridVisualize.default_plotter!(CairoMakie)
-	TableOfContents()
+    TableOfContents()
 end
 
 # ╔═╡ 4219cd3c-8d65-4054-bdce-01410edee958
@@ -168,18 +168,18 @@ let
     X = molvar_results.X / nm
     fig = Figure(size = (750, 500))
 
-	xt=[-1,0,2,3,4,6,8]
-	xtnames=Any[s for s in string.(xt)]
-	xtnames[4]=L"x_{DL}"
+    xt = [-1, 0, 2, 3, 4, 6, 8]
+    xtnames = Any[s for s in string.(xt)]
+    xtnames[4] = L"x_{DL}"
     axl = Axis(
         fig[1, 1], ylabel = L"ϕ/V", xlabel = "x/nm",
         width = 300, height = 150, title = "Nanoscale",
-		xticks=(xt, xtnames  )
+        xticks = (xt, xtnames)
     )
     axr = Axis(
         fig[1, 1], yaxisposition = :right, ylabel = L"c/(mol/dm^3)",
         width = 300, height = 150,
-			xticks=(xt, xtnames )
+        xticks = (xt, xtnames)
     )
 
 

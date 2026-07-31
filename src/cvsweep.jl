@@ -158,10 +158,10 @@ function cvsweep(
     ### todo: Review calculation of ϕ_we by averaging over  Γ_we
     @assert dim_space(sys.grid) == 1
     function ϕ_we(u, data)
-        if isinf(data.ϕ_we_set)
-            return u[data.iϕ, 1]
+        if isactive(data.ircompensation)
+            return u[data.iϕ_we, 1]
         else
-            return data.ϕ_we_set
+            return u[data.iϕ, 1]
         end
     end
 
@@ -209,9 +209,10 @@ function cvsweep(
             I_cap = (Q[cdata.iϕ] - Qold[cdata.iϕ]) / Δt
 
             push!(result.times, t)
-            ### todo: replace index 1 by relevant current species
             push!(result.voltages, ϕ_we(sol, cdata))
-            push!(result.dlvoltages, ϕ_we(sol, cdata) - sol[cdata.iϕ, cdata.i_ref])
+            if cdata.iref > 0
+                push!(result.dlvoltages, ϕ_we(sol, cdata) - sol[cdata.iϕ, cdata.iref])
+            end
             push!(result.sawtooth, voltages(t))
             push!(result.j_reaction, I_react)
             push!(result.j_we, I_we)
@@ -238,10 +239,10 @@ function cvsweep(
             delta,
             store_all = store_solutions
         )
+        @info "Solved $nsteps steps in $(telapsed)s."
         if store_solutions
             result.tsol = tsol
         end
     end
-    @info "Solved $nsteps steps in $(telapsed)s."
     return result
 end

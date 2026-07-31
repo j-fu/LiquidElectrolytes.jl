@@ -33,6 +33,7 @@ export dlcap0, chargedensity, chemical_potentials!, rrate, debyelength, chemical
 export isincompressible, iselectroneutral
 export chemical_potentials, electrochemical_potentials
 export conductivity
+export NoIRCompensation, PseudoPotentiostat, OhmicDropEstimation, isactive, applied_voltage
 
 include("celldata.jl")
 export AbstractCellData, electrolytes
