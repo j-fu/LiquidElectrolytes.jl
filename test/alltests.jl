@@ -10,7 +10,6 @@ using ExplicitImports
 using ExtendableFEM
 using Markdown
 using Documenter
-using LessUnitful
 using Aqua
 using LiquidElectrolytes: act_flux!, cent_flux!, μex_flux!
 

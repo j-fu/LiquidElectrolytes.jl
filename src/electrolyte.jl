@@ -453,7 +453,7 @@ ely = ElectrolyteData(c_bulk=fill(0.01ufac"mol/dm^3",2))
 round(dlcap0(ely),sigdigits=5) |> u"μF/cm^2"
 # output
 
-22.847 μF cm^-2
+22.847 μF cm⁻²
 ```
 """
 function dlcap0(data::AbstractElectrolyteData)
@@ -487,10 +487,10 @@ by the bulk concentration value ``c_1^b``.
 ```jldoctest
 using LessUnitful
 ely = ElectrolyteData(c_bulk=fill(0.01ufac"mol/dm^3",2))
-round(debyelength(ely)/ufac"nm",sigdigits=5)
+round(debyelength(ely),sigdigits=5) |> u"nm"
 # output
 
-3.0419
+3.0419 nm
 ```
 """
 debyelength(data) = sqrt(data.ε * data.ε_0 * data.RT / (2 * data.F^2 * data.c_bulk[1]))
