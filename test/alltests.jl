@@ -9,6 +9,8 @@ using ExampleJuggler
 using ExplicitImports
 using ExtendableFEM
 using Markdown
+using Documenter
+using LessUnitful
 using Aqua
 using LiquidElectrolytes: act_flux!, cent_flux!, μex_flux!
 
@@ -26,6 +28,10 @@ thisproject = dirname(Base.active_project())
     @test conductivity(ely, ely.c_bulk) ≈ 15.02150977814831
 end
 
+@testset "doctests" begin
+    DocMeta.setdocmeta!(LiquidElectrolytes, :DocTestSetup, :(using Unitful, LessUnitful, LiquidElectrolytes); recursive = true)
+    doctest(LiquidElectrolytes)
+end
 
 @testset "dlcap" begin
 

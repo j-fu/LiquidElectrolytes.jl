@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 
 ## 2.8.0 - 2026-07-28
 - Update handling of IR compensation:
-  - introduce ircompspecies and ircompnelectons fields in elecrolyte data
+  - introduce ircompspecies and ircompnelectons fields in electrolyte data
   - record double layer voltage difference + sawtooth voltage in CVSweepResult
 - new CellSizeComparison notebook
 
