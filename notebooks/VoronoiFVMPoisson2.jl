@@ -108,7 +108,7 @@ begin
     const c0_bulk = c̄ - sum(c_bulk) # solvent bulk molar concentration
     const hmin = 1.0e-1 * nm * 2.0^(-nref) # grid size at working electrode
     const hmax = 1.0 * nm * 2.0^(-nref) # grid size at bulk
-    const l_debye = sqrt(ε * ε_0 * RT / (F^2 * c_bulk[1])) # Debye length
+    const l_debye = sqrt(ε * ε_0 * RT / (2F^2 * c_bulk[1])) # Debye length
     const dlcap0 = sqrt(2 * ε * ε_0 * F^2 * c_bulk[1] / RT) # Double layer capacitance at point of zero charge (0V)
 end;
 
