@@ -28,7 +28,7 @@ thisproject = dirname(Base.active_project())
 end
 
 @testset "doctests" begin
-    DocMeta.setdocmeta!(LiquidElectrolytes, :DocTestSetup, :(using Unitful, LessUnitful, LiquidElectrolytes); recursive = true)
+    DocMeta.setdocmeta!(LiquidElectrolytes, :DocTestSetup, :(using LessUnitful, LiquidElectrolytes); recursive = true)
     doctest(LiquidElectrolytes)
 end
 

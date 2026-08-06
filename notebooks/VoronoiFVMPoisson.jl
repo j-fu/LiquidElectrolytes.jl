@@ -106,19 +106,19 @@ begin
     const c0_bulk = c̄ - sum(c_bulk) # solvent bulk molar concentration
     const hmin = 1.0e-1 * nm * 2.0^(-nref) # grid size at working electrode
     const hmax = 1.0 * nm * 2.0^(-nref) # grid size at bulk
-    const l_debye = sqrt(ε * ε_0 * RT / (F^2 * c_bulk[1])) # Debye length
+    const l_debye = sqrt(ε * ε_0 * RT / (2F^2 * c_bulk[1])) # Debye length
     const dlcap0 = sqrt(2 * ε * ε_0 * F^2 * c_bulk[1] / RT) # Double layer capacitance at point of zero charge (0V)
 end;
 
 # ╔═╡ c57e82bb-79d8-4553-b31d-d1448c38c649
 md"""
-Debye length= $(l_debye |> x->round(x,sigdigits=5) |>u"nm")
+Debye length = $(l_debye |> x->round(x,sigdigits=5) |>u"nm")
 """
 
 # ╔═╡ e2179a6c-cc1c-4850-89d4-d3f87fd5e6ee
 md"""
 Double layer capacitance at zero voltage for symmetric binary electrolyte = 
-$(dlcap0 |> x->round(x,sigdigits=5) |>u"μF/cm^2")
+$(dlcap0 |> x->round(x,sigdigits=5) |> u"μF/cm^2")
 """
 
 # ╔═╡ 7da889ce-9c6b-4abc-b19d-6311aacc32b1
