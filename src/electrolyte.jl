@@ -450,10 +450,10 @@ The molarity is defined by the bulk concentration value ``c_1^b``.
 ```jldoctest
 using LessUnitful
 ely = ElectrolyteData(c_bulk=fill(0.01ufac"mol/dm^3",2))
-round(dlcap0(ely),sigdigits=5) |> u"μF/cm^2"
+round(dlcap0(ely)/ufac"μF/cm^2",sigdigits=5)
 # output
 
-22.847 μF cm⁻²
+22.847
 ```
 """
 function dlcap0(data::AbstractElectrolyteData)
@@ -487,10 +487,10 @@ by the bulk concentration value ``c_1^b``.
 ```jldoctest
 using LessUnitful
 ely = ElectrolyteData(c_bulk=fill(0.01ufac"mol/dm^3",2))
-round(debyelength(ely),sigdigits=5) |> u"nm"
+round(debyelength(ely)/ufac"nm",sigdigits=5) 
 # output
 
-3.0419 nm
+3.0419
 ```
 """
 debyelength(data) = sqrt(data.ε * data.ε_0 * data.RT / (2 * data.F^2 * data.c_bulk[1]))
