@@ -481,19 +481,19 @@ end
 Return debye length for symmetric binary electrolyte. The molarity is defined
 by the bulk concentration value ``c_1^b``.
 ```math
-    l_{debye}=\\sqrt{RT\\frac{εε_0}{F^2c_1^b}}
+    l_{debye}=\\sqrt{RT\\frac{εε_0}{2F^2c_1^b}}
 ```
 
 ```jldoctest
 using LessUnitful
 ely = ElectrolyteData(c_bulk=fill(0.01ufac"mol/dm^3",2))
-round(debyelength(ely),sigdigits=5) |> u"nm"
+round(debyelength(ely)/ufac"nm",sigdigits=5)
 # output
 
-4.3018 nm
+3.0419
 ```
 """
-debyelength(data) = sqrt(data.ε * data.ε_0 * data.RT / (data.F^2 * data.c_bulk[1]))
+debyelength(data) = sqrt(data.ε * data.ε_0 * data.RT / (2 * data.F^2 * data.c_bulk[1]))
 
 """
     chargedensity(c,electrolyte)
