@@ -134,11 +134,9 @@ function pnpflux!(f, u, edge, electrolyte)
         ε_0, ε, ε_dec,
         eneutral, pscale, p_bulk,
         upwindflux!, actcoeff!,
-        γk_cache, γl_cache,
+        γk_cache, γl_cache, x_cache,
     ) = electrolyte
-
     evelo = edgevelocity(electrolyte, edge.index)
-
     pk, pl = u[ip, 1] * pscale - p_bulk, u[ip, 2] * pscale - p_bulk
     ϕk, ϕl = u[iϕ, 1], u[iϕ, 2]
     ck, cl = view(u, :, 1), view(u, :, 2)
@@ -147,7 +145,7 @@ function pnpflux!(f, u, edge, electrolyte)
     actcoeff!(γk, ck, pk, electrolyte)
     actcoeff!(γl, cl, pl, electrolyte)
 
-    xmid = MVector{3, Float64}(undef)
+    xmid = x_cache
     for i in 1:size(edge.coord)[1]
         xmid[i] = 0.5 * (edge[i, 1] + edge[i, 2])
     end
@@ -170,9 +168,9 @@ function pnpflux!(f, u, edge, celldata::AbstractCellData)
 end
 
 function sgflux!(y, u, edge, data)
-    (; nc, z, iϕ, ip, ε_0, ε, ε_dec, F, RT, D, eneutral) = data
+    (; nc, z, iϕ, ip, ε_0, ε, ε_dec, F, RT, D, eneutral, x_cache) = data
     dϕ = u[iϕ, 1] - u[iϕ, 2]
-    xmid = MVector{3, Float64}(undef)
+    xmid = x_cache
     for i in 1:size(edge.coord)[1]
         xmid[i] = 0.5 * (edge[i, 1] + edge[i, 2])
     end

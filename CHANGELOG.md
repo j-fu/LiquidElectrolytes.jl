@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 2.9.2 - 2026-09-26
+- Remove allocations in flux calculation
+
+## 2.9.1 - 2026-08-06
+- Fix debye length calculation
+
 ## 2.9.0 - 2026-07-31
 - Refactoring of IR compensation API - control by type instances (still EXPERIMENTAL)
 - Introduced additional surface pseudo species to record IR corrected potential

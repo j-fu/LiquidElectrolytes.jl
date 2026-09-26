@@ -309,6 +309,9 @@ $(TYPEDFIELDS)
     "Cache for activity coefficient calculation (reserved)"
     γl_cache::Tcache = DiffCache(zeros(maximum(cspecies)), 10 * maximum(cspecies))
 
+    "Cache for coordinate intermediates"
+    x_cache::Vector{Float64} = zeros(3)
+
     """
     Working electrode voltage ``ϕ_{we}`` (reserved)
     Used by sweep algorithms to pass boundary value data.
