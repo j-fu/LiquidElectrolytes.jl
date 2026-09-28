@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.8
+# v1.0.3
 
 using Markdown
 using InteractiveUtils
@@ -21,9 +21,8 @@ end
 begin
     using PlutoUI
     using VoronoiFVM
-    using ExtendableGrids
     using LinearAlgebra
-    using NLsolve
+    using NLsolve, ADTypes
     using Unitful
     using LessUnitful
     using LessUnitful.MoreUnitful
@@ -765,7 +764,7 @@ function create_equilibrium_pp_system(
     )
     if Γ_bulk > 0
         logysum!(y, p) = y[1] = log(ysum(0.0, p[1], data))
-        res = nlsolve(logysum!, [0.0]; autodiff = :forward, method = :newton, xtol = 1.0e-10, ftol = 1.0e-20)
+        res = nlsolve(logysum!, [0.0]; autodiff = AutoForwardDiff(), method = :newton, xtol = 1.0e-10, ftol = 1.0e-20)
         boundary_dirichlet!(sys, iφ, Γ_bulk, 0.0)
         boundary_dirichlet!(sys, ip, Γ_bulk, res.zero[1])
     end
