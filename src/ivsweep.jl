@@ -58,7 +58,6 @@ function ivsweep(
     update_derived!(cdata)
     sys = esys.vfvmsys
     ranges = splitc(voltages; center = pzc)
-    @show ranges
     F = ph"N_A" * ph"e"
     factory = VoronoiFVM.TestFunctionFactory(sys)
     tf_bulk = testfunction(factory, [working_electrode(cdata)], [bulk_electrode(cdata)])
